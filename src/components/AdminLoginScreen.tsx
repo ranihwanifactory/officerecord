@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShieldCheck, Lock, LogIn, LogOut, CheckCircle2, FileSpreadsheet, Calendar, Image as ImageIcon } from 'lucide-react';
+import { ShieldCheck, Lock, LogOut } from 'lucide-react';
 import { User } from 'firebase/auth';
 import { OfficeSettings } from '../types';
 
@@ -119,25 +119,6 @@ export const AdminLoginScreen: React.FC<AdminLoginScreenProps> = ({
               </button>
             </div>
           )}
-
-          {/* Key System Features Highlight */}
-          <div className="pt-5 border-t border-slate-800 text-left space-y-2.5">
-            <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">주요 기능</h4>
-            <div className="grid grid-cols-1 gap-2 text-xs text-slate-300 font-medium">
-              <div className="flex items-center space-x-2 bg-slate-800/50 px-3 py-2 rounded-xl border border-slate-700/40">
-                <Calendar className="w-4 h-4 text-blue-400 shrink-0" />
-                <span>달력형 출력 일지 작성 및 1~31일 출근 선택</span>
-              </div>
-              <div className="flex items-center space-x-2 bg-slate-800/50 px-3 py-2 rounded-xl border border-slate-700/40">
-                <ImageIcon className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>현장 출력표 양식 자동 생성 및 이미지(PNG) 저장</span>
-              </div>
-              <div className="flex items-center space-x-2 bg-slate-800/50 px-3 py-2 rounded-xl border border-slate-700/40">
-                <FileSpreadsheet className="w-4 h-4 text-amber-400 shrink-0" />
-                <span>월간 공수/단가 자동 계산 및 Excel CSV 다운로드</span>
-              </div>
-            </div>
-          </div>
 
         </div>
       </main>
