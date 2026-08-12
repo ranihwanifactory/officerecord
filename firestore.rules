@@ -1,0 +1,39 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 인력출력표 앱 컬렉션 (누구나 읽기 가능, 작성/수정 자유롭게 허용)
+    match /dispatch_logs/{logId} {
+      allow read, write: if true;
+    }
+    match /workers/{workerId} {
+      allow read, write: if true;
+    }
+    match /clients/{clientId} {
+      allow read, write: if true;
+    }
+    match /settings/{settingId} {
+      allow read, write: if true;
+    }
+    match /_connection_test/{testId} {
+      allow read, write: if true;
+    }
+
+    // 영상/레시피: 누구나 읽기 가능, 관리자(acehwan69@gmail.com)만 쓰기 가능
+    match /videos/{videoId} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.token.email == 'acehwan69@gmail.com';
+    }
+    
+    // 사용자 정보: 본인만 읽고 쓰기 가능
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // 댓글: 누구나 읽기 가능, 로그인 유저 작성, 삭제는 작성자 또는 관리자
+    match /comments/{commentId} {
+      allow read: if true;
+      allow create: if request.auth != null;
+      allow delete: if request.auth != null && (request.auth.uid == resource.data.userId || request.auth.token.email == 'acehwan69@gmail.com');
+    }
+  }
+}

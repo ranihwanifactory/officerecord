@@ -1,0 +1,82 @@
+{
+  "entities": {
+    "DispatchLog": {
+      "title": "DispatchLog",
+      "description": "Daily dispatch log record for manpower placement",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "date": { "type": "string" },
+        "clientName": { "type": "string" },
+        "clientContact": { "type": "string" },
+        "generalGongsuCount": { "type": "number" },
+        "skillGongsuCount": { "type": "number" },
+        "totalAmount": { "type": "number" },
+        "memo": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "date", "clientName"]
+    },
+    "WorkerMaster": {
+      "title": "WorkerMaster",
+      "description": "Worker master roster entry",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "defaultDailyRate": { "type": "number" },
+        "phone": { "type": "string" }
+      },
+      "required": ["id", "name", "category", "defaultDailyRate"]
+    },
+    "ClientSiteMaster": {
+      "title": "ClientSiteMaster",
+      "description": "Client or construction site entry",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "clientName": { "type": "string" },
+        "contactPhone": { "type": "string" },
+        "address": { "type": "string" }
+      },
+      "required": ["id", "clientName"]
+    },
+    "OfficeSettings": {
+      "title": "OfficeSettings",
+      "description": "Office contact and bank details settings",
+      "type": "object",
+      "properties": {
+        "officeName": { "type": "string" },
+        "phone1": { "type": "string" },
+        "phone2": { "type": "string" },
+        "address": { "type": "string" },
+        "bankAccount": { "type": "string" }
+      },
+      "required": ["officeName"]
+    }
+  },
+  "firestore": {
+    "/dispatch_logs/{logId}": {
+      "schema": { "$ref": "#/entities/DispatchLog" },
+      "description": "Collection of dispatch logs"
+    },
+    "/workers/{workerId}": {
+      "schema": { "$ref": "#/entities/WorkerMaster" },
+      "description": "Collection of worker roster items"
+    },
+    "/clients/{clientId}": {
+      "schema": { "$ref": "#/entities/ClientSiteMaster" },
+      "description": "Collection of client site items"
+    },
+    "/settings/{settingId}": {
+      "schema": { "$ref": "#/entities/OfficeSettings" },
+      "description": "Settings collection"
+    },
+    "/_connection_test/{testId}": {
+      "schema": { "$ref": "#/entities/OfficeSettings" },
+      "description": "Connection test collection"
+    }
+  }
+}
