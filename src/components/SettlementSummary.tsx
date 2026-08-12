@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DispatchLog, OfficeSettings } from '../types';
 import { DollarSign, Users, Building, Download, Printer, Calendar, FileSpreadsheet } from 'lucide-react';
+import { Pagination } from './Pagination';
 
 interface SettlementSummaryProps {
   logs: DispatchLog[];
@@ -10,6 +11,18 @@ interface SettlementSummaryProps {
 export const SettlementSummary: React.FC<SettlementSummaryProps> = ({ logs, officeSettings }) => {
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1); // 1-12
+
+  // Pagination states
+  const [matrixPage, setMatrixPage] = useState(1);
+  const [clientPage, setClientPage] = useState(1);
+  const [workerSummaryPage, setWorkerSummaryPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
+
+  useEffect(() => {
+    setMatrixPage(1);
+    setClientPage(1);
+    setWorkerSummaryPage(1);
+  }, [selectedYear, selectedMonth]);
 
   // Filter logs for selected year and month
   const monthPrefix = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`;
@@ -119,6 +132,25 @@ export const SettlementSummary: React.FC<SettlementSummaryProps> = ({ logs, offi
 
   const grandTotalMatrixGongsu = monthlyMatrixList.reduce((acc, m) => acc + m.totalGongsu, 0);
   const grandTotalMatrixWage = monthlyMatrixList.reduce((acc, m) => acc + m.totalCalculatedWage, 0);
+
+  // Paginated Lists
+  const matrixTotalPages = Math.ceil(monthlyMatrixList.length / ITEMS_PER_PAGE) || 1;
+  const paginatedMatrixList = monthlyMatrixList.slice(
+    (matrixPage - 1) * ITEMS_PER_PAGE,
+    matrixPage * ITEMS_PER_PAGE
+  );
+
+  const clientTotalPages = Math.ceil(clientList.length / ITEMS_PER_PAGE) || 1;
+  const paginatedClientList = clientList.slice(
+    (clientPage - 1) * ITEMS_PER_PAGE,
+    clientPage * ITEMS_PER_PAGE
+  );
+
+  const workerSummaryTotalPages = Math.ceil(monthlyMatrixList.length / ITEMS_PER_PAGE) || 1;
+  const paginatedWorkerSummaryList = monthlyMatrixList.slice(
+    (workerSummaryPage - 1) * ITEMS_PER_PAGE,
+    workerSummaryPage * ITEMS_PER_PAGE
+  );
 
   // CSV Export Helper
   const handleExportCSV = () => {
@@ -278,14 +310,14 @@ export const SettlementSummary: React.FC<SettlementSummaryProps> = ({ logs, offi
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
-              {monthlyMatrixList.length === 0 ? (
+              {paginatedMatrixList.length === 0 ? (
                 <tr>
                   <td colSpan={36} className="p-8 text-center text-slate-400 font-medium">
                     해당 월에 등록된 인부 출력 일지 내역이 없습니다.
                   </td>
                 </tr>
               ) : (
-                monthlyMatrixList.map((m, idx) => (
+                paginatedMatrixList.map((m, idx) => (
                   <tr key={idx} className="hover:bg-slate-50/80">
                     <td className="p-2.5 font-bold text-slate-800 border-r border-slate-200 sticky left-0 bg-white z-10 shadow-xs">
                       {m.name}
@@ -346,6 +378,14 @@ export const SettlementSummary: React.FC<SettlementSummaryProps> = ({ logs, offi
             </tbody>
           </table>
         </div>
+
+        <Pagination
+          currentPage={matrixPage}
+          totalPages={matrixTotalPages}
+          onPageChange={setMatrixPage}
+          totalItems={monthlyMatrixList.length}
+          itemsPerPage={ITEMS_PER_PAGE}
+        />
       </div>
 
       {/* Two Columns Tables: Client Summary & Worker Summary */}
@@ -372,14 +412,14 @@ export const SettlementSummary: React.FC<SettlementSummaryProps> = ({ logs, offi
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {clientList.length === 0 ? (
+                {paginatedClientList.length === 0 ? (
                   <tr>
                     <td colSpan={4} className="p-6 text-center text-xs text-slate-400">
                       해당 월의 업체 정산 내역이 없습니다.
                     </td>
                   </tr>
                 ) : (
-                  clientList.map((c, idx) => (
+                  paginatedClientList.map((c, idx) => (
                     <tr key={idx} className="hover:bg-slate-50/80">
                       <td className="p-2.5 font-bold text-slate-800">
                         {c.clientName}
@@ -400,6 +440,14 @@ export const SettlementSummary: React.FC<SettlementSummaryProps> = ({ logs, offi
               </tbody>
             </table>
           </div>
+
+          <Pagination
+            currentPage={clientPage}
+            totalPages={clientTotalPages}
+            onPageChange={setClientPage}
+            totalItems={clientList.length}
+            itemsPerPage={ITEMS_PER_PAGE}
+          />
         </div>
 
         {/* Table 2: Worker Earnings Breakdown */}
@@ -423,14 +471,14 @@ export const SettlementSummary: React.FC<SettlementSummaryProps> = ({ logs, offi
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {monthlyMatrixList.length === 0 ? (
+                {paginatedWorkerSummaryList.length === 0 ? (
                   <tr>
                     <td colSpan={4} className="p-6 text-center text-xs text-slate-400">
                       해당 월의 인부 지급 내역이 없습니다.
                     </td>
                   </tr>
                 ) : (
-                  monthlyMatrixList.map((m, idx) => (
+                  paginatedWorkerSummaryList.map((m, idx) => (
                     <tr key={idx} className="hover:bg-slate-50/80">
                       <td className="p-2.5 font-bold text-slate-800">
                         {m.name}
@@ -452,6 +500,14 @@ export const SettlementSummary: React.FC<SettlementSummaryProps> = ({ logs, offi
               </tbody>
             </table>
           </div>
+
+          <Pagination
+            currentPage={workerSummaryPage}
+            totalPages={workerSummaryTotalPages}
+            onPageChange={setWorkerSummaryPage}
+            totalItems={monthlyMatrixList.length}
+            itemsPerPage={ITEMS_PER_PAGE}
+          />
         </div>
 
       </div>

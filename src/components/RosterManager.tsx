@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { WorkerMaster, ClientSiteMaster, WorkerCategory } from '../types';
-import { Users, Building, Plus, Edit, Trash2, Phone, Save, X } from 'lucide-react';
+import { Users, Building, Plus, Edit, Trash2, Phone, Save, X, Search } from 'lucide-react';
+import { Pagination } from './Pagination';
 
 interface RosterManagerProps {
   workers: WorkerMaster[];
@@ -20,6 +21,47 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
   onDeleteClient,
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<'workers' | 'clients'>('workers');
+
+  // Search & Pagination States
+  const [workerSearch, setWorkerSearch] = useState('');
+  const [workerPage, setWorkerPage] = useState(1);
+  const [clientSearch, setClientSearch] = useState('');
+  const [clientPage, setClientPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
+
+  useEffect(() => {
+    setWorkerPage(1);
+  }, [workerSearch]);
+
+  useEffect(() => {
+    setClientPage(1);
+  }, [clientSearch]);
+
+  const filteredWorkers = workers.filter(
+    (w) =>
+      w.name.toLowerCase().includes(workerSearch.toLowerCase()) ||
+      w.category.toLowerCase().includes(workerSearch.toLowerCase()) ||
+      (w.phone && w.phone.includes(workerSearch))
+  );
+
+  const workerTotalPages = Math.ceil(filteredWorkers.length / ITEMS_PER_PAGE) || 1;
+  const paginatedWorkers = filteredWorkers.slice(
+    (workerPage - 1) * ITEMS_PER_PAGE,
+    workerPage * ITEMS_PER_PAGE
+  );
+
+  const filteredClients = clients.filter(
+    (c) =>
+      c.clientName.toLowerCase().includes(clientSearch.toLowerCase()) ||
+      (c.contactPhone && c.contactPhone.includes(clientSearch)) ||
+      (c.address && c.address.toLowerCase().includes(clientSearch.toLowerCase()))
+  );
+
+  const clientTotalPages = Math.ceil(filteredClients.length / ITEMS_PER_PAGE) || 1;
+  const paginatedClients = filteredClients.slice(
+    (clientPage - 1) * ITEMS_PER_PAGE,
+    clientPage * ITEMS_PER_PAGE
+  );
 
   // Worker Modal State
   const [editingWorker, setEditingWorker] = useState<WorkerMaster | null>(null);
@@ -165,6 +207,18 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
       {/* Workers Roster SubTab */}
       {activeSubTab === 'workers' && (
         <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+          {/* Search bar */}
+          <div className="relative max-w-xs">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+            <input
+              type="text"
+              placeholder="인부 이름, 직종, 연락처 검색..."
+              value={workerSearch}
+              onChange={(e) => setWorkerSearch(e.target.value)}
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-800 outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead className="bg-slate-50 text-slate-400 font-bold text-[10px] uppercase tracking-wider border-b border-slate-100">
@@ -177,55 +231,97 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {workers.map((w) => (
-                  <tr key={w.id} className="hover:bg-slate-50/80">
-                    <td className="p-3 font-bold text-slate-800">
-                      {w.name}
-                    </td>
-                    <td className="p-3 text-center">
-                      <span className="text-xs font-bold bg-blue-50 text-blue-600 px-2.5 py-0.5 rounded-full border border-blue-100">
-                        {w.category}
-                      </span>
-                    </td>
-                    <td className="p-3 text-right font-black text-blue-600 font-mono">
-                      ₩{w.defaultDailyRate.toLocaleString()}원
-                    </td>
-                    <td className="p-3 text-slate-500 font-medium text-xs">
-                      {w.phone || '-'}
-                    </td>
-                    <td className="p-3 text-center">
-                      <div className="flex items-center justify-center space-x-1">
-                        <button
-                          onClick={() => handleOpenWorkerModal(w)}
-                          className="p-1.5 text-slate-400 hover:text-blue-600 rounded-lg hover:bg-slate-100"
-                          title="수정"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (confirm(`'${w.name}' 인부를 명단에서 삭제하시겠습니까?`)) {
-                              onDeleteWorker(w.id);
-                            }
-                          }}
-                          className="p-1.5 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-slate-100"
-                          title="삭제"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
+                {paginatedWorkers.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="p-8 text-center text-slate-400 text-xs">
+                      등록된 인부가 없거나 검색 결과가 없습니다.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  paginatedWorkers.map((w) => (
+                    <tr key={w.id} className="hover:bg-slate-50/80">
+                      <td className="p-3 font-bold text-slate-800">
+                        {w.name}
+                      </td>
+                      <td className="p-3 text-center">
+                        <span className="text-xs font-bold bg-blue-50 text-blue-600 px-2.5 py-0.5 rounded-full border border-blue-100">
+                          {w.category}
+                        </span>
+                      </td>
+                      <td className="p-3 text-right font-black text-blue-600 font-mono">
+                        ₩{w.defaultDailyRate.toLocaleString()}원
+                      </td>
+                      <td className="p-3">
+                        {w.phone ? (
+                          <div className="flex items-center space-x-2">
+                            <span className="font-mono text-slate-700 font-medium text-xs">{w.phone}</span>
+                            <a
+                              href={`tel:${w.phone.replace(/[^0-9+]/g, '')}`}
+                              className="inline-flex items-center space-x-1 px-2 py-0.5 text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-lg transition-colors cursor-pointer"
+                              title={`${w.name} 님에게 바로 전화걸기`}
+                            >
+                              <Phone className="w-3 h-3 text-emerald-600 fill-emerald-100" />
+                              <span>전화</span>
+                            </a>
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 font-mono text-xs">-</span>
+                        )}
+                      </td>
+                      <td className="p-3 text-center">
+                        <div className="flex items-center justify-center space-x-1">
+                          <button
+                            onClick={() => handleOpenWorkerModal(w)}
+                            className="p-1.5 text-slate-400 hover:text-blue-600 rounded-lg hover:bg-slate-100 cursor-pointer"
+                            title="수정"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (confirm(`'${w.name}' 인부를 명단에서 삭제하시겠습니까?`)) {
+                                onDeleteWorker(w.id);
+                              }
+                            }}
+                            className="p-1.5 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-slate-100 cursor-pointer"
+                            title="삭제"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
+
+          <Pagination
+            currentPage={workerPage}
+            totalPages={workerTotalPages}
+            onPageChange={setWorkerPage}
+            totalItems={filteredWorkers.length}
+            itemsPerPage={ITEMS_PER_PAGE}
+          />
         </div>
       )}
 
       {/* Clients SubTab */}
       {activeSubTab === 'clients' && (
         <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+          {/* Search bar */}
+          <div className="relative max-w-xs">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+            <input
+              type="text"
+              placeholder="업체/현장명, 연락처, 주소 검색..."
+              value={clientSearch}
+              onChange={(e) => setClientSearch(e.target.value)}
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-800 outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead className="bg-slate-50 text-slate-400 font-bold text-[10px] uppercase tracking-wider border-b border-slate-100">
@@ -237,44 +333,74 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {clients.map((c) => (
-                  <tr key={c.id} className="hover:bg-slate-50/80">
-                    <td className="p-3 font-bold text-slate-800">
-                      {c.clientName}
-                    </td>
-                    <td className="p-3 font-semibold text-blue-600 font-mono text-xs">
-                      {c.contactPhone || '-'}
-                    </td>
-                    <td className="p-3 text-slate-500 text-xs">
-                      {c.address || '-'}
-                    </td>
-                    <td className="p-3 text-center">
-                      <div className="flex items-center justify-center space-x-1">
-                        <button
-                          onClick={() => handleOpenClientModal(c)}
-                          className="p-1.5 text-slate-400 hover:text-blue-600 rounded-lg hover:bg-slate-100"
-                          title="수정"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (confirm(`'${c.clientName}' 현장을 삭제하시겠습니까?`)) {
-                              onDeleteClient(c.id);
-                            }
-                          }}
-                          className="p-1.5 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-slate-100"
-                          title="삭제"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
+                {paginatedClients.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="p-8 text-center text-slate-400 text-xs">
+                      등록된 업체/현장이 없거나 검색 결과가 없습니다.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  paginatedClients.map((c) => (
+                    <tr key={c.id} className="hover:bg-slate-50/80">
+                      <td className="p-3 font-bold text-slate-800">
+                        {c.clientName}
+                      </td>
+                      <td className="p-3">
+                        {c.contactPhone ? (
+                          <div className="flex items-center space-x-2">
+                            <span className="font-mono text-slate-700 font-medium text-xs">{c.contactPhone}</span>
+                            <a
+                              href={`tel:${c.contactPhone.replace(/[^0-9+]/g, '')}`}
+                              className="inline-flex items-center space-x-1 px-2 py-0.5 text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-lg transition-colors cursor-pointer"
+                              title={`${c.clientName} 담당자에게 전화 연결`}
+                            >
+                              <Phone className="w-3 h-3 text-emerald-600 fill-emerald-100" />
+                              <span>전화</span>
+                            </a>
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 font-mono text-xs">-</span>
+                        )}
+                      </td>
+                      <td className="p-3 text-slate-500 text-xs">
+                        {c.address || '-'}
+                      </td>
+                      <td className="p-3 text-center">
+                        <div className="flex items-center justify-center space-x-1">
+                          <button
+                            onClick={() => handleOpenClientModal(c)}
+                            className="p-1.5 text-slate-400 hover:text-blue-600 rounded-lg hover:bg-slate-100 cursor-pointer"
+                            title="수정"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (confirm(`'${c.clientName}' 현장을 목록에서 삭제하시겠습니까?`)) {
+                                onDeleteClient(c.id);
+                              }
+                            }}
+                            className="p-1.5 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-slate-100 cursor-pointer"
+                            title="삭제"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
+
+          <Pagination
+            currentPage={clientPage}
+            totalPages={clientTotalPages}
+            onPageChange={setClientPage}
+            totalItems={filteredClients.length}
+            itemsPerPage={ITEMS_PER_PAGE}
+          />
         </div>
       )}
 

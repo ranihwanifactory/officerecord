@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DispatchLog } from '../types';
 import { Search, Printer, Copy, Edit, Trash2, Calendar, Users, Building, Plus } from 'lucide-react';
+import { Pagination } from './Pagination';
 
 interface DispatchLogListProps {
   logs: DispatchLog[];
@@ -21,6 +22,8 @@ export const DispatchLogList: React.FC<DispatchLogListProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterMonth, setFilterMonth] = useState(''); // YYYY-MM or empty
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
 
   const filteredLogs = logs.filter((log) => {
     const matchesSearch =
@@ -33,6 +36,16 @@ export const DispatchLogList: React.FC<DispatchLogListProps> = ({
 
     return matchesSearch && matchesMonth;
   });
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterMonth]);
+
+  const totalPages = Math.ceil(filteredLogs.length / ITEMS_PER_PAGE) || 1;
+  const paginatedLogs = filteredLogs.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   return (
     <div className="space-y-6">
@@ -111,7 +124,7 @@ export const DispatchLogList: React.FC<DispatchLogListProps> = ({
                   </td>
                 </tr>
               ) : (
-                filteredLogs.map((log) => (
+                paginatedLogs.map((log) => (
                   <tr key={log.id} className="hover:bg-slate-50/80 transition-colors">
                     
                     {/* Date */}
@@ -214,6 +227,13 @@ export const DispatchLogList: React.FC<DispatchLogListProps> = ({
             </tbody>
           </table>
         </div>
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          totalItems={filteredLogs.length}
+          itemsPerPage={ITEMS_PER_PAGE}
+        />
       </div>
     </div>
   );
