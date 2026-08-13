@@ -244,7 +244,7 @@ export default function App() {
     const updatedLog: DispatchLog = {
       ...log,
       isPaid: !log.isPaid,
-      paidAt: !log.isPaid ? new Date().toISOString() : undefined,
+      paidAt: !log.isPaid ? new Date().toISOString() : '',
       updatedAt: new Date().toISOString(),
     };
     await saveDispatchLog(updatedLog);

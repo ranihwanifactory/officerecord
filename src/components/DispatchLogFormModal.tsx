@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { DispatchLog, DispatchWorkerItem, InvoiceItem, WorkerMaster, ClientSiteMaster, WorkerCategory } from '../types';
-import { Plus, Trash2, Save, Copy, X, Users, FileText, Calculator, AlertCircle, DollarSign, Clock, Utensils, Fuel, Check, CheckCircle2 } from 'lucide-react';
+import { DispatchLog, DispatchWorkerItem, InvoiceItem, WorkerMaster, ClientSiteMaster, WorkerCategory, OfficeSettings } from '../types';
+import { Plus, Trash2, Save, Copy, X, Users, FileText, Calculator, AlertCircle, DollarSign, Clock, Utensils, Fuel, Check, CheckCircle2, Building } from 'lucide-react';
 
 interface DispatchLogFormModalProps {
   initialLog?: DispatchLog | null;
@@ -387,7 +387,7 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
       grandTotalAmount: activeGrandTotal,
       memo: memo.trim(),
       isPaid,
-      paidAt: isPaid ? (initialLog?.paidAt || new Date().toISOString()) : undefined,
+      paidAt: isPaid ? (initialLog?.paidAt || new Date().toISOString()) : '',
       createdAt: initialLog?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -442,7 +442,7 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
       grandTotalAmount: activeGrandTotal,
       memo: memo.trim() ? `${memo} (반복 복사)` : '반복 일정 등록',
       isPaid,
-      paidAt: isPaid ? new Date().toISOString() : undefined,
+      paidAt: isPaid ? new Date().toISOString() : '',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };

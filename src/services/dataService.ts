@@ -17,6 +17,17 @@ const KEYS = {
 // Initialize default local storage
 initLocalData();
 
+/**
+ * Recursively removes undefined fields from objects before saving to Firestore.
+ * Firestore throws an error if any field is `undefined`.
+ */
+function sanitizeForFirestore<T>(data: T): T {
+  if (data === null || data === undefined) {
+    return null as any;
+  }
+  return JSON.parse(JSON.stringify(data));
+}
+
 // Dispatch Logs
 export function subscribeDispatchLogs(onUpdate: (logs: DispatchLog[]) => void): () => void {
   const localLogs = getLocalData<DispatchLog[]>(KEYS.LOGS, INITIAL_DISPATCH_LOGS);
@@ -61,7 +72,7 @@ export async function saveDispatchLog(log: DispatchLog): Promise<void> {
 
   // Firestore write
   try {
-    await setDoc(doc(db, 'dispatch_logs', log.id), log);
+    await setDoc(doc(db, 'dispatch_logs', log.id), sanitizeForFirestore(log));
   } catch (err) {
     console.warn('Firestore save failed (saved locally):', err);
   }
@@ -110,7 +121,7 @@ export async function saveWorker(worker: WorkerMaster): Promise<void> {
   setLocalData(KEYS.WORKERS, updated);
 
   try {
-    await setDoc(doc(db, 'workers', worker.id), worker);
+    await setDoc(doc(db, 'workers', worker.id), sanitizeForFirestore(worker));
   } catch (err) {
     console.warn('Firestore save worker error:', err);
   }
@@ -159,7 +170,7 @@ export async function saveClient(client: ClientSiteMaster): Promise<void> {
   setLocalData(KEYS.CLIENTS, updated);
 
   try {
-    await setDoc(doc(db, 'clients', client.id), client);
+    await setDoc(doc(db, 'clients', client.id), sanitizeForFirestore(client));
   } catch (err) {
     console.warn('Firestore save client error:', err);
   }
@@ -290,9 +301,9 @@ export async function saveOfficeProfile(profile: OfficeSettings): Promise<void> 
   }
 
   try {
-    await setDoc(doc(db, 'office_profiles', profileId), profileToSave);
+    await setDoc(doc(db, 'office_profiles', profileId), sanitizeForFirestore(profileToSave));
     if (defaultProfile) {
-      await setDoc(doc(db, 'settings', 'office_info'), defaultProfile);
+      await setDoc(doc(db, 'settings', 'office_info'), sanitizeForFirestore(defaultProfile));
     }
   } catch (err) {
     console.warn('Firestore saveOfficeProfile error:', err);
