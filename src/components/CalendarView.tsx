@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DispatchLog, OfficeSettings } from '../types';
 import { ChevronLeft, ChevronRight, Plus, Printer, Copy, Edit, Trash2, Calendar as CalendarIcon, Users, DollarSign } from 'lucide-react';
+import { Pagination } from './Pagination';
 
 interface CalendarViewProps {
   logs: DispatchLog[];
@@ -74,8 +75,20 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   );
   const monthlyTotalAmount = monthlyLogs.reduce((sum, l) => sum + l.totalAmount, 0);
 
-  // Selected Date logs
+  // Selected Date logs & pagination
   const selectedDateLogs = logs.filter((l) => l.date === selectedDateStr);
+  const [selectedDatePage, setSelectedDatePage] = useState(1);
+  const ITEMS_PER_PAGE = 5;
+
+  useEffect(() => {
+    setSelectedDatePage(1);
+  }, [selectedDateStr]);
+
+  const selectedDateTotalPages = Math.ceil(selectedDateLogs.length / ITEMS_PER_PAGE) || 1;
+  const paginatedSelectedDateLogs = selectedDateLogs.slice(
+    (selectedDatePage - 1) * ITEMS_PER_PAGE,
+    selectedDatePage * ITEMS_PER_PAGE
+  );
 
   return (
     <div className="space-y-6">
@@ -273,7 +286,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 </button>
               </div>
             ) : (
-              selectedDateLogs.map((log) => (
+              paginatedSelectedDateLogs.map((log) => (
                 <div
                   key={log.id}
                   className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3 hover:border-blue-300 transition-all shadow-xs"
@@ -356,6 +369,14 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               ))
             )}
           </div>
+
+          <Pagination
+            currentPage={selectedDatePage}
+            totalPages={selectedDateTotalPages}
+            onPageChange={setSelectedDatePage}
+            totalItems={selectedDateLogs.length}
+            itemsPerPage={ITEMS_PER_PAGE}
+          />
         </div>
 
       </div>

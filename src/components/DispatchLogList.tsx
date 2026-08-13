@@ -138,11 +138,11 @@ export const DispatchLogList: React.FC<DispatchLogListProps> = ({
                         <span>{log.clientName}</span>
                         {log.formType === 'invoice_summary' ? (
                           <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded border border-emerald-200">
-                            계산서용
+                            양식 2 (용역수)
                           </span>
                         ) : (
                           <span className="text-[10px] font-bold bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded border border-blue-200">
-                            출근표
+                            양식 1 (출근표)
                           </span>
                         )}
                       </div>

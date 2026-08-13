@@ -420,10 +420,10 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
             </div>
             <div>
               <h2 className="text-base sm:text-lg font-bold text-slate-800">
-                {initialLog ? '출력표 일지 / 계산서 작성' : '새 출력표 일지 / 계산서 작성'}
+                {initialLog ? '출력표 일지 수정' : '새 출력표 일지 작성'}
               </h2>
               <p className="text-xs text-slate-500">
-                인부별 출근표 작성 및 계산서 청구용 일별 용역수/인건비/기타비용을 기록합니다.
+                인부별 출근표 작성 및 일별 용역수/인건비/기타비용을 기록합니다.
               </p>
             </div>
           </div>
@@ -478,7 +478,7 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
                   <Calculator className="w-5 h-5" />
                 </div>
                 <div>
-                  <div className="text-xs sm:text-sm font-bold">🧾 [양식 2] 계산서용 일별 용역수 & 인건비 출력표</div>
+                  <div className="text-xs sm:text-sm font-bold">📋 [양식 2] 일별 용역수 & 인건비 출력표</div>
                   <div className="text-[11px] text-slate-500 font-normal">
                     일별 용역수(공수), 단가, 인건비 및 기타비용(잔업/식대/주유비) 정산
                   </div>
@@ -863,7 +863,7 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
                 <div className="flex items-center space-x-2">
                   <Calculator className="w-4 h-4 text-emerald-600" />
                   <h3 className="font-bold text-sm text-slate-800">
-                    계산서용 일별 용역수, 인건비 & 기타비용 세부 항목
+                    일별 용역수, 인건비 & 기타비용 세부 항목
                   </h3>
                   <span className="text-xs bg-emerald-50 text-emerald-700 font-bold px-2 py-0.5 rounded-md border border-emerald-100">
                     {validInvoiceItems.length}개 항목 청구
@@ -876,7 +876,7 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
                     onClick={handleSyncWorkersToInvoice}
                     className="text-xs bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold px-2.5 py-1.5 rounded-lg border border-slate-300 transition-colors cursor-pointer"
                   >
-                    🔄 인부 명단 → 계산서 항목 자동 전환
+                    🔄 인부 명단 → 용역 항목 자동 전환
                   </button>
                   <button
                     type="button"
@@ -1047,7 +1047,7 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
               <div className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center space-x-1">
                 <span>실시간 정산 및 청구 금액 집계</span>
                 {formType === 'invoice_summary' ? (
-                  <span className="bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded text-[10px] font-bold">계산서 양식</span>
+                  <span className="bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded text-[10px] font-bold">용역수 양식</span>
                 ) : (
                   <span className="bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded text-[10px] font-bold">인부 출근 양식</span>
                 )}
@@ -1078,7 +1078,7 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
             </label>
             <input
               type="text"
-              placeholder="예: 8월 11일 계산서 청구용 출력표 작성 완료"
+              placeholder="예: 8월 11일 출력표 작성 완료"
               value={memo}
               onChange={(e) => setMemo(e.target.value)}
               className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 outline-none focus:ring-2 focus:ring-blue-500"

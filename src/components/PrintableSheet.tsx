@@ -40,7 +40,7 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
       });
 
       const link = document.createElement('a');
-      const prefix = viewMode === 'invoice_summary' ? '계산서출력표' : '출력표';
+      const prefix = '출력표';
       link.download = `${prefix}_${log.clientName}_${log.date}.png`;
       link.href = dataUrl;
       link.click();
@@ -181,7 +181,7 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
             }`}
           >
             <Calculator className="w-3.5 h-3.5" />
-            <span>🧾 [양식 2] 계산서용 일별 용역/인건비 출력표</span>
+            <span>📋 [양식 2] 일별 용역/인건비 출력표</span>
           </button>
         </div>
 
@@ -419,7 +419,7 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
             {/* Title */}
             <div className="text-center mb-6">
               <h1 className="text-3xl sm:text-4xl font-extrabold tracking-widest border-b-2 border-black pb-2 inline-block px-8">
-                계 산 서 용 출 력 표
+                출 력 표
               </h1>
             </div>
 
@@ -470,7 +470,7 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
 
             {/* Section Divider Subheader */}
             <div className="border-x-2 border-b-2 border-black bg-slate-50 py-1.5 px-3 text-center font-bold text-sm tracking-wider">
-              일 별 용 역 수 및 인 건 비 내 역 (계산서 청구용)
+              일 별 용 역 수 및 인 건 비 내 역
             </div>
 
             {/* Invoice Table Grid */}
