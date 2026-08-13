@@ -59,7 +59,12 @@ export const SettlementSummary: React.FC<SettlementSummaryProps> = ({ logs, offi
       };
     }
     clientMap[key].logsCount += 1;
-    clientMap[key].gongsuSum += log.workers.reduce((acc, w) => acc + (w.gongsu || 1), 0);
+    const logGongsu = log.workers && log.workers.length > 0
+      ? log.workers.reduce((acc, w) => acc + (w.gongsu || 1), 0)
+      : log.invoiceItems && log.invoiceItems.length > 0
+      ? log.invoiceItems.reduce((acc, i) => acc + (Number(i.serviceCount) || 0), 0)
+      : (log.generalGongsuCount || 0) + (log.skillGongsuCount || 0);
+    clientMap[key].gongsuSum += logGongsu;
     clientMap[key].amountSum += log.totalAmount;
   });
 

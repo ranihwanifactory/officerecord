@@ -225,20 +225,26 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
                   {/* Day Log Badges */}
                   <div className="space-y-1 overflow-y-auto max-h-16 scrollbar-none my-0.5">
-                    {dayLogs.map((log) => (
-                      <div
-                        key={log.id}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedDateStr(dateStr);
-                          onPrintLog(log);
-                        }}
-                        className="bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-bold p-1 rounded-lg truncate hover:bg-blue-600 hover:text-white transition-colors"
-                        title={`${log.clientName} (${log.workers.length}명 / ₩${log.totalAmount.toLocaleString()})`}
-                      >
-                        {log.clientName} ({log.workers.length}명)
-                      </div>
-                    ))}
+                    {dayLogs.map((log) => {
+                      const headcount = log.workers && log.workers.length > 0
+                        ? log.workers.length
+                        : (log.invoiceItems?.reduce((acc, i) => acc + (Number(i.serviceCount) || 0), 0) || 0);
+
+                      return (
+                        <div
+                          key={log.id}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedDateStr(dateStr);
+                            onPrintLog(log);
+                          }}
+                          className="bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-bold p-1 rounded-lg truncate hover:bg-blue-600 hover:text-white transition-colors"
+                          title={`${log.clientName} (${headcount}명 / ₩${log.totalAmount.toLocaleString()})`}
+                        >
+                          {log.clientName} ({headcount}명)
+                        </div>
+                      );
+                    })}
                   </div>
 
                   {/* Bottom Daily Total */}
@@ -306,23 +312,53 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                         ₩{log.totalAmount.toLocaleString()}원
                       </div>
                       <div className="text-xs text-slate-500 font-medium">
-                        일반 {log.generalGongsuCount}공수 / 기공 {log.skillGongsuCount}공수
+                        {(() => {
+                          let general = log.generalGongsuCount || 0;
+                          let skill = log.skillGongsuCount || 0;
+                          if (general === 0 && skill === 0 && log.invoiceItems && log.invoiceItems.length > 0) {
+                            log.invoiceItems.forEach((i) => {
+                              const count = Number(i.serviceCount) || 0;
+                              if (i.workCategory && i.workCategory.includes('기공')) skill += count;
+                              else general += count;
+                            });
+                          }
+                          return `일반 ${general}공수 / 기공 ${skill}공수`;
+                        })()}
                       </div>
                     </div>
                   </div>
 
                   {/* Workers List Preview */}
                   <div className="bg-white rounded-xl p-3 text-xs space-y-1 border border-slate-200">
-                    <div className="font-bold text-slate-400 mb-1 flex justify-between uppercase text-[10px] tracking-wider">
-                      <span>출력 인부 ({log.workers.length}명)</span>
-                      <span>단가</span>
-                    </div>
-                    {log.workers.map((w, wIdx) => (
-                      <div key={wIdx} className="flex justify-between font-semibold text-slate-700">
-                        <span>• {w.name} <span className="text-[10px] text-slate-400">({w.category})</span></span>
-                        <span className="font-mono">₩{w.dailyRate.toLocaleString()}원</span>
-                      </div>
-                    ))}
+                    {log.workers && log.workers.length > 0 ? (
+                      <>
+                        <div className="font-bold text-slate-400 mb-1 flex justify-between uppercase text-[10px] tracking-wider">
+                          <span>출력 인부 ({log.workers.length}명)</span>
+                          <span>단가</span>
+                        </div>
+                        {log.workers.map((w, wIdx) => (
+                          <div key={wIdx} className="flex justify-between font-semibold text-slate-700">
+                            <span>• {w.name} <span className="text-[10px] text-slate-400">({w.category})</span></span>
+                            <span className="font-mono">₩{w.dailyRate.toLocaleString()}원</span>
+                          </div>
+                        ))}
+                      </>
+                    ) : log.invoiceItems && log.invoiceItems.length > 0 ? (
+                      <>
+                        <div className="font-bold text-slate-400 mb-1 flex justify-between uppercase text-[10px] tracking-wider">
+                          <span>용역 항목 (총 {log.invoiceItems.reduce((acc, i) => acc + (Number(i.serviceCount) || 0), 0)}명/공수)</span>
+                          <span>단가</span>
+                        </div>
+                        {log.invoiceItems.map((item, iIdx) => (
+                          <div key={iIdx} className="flex justify-between font-semibold text-slate-700">
+                            <span>• {item.workCategory || '용역'} ({item.serviceCount}명)</span>
+                            <span className="font-mono">₩{item.unitPrice.toLocaleString()}원</span>
+                          </div>
+                        ))}
+                      </>
+                    ) : (
+                      <div className="text-slate-400 text-xs">등록된 인부 또는 용역 항목이 없습니다.</div>
+                    )}
                   </div>
 
                   {/* Action Buttons */}

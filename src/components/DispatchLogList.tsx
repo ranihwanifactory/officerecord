@@ -30,7 +30,8 @@ export const DispatchLogList: React.FC<DispatchLogListProps> = ({
       log.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       log.clientContact.includes(searchTerm) ||
       (log.siteAddress && log.siteAddress.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      log.workers.some((w) => w.name.toLowerCase().includes(searchTerm.toLowerCase()));
+      log.workers.some((w) => w.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (log.invoiceItems && log.invoiceItems.some((i) => i.workCategory.toLowerCase().includes(searchTerm.toLowerCase())));
     
     const matchesMonth = filterMonth ? log.date.startsWith(filterMonth) : true;
 
@@ -160,21 +161,53 @@ export const DispatchLogList: React.FC<DispatchLogListProps> = ({
 
                     {/* Workers list preview */}
                     <td className="p-3.5">
-                      <div className="flex flex-wrap gap-1 max-w-xs">
-                        {log.workers.map((w, idx) => (
-                          <span
-                            key={idx}
-                            className="text-[11px] font-semibold bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md border border-slate-200"
-                          >
-                            {w.name}
+                      {log.workers && log.workers.length > 0 ? (
+                        <div className="flex flex-wrap gap-1 max-w-xs">
+                          {log.workers.map((w, idx) => (
+                            <span
+                              key={idx}
+                              className="text-[11px] font-semibold bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md border border-slate-200"
+                            >
+                              {w.name}
+                            </span>
+                          ))}
+                        </div>
+                      ) : log.invoiceItems && log.invoiceItems.length > 0 ? (
+                        <div className="flex flex-wrap items-center gap-1 max-w-xs">
+                          <span className="text-[11px] font-bold bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded-md border border-emerald-200">
+                            총 {log.invoiceItems.reduce((acc, i) => acc + (Number(i.serviceCount) || 0), 0)}명/공수
                           </span>
-                        ))}
-                      </div>
+                          {Array.from(new Set(log.invoiceItems.map((i) => i.workCategory).filter(Boolean))).map((cat, idx) => (
+                            <span
+                              key={idx}
+                              className="text-[10px] font-medium bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200"
+                            >
+                              {cat}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-slate-400 font-medium">-</span>
+                      )}
                     </td>
 
                     {/* Gongsu */}
                     <td className="p-3.5 text-center text-xs font-bold whitespace-nowrap text-slate-600">
-                      일반 {log.generalGongsuCount} / 기공 {log.skillGongsuCount}
+                      {(() => {
+                        let general = log.generalGongsuCount || 0;
+                        let skill = log.skillGongsuCount || 0;
+                        if (general === 0 && skill === 0 && log.invoiceItems && log.invoiceItems.length > 0) {
+                          log.invoiceItems.forEach((i) => {
+                            const count = Number(i.serviceCount) || 0;
+                            if (i.workCategory && i.workCategory.includes('기공')) {
+                              skill += count;
+                            } else {
+                              general += count;
+                            }
+                          });
+                        }
+                        return `일반 ${general} / 기공 ${skill}`;
+                      })()}
                     </td>
 
                     {/* Total Amount */}

@@ -342,6 +342,22 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
       return;
     }
 
+    let finalGeneralGongsu = generalGongsuCount;
+    let finalSkillGongsu = skillGongsuCount;
+
+    if (formType === 'invoice_summary' && validWorkers.length === 0) {
+      finalGeneralGongsu = 0;
+      finalSkillGongsu = 0;
+      validInvoiceItems.forEach((i) => {
+        const count = Number(i.serviceCount) || 0;
+        if (i.workCategory && i.workCategory.includes('기공')) {
+          finalSkillGongsu += count;
+        } else {
+          finalGeneralGongsu += count;
+        }
+      });
+    }
+
     const logToSave: DispatchLog = {
       id: initialLog?.id || `log-${date}-${Date.now()}`,
       date,
@@ -350,8 +366,8 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
       clientName: clientName.trim(),
       clientContact: clientContact.trim(),
       siteAddress: siteAddress.trim(),
-      generalGongsuCount,
-      skillGongsuCount,
+      generalGongsuCount: finalGeneralGongsu,
+      skillGongsuCount: finalSkillGongsu,
       workers: validWorkers,
       formType,
       invoiceItems: validInvoiceItems,
@@ -378,6 +394,22 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
       return;
     }
 
+    let finalGeneralGongsu = generalGongsuCount;
+    let finalSkillGongsu = skillGongsuCount;
+
+    if (formType === 'invoice_summary' && validWorkers.length === 0) {
+      finalGeneralGongsu = 0;
+      finalSkillGongsu = 0;
+      validInvoiceItems.forEach((i) => {
+        const count = Number(i.serviceCount) || 0;
+        if (i.workCategory && i.workCategory.includes('기공')) {
+          finalSkillGongsu += count;
+        } else {
+          finalGeneralGongsu += count;
+        }
+      });
+    }
+
     const newLog: DispatchLog = {
       id: `log-${duplicateTargetDate}-${Date.now()}`,
       date: duplicateTargetDate,
@@ -386,8 +418,8 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
       clientName: clientName.trim(),
       clientContact: clientContact.trim(),
       siteAddress: siteAddress.trim(),
-      generalGongsuCount,
-      skillGongsuCount,
+      generalGongsuCount: finalGeneralGongsu,
+      skillGongsuCount: finalSkillGongsu,
       workers: validWorkers,
       formType,
       invoiceItems: validInvoiceItems,
