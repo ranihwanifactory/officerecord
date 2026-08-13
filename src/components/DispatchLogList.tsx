@@ -134,7 +134,18 @@ export const DispatchLogList: React.FC<DispatchLogListProps> = ({
 
                     {/* Client */}
                     <td className="p-3.5 font-bold text-slate-900 whitespace-nowrap">
-                      <div>{log.clientName}</div>
+                      <div className="flex items-center space-x-1.5">
+                        <span>{log.clientName}</span>
+                        {log.formType === 'invoice_summary' ? (
+                          <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded border border-emerald-200">
+                            계산서용
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-bold bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded border border-blue-200">
+                            출근표
+                          </span>
+                        )}
+                      </div>
                       {log.siteAddress && (
                         <div className="text-[11px] font-normal text-slate-500 max-w-[180px] truncate">
                           📍 {log.siteAddress}

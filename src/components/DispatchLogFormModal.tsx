@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { DispatchLog, DispatchWorkerItem, WorkerMaster, ClientSiteMaster, WorkerCategory } from '../types';
-import { Plus, Trash2, Save, Copy, X, Users, Building, AlertCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import { DispatchLog, DispatchWorkerItem, InvoiceItem, WorkerMaster, ClientSiteMaster, WorkerCategory } from '../types';
+import { Plus, Trash2, Save, Copy, X, Users, FileText, Calculator, AlertCircle, DollarSign, Clock, Utensils, Fuel } from 'lucide-react';
 
 interface DispatchLogFormModalProps {
   initialLog?: DispatchLog | null;
@@ -23,6 +23,10 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
 }) => {
   const todayStr = new Date().toISOString().substring(0, 10);
   
+  const [formType, setFormType] = useState<'worker_roster' | 'invoice_summary'>(
+    initialLog?.formType || 'worker_roster'
+  );
+
   const [date, setDate] = useState<string>(
     initialLog?.date || selectedDate || todayStr
   );
@@ -33,11 +37,45 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
   const [siteAddress, setSiteAddress] = useState<string>(initialLog?.siteAddress || '');
   const [memo, setMemo] = useState<string>(initialLog?.memo || '');
 
-  // Workers list state
+  // Form Mode 1: Workers list state
   const [workers, setWorkers] = useState<DispatchWorkerItem[]>(
     initialLog?.workers || [
-      { id: 'item-1', name: '', category: '일반', dailyRate: 160000, gongsu: 1.0, remarks: '' },
-      { id: 'item-2', name: '', category: '일반', dailyRate: 160000, gongsu: 1.0, remarks: '' },
+      { id: 'item-1', name: '', category: '일반', dailyRate: 160000, gongsu: 1.0, remarks: '', overtimeFee: 0, mealFee: 0, fuelFee: 0, otherFee: 0, extraFeeRemarks: '' },
+      { id: 'item-2', name: '', category: '일반', dailyRate: 160000, gongsu: 1.0, remarks: '', overtimeFee: 0, mealFee: 0, fuelFee: 0, otherFee: 0, extraFeeRemarks: '' },
+    ]
+  );
+
+  // Form Mode 2: Invoice items state
+  const [invoiceItems, setInvoiceItems] = useState<InvoiceItem[]>(
+    initialLog?.invoiceItems || [
+      {
+        id: 'inv-1',
+        date: initialLog?.date || selectedDate || todayStr,
+        workCategory: '보통인부',
+        serviceCount: 2.0,
+        unitPrice: 160000,
+        laborCost: 320000,
+        overtimeFee: 0,
+        mealFee: 0,
+        fuelFee: 0,
+        otherFee: 0,
+        totalItemAmount: 320000,
+        remarks: '보통인부 2명 작업',
+      },
+      {
+        id: 'inv-2',
+        date: initialLog?.date || selectedDate || todayStr,
+        workCategory: '특별기공',
+        serviceCount: 1.0,
+        unitPrice: 220000,
+        laborCost: 220000,
+        overtimeFee: 0,
+        mealFee: 0,
+        fuelFee: 0,
+        otherFee: 0,
+        totalItemAmount: 220000,
+        remarks: '기공 1명 작업',
+      },
     ]
   );
 
@@ -61,7 +99,7 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
     }
   };
 
-  // Add empty worker row
+  // --- FORM MODE 1 HANDLERS (Worker Roster) ---
   const handleAddWorkerRow = () => {
     setWorkers((prev) => [
       ...prev,
@@ -72,11 +110,15 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
         dailyRate: 160000,
         gongsu: 1.0,
         remarks: '',
+        overtimeFee: 0,
+        mealFee: 0,
+        fuelFee: 0,
+        otherFee: 0,
+        extraFeeRemarks: '',
       },
     ]);
   };
 
-  // Quick load default 2 workers from roster
   const handleQuickLoadDefault2 = () => {
     const top2 = workersRoster.slice(0, 2);
     if (top2.length === 0) return;
@@ -88,17 +130,20 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
       dailyRate: w.defaultDailyRate || 160000,
       gongsu: 1.0,
       remarks: '',
+      overtimeFee: 0,
+      mealFee: 0,
+      fuelFee: 0,
+      otherFee: 0,
+      extraFeeRemarks: '',
     }));
     setWorkers(newItems);
   };
 
-  // Update worker row
   const handleUpdateWorkerRow = (index: number, field: keyof DispatchWorkerItem, value: any) => {
     setWorkers((prev) => {
       const updated = [...prev];
       const item = { ...updated[index], [field]: value };
 
-      // If worker name changed via dropdown, set default rate & category
       if (field === 'name') {
         const found = workersRoster.find((w) => w.name === value);
         if (found) {
@@ -113,7 +158,6 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
     });
   };
 
-  // Toggle day number 1..31 for a worker
   const handleToggleWorkerDay = (workerIdx: number, dayNum: number) => {
     setWorkers((prev) => {
       const updated = [...prev];
@@ -136,7 +180,6 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
     });
   };
 
-  // Select all or clear all 1..31 days for a worker
   const handleClearWorkerDays = (workerIdx: number) => {
     setWorkers((prev) => {
       const updated = [...prev];
@@ -145,23 +188,141 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
     });
   };
 
-  // Remove worker row
   const handleRemoveWorkerRow = (index: number) => {
     setWorkers((prev) => prev.filter((_, i) => i !== index));
   };
 
-  // Calculate totals
+  // --- FORM MODE 2 HANDLERS (Invoice Summary) ---
+  const handleAddInvoiceRow = () => {
+    setInvoiceItems((prev) => [
+      ...prev,
+      {
+        id: `inv-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        date: date,
+        workCategory: '보통인부',
+        serviceCount: 1.0,
+        unitPrice: 160000,
+        laborCost: 160000,
+        overtimeFee: 0,
+        mealFee: 0,
+        fuelFee: 0,
+        otherFee: 0,
+        totalItemAmount: 160000,
+        remarks: '',
+      },
+    ]);
+  };
+
+  const handleUpdateInvoiceRow = (index: number, field: keyof InvoiceItem, value: any) => {
+    setInvoiceItems((prev) => {
+      const updated = [...prev];
+      const item = { ...updated[index], [field]: value };
+
+      // Recalculate labor cost and total item amount
+      const count = Number(item.serviceCount) || 0;
+      const price = Number(item.unitPrice) || 0;
+      const ot = Number(item.overtimeFee) || 0;
+      const meal = Number(item.mealFee) || 0;
+      const fuel = Number(item.fuelFee) || 0;
+      const other = Number(item.otherFee) || 0;
+
+      item.laborCost = count * price;
+      item.totalItemAmount = item.laborCost + ot + meal + fuel + other;
+
+      updated[index] = item;
+      return updated;
+    });
+  };
+
+  const handleRemoveInvoiceRow = (index: number) => {
+    setInvoiceItems((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // Sync workers to invoice items automatically if needed
+  const handleSyncWorkersToInvoice = () => {
+    const validW = workers.filter((w) => w.name.trim() !== '');
+    if (validW.length === 0) {
+      alert('변환할 인부 명단이 비어 있습니다.');
+      return;
+    }
+
+    const newInvItems: InvoiceItem[] = validW.map((w, idx) => {
+      const labor = (w.dailyRate || 0) * (w.gongsu || 1);
+      const ot = w.overtimeFee || 0;
+      const meal = w.mealFee || 0;
+      const fuel = w.fuelFee || 0;
+      const oth = w.otherFee || 0;
+      const total = labor + ot + meal + fuel + oth;
+
+      return {
+        id: `inv-sync-${idx}-${Date.now()}`,
+        date: date,
+        workCategory: `${w.name} (${w.category || '용역'})`,
+        serviceCount: w.gongsu || 1.0,
+        unitPrice: w.dailyRate || 160000,
+        laborCost: labor,
+        overtimeFee: ot,
+        mealFee: meal,
+        fuelFee: fuel,
+        otherFee: oth,
+        totalItemAmount: total,
+        remarks: w.remarks || w.extraFeeRemarks || '',
+      };
+    });
+
+    setInvoiceItems(newInvItems);
+    alert('인부 명단 데이터가 계산서 용역 항목으로 자동 변환되었습니다.');
+  };
+
+  // --- CALCULATION TOTALS ---
   const validWorkers = workers.filter((w) => w.name.trim() !== '');
+  const workerLaborCostTotal = validWorkers.reduce(
+    (acc, w) => acc + (Number(w.dailyRate) || 0) * (Number(w.gongsu) || 0),
+    0
+  );
+  const workerExtraFeeTotal = validWorkers.reduce(
+    (acc, w) =>
+      acc +
+      (Number(w.overtimeFee) || 0) +
+      (Number(w.mealFee) || 0) +
+      (Number(w.fuelFee) || 0) +
+      (Number(w.otherFee) || 0),
+    0
+  );
+  const workerGrandTotal = workerLaborCostTotal + workerExtraFeeTotal;
+
   const generalGongsuCount = validWorkers
     .filter((w) => w.category === '일반')
     .reduce((acc, w) => acc + (Number(w.gongsu) || 0), 0);
   const skillGongsuCount = validWorkers
     .filter((w) => w.category === '기공')
     .reduce((acc, w) => acc + (Number(w.gongsu) || 0), 0);
-  const totalAmount = validWorkers.reduce(
-    (acc, w) => acc + (Number(w.dailyRate) || 0) * (Number(w.gongsu) || 0),
+
+  // Invoice Totals
+  const validInvoiceItems = invoiceItems.filter((i) => i.workCategory.trim() !== '');
+  const invoiceTotalServiceCount = validInvoiceItems.reduce(
+    (acc, i) => acc + (Number(i.serviceCount) || 0),
     0
   );
+  const invoiceLaborCostTotal = validInvoiceItems.reduce(
+    (acc, i) => acc + (Number(i.laborCost) || 0),
+    0
+  );
+  const invoiceExtraFeeTotal = validInvoiceItems.reduce(
+    (acc, i) =>
+      acc +
+      (Number(i.overtimeFee) || 0) +
+      (Number(i.mealFee) || 0) +
+      (Number(i.fuelFee) || 0) +
+      (Number(i.otherFee) || 0),
+    0
+  );
+  const invoiceGrandTotal = invoiceLaborCostTotal + invoiceExtraFeeTotal;
+
+  // Final totals based on selected formType
+  const activeLaborCost = formType === 'worker_roster' ? workerLaborCostTotal : invoiceLaborCostTotal;
+  const activeExtraFee = formType === 'worker_roster' ? workerExtraFeeTotal : invoiceExtraFeeTotal;
+  const activeGrandTotal = formType === 'worker_roster' ? workerGrandTotal : invoiceGrandTotal;
 
   // Submit Handler
   const handleSubmit = (e: React.FormEvent) => {
@@ -170,8 +331,14 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
       alert('업체/현장명을 입력해 주세요.');
       return;
     }
-    if (validWorkers.length === 0) {
+
+    if (formType === 'worker_roster' && validWorkers.length === 0) {
       alert('최소 1명 이상의 인부를 등록해 주세요.');
+      return;
+    }
+
+    if (formType === 'invoice_summary' && validInvoiceItems.length === 0) {
+      alert('최소 1개 이상의 계산서 용역 항목을 등록해 주세요.');
       return;
     }
 
@@ -186,7 +353,12 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
       generalGongsuCount,
       skillGongsuCount,
       workers: validWorkers,
-      totalAmount,
+      formType,
+      invoiceItems: validInvoiceItems,
+      totalLaborCost: activeLaborCost,
+      totalExtraFee: activeExtraFee,
+      totalAmount: activeGrandTotal,
+      grandTotalAmount: activeGrandTotal,
       memo: memo.trim(),
       createdAt: initialLog?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -195,7 +367,7 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
     onSave(logToSave);
   };
 
-  // Duplicate Save Handler (Same log details, different date)
+  // Duplicate Save Handler
   const handleConfirmDuplicate = () => {
     if (!duplicateTargetDate) {
       alert('복사하여 저장할 날짜를 선택해 주세요.');
@@ -217,7 +389,12 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
       generalGongsuCount,
       skillGongsuCount,
       workers: validWorkers,
-      totalAmount,
+      formType,
+      invoiceItems: validInvoiceItems,
+      totalLaborCost: activeLaborCost,
+      totalExtraFee: activeExtraFee,
+      totalAmount: activeGrandTotal,
+      grandTotalAmount: activeGrandTotal,
       memo: memo.trim() ? `${memo} (반복 복사)` : '반복 일정 등록',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -232,21 +409,21 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-xl w-full max-w-4xl max-h-[92vh] flex flex-col my-auto">
+    <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-xl w-full max-w-5xl max-h-[94vh] flex flex-col my-auto">
         
         {/* Modal Header */}
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 rounded-t-2xl">
-          <div className="flex items-center space-x-2">
+        <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/80 rounded-t-2xl">
+          <div className="flex items-center space-x-2.5">
             <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-sm">
               출
             </div>
             <div>
-              <h2 className="text-lg font-bold text-slate-800">
-                {initialLog ? '출력표 일지 수정' : '새 출력표 일지 등록'}
+              <h2 className="text-base sm:text-lg font-bold text-slate-800">
+                {initialLog ? '출력표 일지 / 계산서 작성' : '새 출력표 일지 / 계산서 작성'}
               </h2>
               <p className="text-xs text-slate-500">
-                날짜, 현장명, 인부명과 단가를 기록하면 자동으로 정산됩니다.
+                인부별 출근표 작성 및 계산서 청구용 일별 용역수/인건비/기타비용을 기록합니다.
               </p>
             </div>
           </div>
@@ -260,15 +437,63 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
         </div>
 
         {/* Modal Body */}
-        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-6 flex-1">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 overflow-y-auto space-y-5 flex-1">
           
+          {/* Form Type Selector Tabs */}
+          <div className="bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
+            <div className="text-[11px] font-bold text-slate-500 px-3 pt-1 pb-1 uppercase tracking-wider">
+              작업 양식 선택 (입력폼 모드)
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setFormType('worker_roster')}
+                className={`flex items-center space-x-3 p-3 rounded-xl transition-all cursor-pointer text-left ${
+                  formType === 'worker_roster'
+                    ? 'bg-white text-blue-700 shadow-sm border border-blue-200 font-bold'
+                    : 'bg-transparent text-slate-600 hover:bg-slate-200/60 font-semibold'
+                }`}
+              >
+                <div className={`p-2 rounded-lg ${formType === 'worker_roster' ? 'bg-blue-50 text-blue-600' : 'bg-slate-200 text-slate-500'}`}>
+                  <Users className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="text-xs sm:text-sm font-bold">📋 [양식 1] 인부별 출근 출력표</div>
+                  <div className="text-[11px] text-slate-500 font-normal">
+                    인부별 출근일수(1~31일) 지정 + 단가 & 기타비용 기록
+                  </div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setFormType('invoice_summary')}
+                className={`flex items-center space-x-3 p-3 rounded-xl transition-all cursor-pointer text-left ${
+                  formType === 'invoice_summary'
+                    ? 'bg-white text-emerald-700 shadow-sm border border-emerald-200 font-bold'
+                    : 'bg-transparent text-slate-600 hover:bg-slate-200/60 font-semibold'
+                }`}
+              >
+                <div className={`p-2 rounded-lg ${formType === 'invoice_summary' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-200 text-slate-500'}`}>
+                  <Calculator className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="text-xs sm:text-sm font-bold">🧾 [양식 2] 계산서용 일별 용역수 & 인건비 출력표</div>
+                  <div className="text-[11px] text-slate-500 font-normal">
+                    일별 용역수(공수), 단가, 인건비 및 기타비용(잔업/식대/주유비) 정산
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+
           {/* Top Metadata Row */}
           <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200/80">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {/* Date */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  출력일 (기준일) <span className="text-rose-500">*</span>
+                  작성 기준일 <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="date"
@@ -284,7 +509,7 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
                 />
               </div>
 
-              {/* Work Period Range: Start Date ~ End Date */}
+              {/* Work Period Range */}
               <div className="sm:col-span-2">
                 <label className="block text-xs font-bold text-slate-700 mb-1">
                   작업 기간 (시작일 ~ 종료일)
@@ -369,73 +594,76 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
             </div>
           </div>
 
-          {/* Workers Table Section */}
-          <div>
-            <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-              <div className="flex items-center space-x-2">
-                <Users className="w-4 h-4 text-blue-600" />
-                <h3 className="font-bold text-sm text-slate-800">
-                  출력 인부 명단 및 단가 설정
-                </h3>
-                <span className="text-xs bg-blue-50 text-blue-600 font-bold px-2 py-0.5 rounded-md border border-blue-100">
-                  {validWorkers.length}명 등록 중
-                </span>
-              </div>
+          {/* ======================================================== */}
+          {/* MODE 1: WORKER ROSTER FORM TABLE */}
+          {/* ======================================================== */}
+          {formType === 'worker_roster' && (
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center space-x-2">
+                  <Users className="w-4 h-4 text-blue-600" />
+                  <h3 className="font-bold text-sm text-slate-800">
+                    인부 명단 및 출근/기타비용 내역
+                  </h3>
+                  <span className="text-xs bg-blue-50 text-blue-600 font-bold px-2 py-0.5 rounded-md border border-blue-100">
+                    {validWorkers.length}명 등록 중
+                  </span>
+                </div>
 
-              <div className="flex items-center space-x-2">
-                {workersRoster.length > 0 && (
+                <div className="flex items-center space-x-2">
+                  {workersRoster.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleQuickLoadDefault2}
+                      className="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-2.5 py-1.5 rounded-lg border border-slate-200 transition-colors cursor-pointer"
+                    >
+                      ⚡ 기본 인부 2명 세트 자동 불러오기
+                    </button>
+                  )}
                   <button
                     type="button"
-                    onClick={handleQuickLoadDefault2}
-                    className="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold px-2.5 py-1.5 rounded-lg border border-slate-200 transition-colors cursor-pointer"
+                    onClick={handleAddWorkerRow}
+                    className="text-xs bg-blue-600 hover:bg-blue-700 text-white font-bold px-3 py-1.5 rounded-lg flex items-center space-x-1 transition-colors cursor-pointer"
                   >
-                    ⚡ 기본 인부 2명 세트 자동 불러오기
+                    <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                    <span>인부 추가</span>
                   </button>
-                )}
-                <button
-                  type="button"
-                  onClick={handleAddWorkerRow}
-                  className="text-xs bg-blue-600 hover:bg-blue-700 text-white font-bold px-3 py-1.5 rounded-lg flex items-center space-x-1 transition-colors cursor-pointer"
-                >
-                  <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-                  <span>인부 줄 추가</span>
-                </button>
+                </div>
               </div>
-            </div>
 
-            {/* Table Grid */}
-            <div className="border border-slate-200 rounded-2xl overflow-x-auto shadow-xs">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-slate-50 text-slate-400 font-bold text-[10px] uppercase tracking-wider border-b border-slate-100">
-                  <tr>
-                    <th className="p-3 w-12 text-center">NO</th>
-                    <th className="p-3 w-40">인부 이름</th>
-                    <th className="p-3 w-28">구분</th>
-                    <th className="p-3 w-36">일단가 (원)</th>
-                    <th className="p-3 w-24">공수</th>
-                    <th className="p-3">비고</th>
-                    <th className="p-3 w-12 text-center">삭제</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 bg-white">
-                  {workers.map((item, idx) => (
-                    <React.Fragment key={item.id}>
-                      <tr className="hover:bg-slate-50/80">
-                        {/* NO */}
-                        <td className="p-3 text-center text-xs font-bold text-slate-400">
-                          {idx + 1}
-                        </td>
+              {/* Workers Table */}
+              <div className="border border-slate-200 rounded-2xl overflow-x-auto shadow-xs">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-slate-50 text-slate-400 font-bold text-[10px] uppercase tracking-wider border-b border-slate-100">
+                    <tr>
+                      <th className="p-2.5 w-10 text-center">NO</th>
+                      <th className="p-2.5 w-36">인부 이름</th>
+                      <th className="p-2.5 w-24">구분</th>
+                      <th className="p-2.5 w-32">일단가 (원)</th>
+                      <th className="p-2.5 w-20">공수</th>
+                      <th className="p-2.5 w-72">기타비용 (잔업/식대/주유)</th>
+                      <th className="p-2.5">비고</th>
+                      <th className="p-2.5 w-10 text-center">삭제</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 bg-white">
+                    {workers.map((item, idx) => (
+                      <React.Fragment key={item.id}>
+                        <tr className="hover:bg-slate-50/80">
+                          {/* NO */}
+                          <td className="p-2.5 text-center text-xs font-bold text-slate-400">
+                            {idx + 1}
+                          </td>
 
-                        {/* Worker Name */}
-                        <td className="p-2">
-                          <div className="relative">
+                          {/* Worker Name */}
+                          <td className="p-2">
                             <input
                               type="text"
                               list={`workers-list-${idx}`}
-                              placeholder="이름 입력 또는 선택"
+                              placeholder="이름 입력/선택"
                               value={item.name}
                               onChange={(e) => handleUpdateWorkerRow(idx, 'name', e.target.value)}
-                              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-sm font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500"
+                              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500"
                             />
                             <datalist id={`workers-list-${idx}`}>
                               {workersRoster.map((w) => (
@@ -444,160 +672,401 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
                                 </option>
                               ))}
                             </datalist>
-                          </div>
+                          </td>
+
+                          {/* Category */}
+                          <td className="p-2">
+                            <select
+                              value={item.category}
+                              onChange={(e) => handleUpdateWorkerRow(idx, 'category', e.target.value as WorkerCategory)}
+                              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                              <option value="일반">일반</option>
+                              <option value="기공">기공</option>
+                            </select>
+                          </td>
+
+                          {/* Daily Rate */}
+                          <td className="p-2">
+                            <input
+                              type="number"
+                              step={5000}
+                              value={item.dailyRate || ''}
+                              onChange={(e) => handleUpdateWorkerRow(idx, 'dailyRate', Number(e.target.value))}
+                              placeholder="160000"
+                              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-bold text-blue-600 font-mono outline-none text-right focus:ring-2 focus:ring-blue-500"
+                            />
+                          </td>
+
+                          {/* Gongsu */}
+                          <td className="p-2">
+                            <input
+                              type="number"
+                              step={0.5}
+                              min={0.5}
+                              max={31}
+                              value={item.gongsu || 1.0}
+                              onChange={(e) => handleUpdateWorkerRow(idx, 'gongsu', Number(e.target.value))}
+                              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-1.5 py-1.5 text-xs font-bold text-slate-800 outline-none text-center focus:ring-2 focus:ring-blue-500"
+                            />
+                          </td>
+
+                          {/* Extra Fees Inline Inputs */}
+                          <td className="p-2">
+                            <div className="grid grid-cols-3 gap-1">
+                              <input
+                                type="number"
+                                step={1000}
+                                placeholder="잔업비"
+                                value={item.overtimeFee || ''}
+                                onChange={(e) => handleUpdateWorkerRow(idx, 'overtimeFee', Number(e.target.value))}
+                                className="bg-slate-50 border border-slate-200 rounded px-1.5 py-1 text-[11px] font-mono font-bold text-amber-700 outline-none"
+                                title="잔업비"
+                              />
+                              <input
+                                type="number"
+                                step={1000}
+                                placeholder="식대"
+                                value={item.mealFee || ''}
+                                onChange={(e) => handleUpdateWorkerRow(idx, 'mealFee', Number(e.target.value))}
+                                className="bg-slate-50 border border-slate-200 rounded px-1.5 py-1 text-[11px] font-mono font-bold text-emerald-700 outline-none"
+                                title="식대"
+                              />
+                              <input
+                                type="number"
+                                step={1000}
+                                placeholder="주유비"
+                                value={item.fuelFee || ''}
+                                onChange={(e) => handleUpdateWorkerRow(idx, 'fuelFee', Number(e.target.value))}
+                                className="bg-slate-50 border border-slate-200 rounded px-1.5 py-1 text-[11px] font-mono font-bold text-sky-700 outline-none"
+                                title="주유비"
+                              />
+                            </div>
+                          </td>
+
+                          {/* Remarks */}
+                          <td className="p-2">
+                            <input
+                              type="text"
+                              placeholder="비고 / 특이사항"
+                              value={item.remarks || ''}
+                              onChange={(e) => handleUpdateWorkerRow(idx, 'remarks', e.target.value)}
+                              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-800 outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                          </td>
+
+                          {/* Delete */}
+                          <td className="p-2 text-center">
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveWorkerRow(idx)}
+                              className="text-slate-400 hover:text-rose-500 p-1 rounded-lg transition-colors cursor-pointer"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </td>
+                        </tr>
+
+                        {/* 1~31 Day Grid & Extra Fee Remarks Sub-Row */}
+                        <tr className="bg-slate-50/70 border-b border-slate-200">
+                          <td colSpan={8} className="px-3 py-2">
+                            <div className="space-y-1.5">
+                              <div className="flex flex-wrap items-center justify-between text-[11px] font-bold text-slate-700 gap-1">
+                                <div className="flex items-center space-x-2">
+                                  <span className="text-blue-600 font-semibold">📅 비고란 1~31일 출근 선택:</span>
+                                  <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-mono font-bold">
+                                    {item.workDaysList && item.workDaysList.length > 0
+                                      ? `${item.workDaysList.length}일 선택 [${item.workDaysList.join(', ')}일]`
+                                      : '일수 클릭하여 선택'}
+                                  </span>
+                                </div>
+
+                                <div className="flex items-center space-x-3">
+                                  <span className="text-slate-700 font-mono text-xs">
+                                    인건비 ₩{((item.dailyRate || 0) * (item.gongsu || 1)).toLocaleString()}원
+                                    {((item.overtimeFee || 0) + (item.mealFee || 0) + (item.fuelFee || 0) + (item.otherFee || 0)) > 0 && (
+                                      <span className="text-amber-700 font-bold ml-1.5">
+                                        + 기타비용 ₩{((item.overtimeFee || 0) + (item.mealFee || 0) + (item.fuelFee || 0) + (item.otherFee || 0)).toLocaleString()}원
+                                      </span>
+                                    )}
+                                    <span className="text-blue-700 font-black ml-2 text-sm">
+                                      = 총 ₩{(
+                                        (item.dailyRate || 0) * (item.gongsu || 1) +
+                                        (item.overtimeFee || 0) +
+                                        (item.mealFee || 0) +
+                                        (item.fuelFee || 0) +
+                                        (item.otherFee || 0)
+                                      ).toLocaleString()}원
+                                    </span>
+                                  </span>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const currentDay = Number(date.substring(8, 10)) || 1;
+                                      handleToggleWorkerDay(idx, currentDay);
+                                    }}
+                                    className="text-[10px] bg-blue-600 hover:bg-blue-700 text-white font-bold px-2 py-0.5 rounded transition-colors cursor-pointer"
+                                  >
+                                    당일({Number(date.substring(8, 10)) || 1}일) 선택
+                                  </button>
+                                  {item.workDaysList && item.workDaysList.length > 0 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleClearWorkerDays(idx)}
+                                      className="text-[10px] text-slate-500 hover:text-rose-600 underline cursor-pointer"
+                                    >
+                                      선택해제
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* 1 to 31 Mini Day Grid */}
+                              <div className="flex flex-wrap items-center gap-1">
+                                {Array.from({ length: 31 }, (_, i) => i + 1).map((dNum) => {
+                                  const isSelected = item.workDaysList?.includes(dNum);
+                                  return (
+                                    <button
+                                      key={dNum}
+                                      type="button"
+                                      onClick={() => handleToggleWorkerDay(idx, dNum)}
+                                      className={`w-6 h-6 text-[11px] font-bold rounded flex items-center justify-center transition-all cursor-pointer ${
+                                        isSelected
+                                          ? 'bg-blue-600 text-white font-black scale-105 shadow-xs border border-blue-700'
+                                          : 'bg-white text-slate-600 hover:bg-blue-50 hover:text-blue-600 border border-slate-200'
+                                      }`}
+                                      title={`${dNum}일 출근 선택/해제`}
+                                    >
+                                      {dNum}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      </React.Fragment>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* ======================================================== */}
+          {/* MODE 2: INVOICE SUMMARY FORM TABLE */}
+          {/* ======================================================== */}
+          {formType === 'invoice_summary' && (
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center space-x-2">
+                  <Calculator className="w-4 h-4 text-emerald-600" />
+                  <h3 className="font-bold text-sm text-slate-800">
+                    계산서용 일별 용역수, 인건비 & 기타비용 세부 항목
+                  </h3>
+                  <span className="text-xs bg-emerald-50 text-emerald-700 font-bold px-2 py-0.5 rounded-md border border-emerald-100">
+                    {validInvoiceItems.length}개 항목 청구
+                  </span>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <button
+                    type="button"
+                    onClick={handleSyncWorkersToInvoice}
+                    className="text-xs bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold px-2.5 py-1.5 rounded-lg border border-slate-300 transition-colors cursor-pointer"
+                  >
+                    🔄 인부 명단 → 계산서 항목 자동 전환
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleAddInvoiceRow}
+                    className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3 py-1.5 rounded-lg flex items-center space-x-1 transition-colors cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                    <span>용역 항목 추가</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Invoice Items Table */}
+              <div className="border border-slate-200 rounded-2xl overflow-x-auto shadow-xs">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-slate-50 text-slate-400 font-bold text-[10px] uppercase tracking-wider border-b border-slate-100">
+                    <tr>
+                      <th className="p-2.5 w-10 text-center">NO</th>
+                      <th className="p-2.5 w-28">일자</th>
+                      <th className="p-2.5 w-40">용역 항목 (직종)</th>
+                      <th className="p-2.5 w-24">용역수 (인원)</th>
+                      <th className="p-2.5 w-32">단가 (원)</th>
+                      <th className="p-2.5 w-32">인건비 소계</th>
+                      <th className="p-2.5 w-64">기타비용 (잔업/식대/주유)</th>
+                      <th className="p-2.5 w-32">항목 청구합계</th>
+                      <th className="p-2.5">비고 / 세부내역</th>
+                      <th className="p-2.5 w-10 text-center">삭제</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 bg-white">
+                    {invoiceItems.map((item, idx) => (
+                      <tr key={item.id} className="hover:bg-slate-50/80">
+                        {/* NO */}
+                        <td className="p-2.5 text-center text-xs font-bold text-slate-400">
+                          {idx + 1}
                         </td>
 
-                        {/* Category */}
-                        <td className="p-2">
-                          <select
-                            value={item.category}
-                            onChange={(e) => handleUpdateWorkerRow(idx, 'category', e.target.value as WorkerCategory)}
-                            className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500"
-                          >
-                            <option value="일반">일반</option>
-                            <option value="기공">기공</option>
-                          </select>
-                        </td>
-
-                        {/* Daily Rate */}
+                        {/* Date */}
                         <td className="p-2">
                           <input
-                            type="number"
-                            step={5000}
-                            value={item.dailyRate || ''}
-                            onChange={(e) => handleUpdateWorkerRow(idx, 'dailyRate', Number(e.target.value))}
-                            placeholder="160000"
-                            className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-sm font-bold text-blue-600 font-mono outline-none text-right focus:ring-2 focus:ring-blue-500"
+                            type="text"
+                            value={item.date}
+                            onChange={(e) => handleUpdateInvoiceRow(idx, 'date', e.target.value)}
+                            placeholder="08월 11일"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-mono font-bold text-slate-800 outline-none"
                           />
                         </td>
 
-                        {/* Gongsu */}
+                        {/* Work Category */}
+                        <td className="p-2">
+                          <input
+                            type="text"
+                            list={`category-list-${idx}`}
+                            value={item.workCategory}
+                            onChange={(e) => handleUpdateInvoiceRow(idx, 'workCategory', e.target.value)}
+                            placeholder="보통인부 / 기공 / 잡급"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-emerald-500"
+                          />
+                          <datalist id={`category-list-${idx}`}>
+                            <option value="보통인부" />
+                            <option value="특별기공" />
+                            <option value="잡급 / 단순노무" />
+                            <option value="신호수 / 안전요원" />
+                            <option value="철거 / 할차작업" />
+                            <option value="미장 / 목수 / 타일" />
+                          </datalist>
+                        </td>
+
+                        {/* Service Count */}
                         <td className="p-2">
                           <input
                             type="number"
                             step={0.5}
                             min={0.5}
-                            max={31}
-                            value={item.gongsu || 1.0}
-                            onChange={(e) => handleUpdateWorkerRow(idx, 'gongsu', Number(e.target.value))}
-                            className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-sm font-bold text-slate-800 outline-none text-center focus:ring-2 focus:ring-blue-500"
+                            value={item.serviceCount || ''}
+                            onChange={(e) => handleUpdateInvoiceRow(idx, 'serviceCount', Number(e.target.value))}
+                            className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-900 outline-none text-center focus:ring-2 focus:ring-emerald-500"
                           />
+                        </td>
+
+                        {/* Unit Price */}
+                        <td className="p-2">
+                          <input
+                            type="number"
+                            step={5000}
+                            value={item.unitPrice || ''}
+                            onChange={(e) => handleUpdateInvoiceRow(idx, 'unitPrice', Number(e.target.value))}
+                            placeholder="160000"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-bold text-emerald-700 font-mono outline-none text-right focus:ring-2 focus:ring-emerald-500"
+                          />
+                        </td>
+
+                        {/* Labor Cost Subtotal */}
+                        <td className="p-2 font-mono font-bold text-xs text-slate-800 text-right">
+                          ₩{(item.laborCost || 0).toLocaleString()}원
+                        </td>
+
+                        {/* Extra Fees */}
+                        <td className="p-2">
+                          <div className="grid grid-cols-3 gap-1">
+                            <input
+                              type="number"
+                              step={1000}
+                              placeholder="잔업"
+                              value={item.overtimeFee || ''}
+                              onChange={(e) => handleUpdateInvoiceRow(idx, 'overtimeFee', Number(e.target.value))}
+                              className="bg-slate-50 border border-slate-200 rounded px-1.5 py-1 text-[11px] font-mono font-bold text-amber-700 outline-none"
+                              title="잔업비"
+                            />
+                            <input
+                              type="number"
+                              step={1000}
+                              placeholder="식대"
+                              value={item.mealFee || ''}
+                              onChange={(e) => handleUpdateInvoiceRow(idx, 'mealFee', Number(e.target.value))}
+                              className="bg-slate-50 border border-slate-200 rounded px-1.5 py-1 text-[11px] font-mono font-bold text-emerald-700 outline-none"
+                              title="식대"
+                            />
+                            <input
+                              type="number"
+                              step={1000}
+                              placeholder="주유"
+                              value={item.fuelFee || ''}
+                              onChange={(e) => handleUpdateInvoiceRow(idx, 'fuelFee', Number(e.target.value))}
+                              className="bg-slate-50 border border-slate-200 rounded px-1.5 py-1 text-[11px] font-mono font-bold text-sky-700 outline-none"
+                              title="주유비"
+                            />
+                          </div>
+                        </td>
+
+                        {/* Total Item Amount */}
+                        <td className="p-2 font-mono font-black text-xs text-emerald-700 text-right">
+                          ₩{(item.totalItemAmount || 0).toLocaleString()}원
                         </td>
 
                         {/* Remarks */}
                         <td className="p-2">
                           <input
                             type="text"
-                            placeholder="특이사항 / 작업내용"
+                            placeholder="비고 / 세부사항"
                             value={item.remarks || ''}
-                            onChange={(e) => handleUpdateWorkerRow(idx, 'remarks', e.target.value)}
-                            className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 outline-none focus:ring-2 focus:ring-blue-500"
+                            onChange={(e) => handleUpdateInvoiceRow(idx, 'remarks', e.target.value)}
+                            className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-slate-800 outline-none focus:ring-2 focus:ring-emerald-500"
                           />
                         </td>
 
-                        {/* Remove Row */}
+                        {/* Delete */}
                         <td className="p-2 text-center">
                           <button
                             type="button"
-                            onClick={() => handleRemoveWorkerRow(idx)}
-                            className="text-slate-400 hover:text-rose-500 p-1 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+                            onClick={() => handleRemoveInvoiceRow(idx)}
+                            className="text-slate-400 hover:text-rose-500 p-1 rounded-lg transition-colors cursor-pointer"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </td>
                       </tr>
-
-                      {/* 1~31 Day Grid Picker Cell Sub-Row */}
-                      <tr className="bg-slate-50/70 border-b border-slate-200">
-                        <td colSpan={7} className="px-3 py-2">
-                          <div className="space-y-1.5">
-                            <div className="flex flex-wrap items-center justify-between text-[11px] font-bold text-slate-700 gap-1">
-                              <div className="flex items-center space-x-2">
-                                <span className="text-blue-600 font-semibold">📅 비고란 1~31일 출근 선택:</span>
-                                <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-mono font-bold">
-                                  {item.workDaysList && item.workDaysList.length > 0
-                                    ? `${item.workDaysList.length}일 선택 [${item.workDaysList.join(', ')}일]`
-                                    : '일수 직접 지정 또는 클릭하여 선택'}
-                                </span>
-                              </div>
-                              <div className="flex items-center space-x-3">
-                                <span className="text-emerald-700 font-mono font-black text-xs">
-                                  총임금: ₩{((item.dailyRate || 0) * (item.gongsu || 1)).toLocaleString()}원
-                                  <span className="text-[10px] font-normal text-slate-500 ml-1">
-                                    (단가 ₩{(item.dailyRate || 0).toLocaleString()} × {item.gongsu || 1}일)
-                                  </span>
-                                </span>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const currentDay = Number(date.substring(8, 10)) || 1;
-                                    handleToggleWorkerDay(idx, currentDay);
-                                  }}
-                                  className="text-[10px] bg-blue-600 hover:bg-blue-700 text-white font-bold px-2 py-0.5 rounded transition-colors cursor-pointer"
-                                >
-                                  당일({Number(date.substring(8, 10)) || 1}일) 선택
-                                </button>
-                                {item.workDaysList && item.workDaysList.length > 0 && (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleClearWorkerDays(idx)}
-                                    className="text-[10px] text-slate-500 hover:text-rose-600 underline cursor-pointer"
-                                  >
-                                    선택해제
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* 1 to 31 Mini Day Grid */}
-                            <div className="flex flex-wrap items-center gap-1">
-                              {Array.from({ length: 31 }, (_, i) => i + 1).map((dNum) => {
-                                const isSelected = item.workDaysList?.includes(dNum);
-                                return (
-                                  <button
-                                    key={dNum}
-                                    type="button"
-                                    onClick={() => handleToggleWorkerDay(idx, dNum)}
-                                    className={`w-6 h-6 text-[11px] font-bold rounded flex items-center justify-center transition-all cursor-pointer ${
-                                      isSelected
-                                        ? 'bg-blue-600 text-white font-black scale-105 shadow-xs border border-blue-700'
-                                        : 'bg-white text-slate-600 hover:bg-blue-50 hover:text-blue-600 border border-slate-200'
-                                    }`}
-                                    title={`${dNum}일 출근 선택/해제`}
-                                  >
-                                    {dNum}
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        </td>
-                      </tr>
-                    </React.Fragment>
-                  ))}
-                </tbody>
-              </table>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Realtime Auto Settlement Calculations Summary Box */}
-          <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4">
+          <div className="bg-slate-900 text-white rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-md">
             <div className="space-y-1">
-              <div className="text-xs font-bold text-blue-700">
-                자동 정산 집계 (작업인원)
+              <div className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center space-x-1">
+                <span>실시간 정산 및 청구 금액 집계</span>
+                {formType === 'invoice_summary' ? (
+                  <span className="bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded text-[10px] font-bold">계산서 양식</span>
+                ) : (
+                  <span className="bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded text-[10px] font-bold">인부 출근 양식</span>
+                )}
               </div>
-              <div className="text-sm font-bold text-slate-800">
-                일반: <span className="text-blue-600">{generalGongsuCount}공수</span> &nbsp;|&nbsp; 
-                기공: <span className="text-blue-600">{skillGongsuCount}공수</span>
+              <div className="text-xs sm:text-sm font-semibold text-slate-200">
+                인건비 소계: <span className="font-bold text-white font-mono">₩{activeLaborCost.toLocaleString()}원</span> &nbsp;|&nbsp;
+                기타비용 합계: <span className="font-bold text-amber-400 font-mono">₩{activeExtraFee.toLocaleString()}원</span>
+                {formType === 'invoice_summary' && (
+                  <span className="ml-2 text-emerald-400 font-bold">(총 용역수: {invoiceTotalServiceCount}명/공수)</span>
+                )}
               </div>
             </div>
 
             <div className="text-right">
-              <div className="text-xs font-bold text-slate-500">
-                금일 합계 정산금액
+              <div className="text-[11px] font-bold text-slate-400">
+                최종 총 청구 금액 (인건비 + 기타비용)
               </div>
-              <div className="text-2xl font-black text-blue-600 font-mono">
-                ₩{totalAmount.toLocaleString()}원
+              <div className="text-2xl sm:text-3xl font-black text-emerald-400 font-mono">
+                ₩{activeGrandTotal.toLocaleString()}원
               </div>
             </div>
           </div>
@@ -609,7 +1078,7 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
             </label>
             <input
               type="text"
-              placeholder="예: 8월 11일 신성에스엔티 4명 출력 완료"
+              placeholder="예: 8월 11일 계산서 청구용 출력표 작성 완료"
               value={memo}
               onChange={(e) => setMemo(e.target.value)}
               className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 outline-none focus:ring-2 focus:ring-blue-500"
@@ -640,7 +1109,7 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
                 className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-2 rounded-xl text-sm flex items-center space-x-1.5 shadow-xs transition-colors cursor-pointer"
               >
                 <Save className="w-4 h-4" />
-                <span>출력표 일지 저장</span>
+                <span>저장하기</span>
               </button>
             </div>
           </div>
@@ -653,7 +1122,7 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
                 <span>동일 일정 반복 복사 기능</span>
               </div>
               <p className="text-xs text-slate-600">
-                현재 입력된 업체명, 인부 명단, 단가 정보를 그대로 유지하고 **날짜만 변경**하여 새 출력표로 즉시 저장합니다.
+                현재 입력된 내용 및 단가/기타비용 정보를 그대로 유지하고 **목표 날짜만 변경**하여 즉시 복사 저장합니다.
               </p>
               
               <div className="flex items-center space-x-3 pt-1">
