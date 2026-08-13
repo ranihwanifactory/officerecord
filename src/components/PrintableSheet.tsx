@@ -32,11 +32,24 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
     if (!sheetRef.current) return;
     try {
       setIsExporting(true);
-      const dataUrl = await toPng(sheetRef.current, {
+      const element = sheetRef.current;
+      
+      const dataUrl = await toPng(element, {
         cacheBust: true,
-        quality: 0.98,
+        quality: 1.0,
         pixelRatio: 2,
         backgroundColor: '#ffffff',
+        width: element.offsetWidth,
+        height: element.offsetHeight,
+        style: {
+          margin: '0',
+          marginLeft: '0',
+          marginRight: '0',
+          marginTop: '0',
+          marginBottom: '0',
+          transform: 'none',
+          boxShadow: 'none',
+        },
       });
 
       const link = document.createElement('a');
@@ -230,7 +243,8 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
       </div>
 
       {/* PRINT AREA CONTAINER */}
-      <div ref={sheetRef} className="bg-white text-black p-6 sm:p-10 max-w-[800px] mx-auto shadow-xl print:shadow-none print:max-w-none print:w-full print:p-0 print:m-0 font-sans border border-slate-300 print:border-none">
+      <div className="max-w-[800px] w-full mx-auto shadow-xl print:shadow-none print:max-w-none print:w-full">
+        <div ref={sheetRef} className="bg-white text-black p-6 sm:p-10 w-full font-sans border border-slate-300 print:border-none">
         
         {/* ========================================================== */}
         {/* PRINT MODE 1: WORKER ATTENDANCE ROSTER SHEET */}
@@ -600,6 +614,7 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
           </div>
         </div>
 
+        </div>
       </div>
     </div>
   );
