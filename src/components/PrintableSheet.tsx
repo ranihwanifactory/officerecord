@@ -85,8 +85,8 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
       : fullDateKorean;
 
   // Worker counts & totals
-  const generalCount = log.workers.filter(w => w.category === '일반').reduce((acc, w) => acc + (w.gongsu || 1), 0);
-  const skillCount = log.workers.filter(w => w.category === '기공').reduce((acc, w) => acc + (w.gongsu || 1), 0);
+  const skillCount = log.workers.filter(w => w.category && w.category.includes('기공')).reduce((acc, w) => acc + (w.gongsu || 1), 0);
+  const generalCount = log.workers.filter(w => !w.category || !w.category.includes('기공')).reduce((acc, w) => acc + (w.gongsu || 1), 0);
 
   const workerLaborCostTotal = log.workers.reduce((acc, w) => acc + (w.dailyRate || 0) * (w.gongsu || 1), 0);
   const workerExtraFeeTotal = log.workers.reduce(

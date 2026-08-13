@@ -291,11 +291,11 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
   );
   const workerGrandTotal = workerLaborCostTotal + workerExtraFeeTotal;
 
-  const generalGongsuCount = validWorkers
-    .filter((w) => w.category === '일반')
-    .reduce((acc, w) => acc + (Number(w.gongsu) || 0), 0);
   const skillGongsuCount = validWorkers
-    .filter((w) => w.category === '기공')
+    .filter((w) => w.category && w.category.includes('기공'))
+    .reduce((acc, w) => acc + (Number(w.gongsu) || 0), 0);
+  const generalGongsuCount = validWorkers
+    .filter((w) => !w.category || !w.category.includes('기공'))
     .reduce((acc, w) => acc + (Number(w.gongsu) || 0), 0);
 
   // Invoice Totals

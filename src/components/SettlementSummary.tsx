@@ -30,10 +30,15 @@ export const SettlementSummary: React.FC<SettlementSummaryProps> = ({ logs, offi
 
   // Overall totals
   const totalLogsCount = filteredLogs.length;
-  const totalGongsu = filteredLogs.reduce(
-    (acc, l) => acc + l.workers.reduce((wAcc, w) => wAcc + (w.gongsu || 1), 0),
-    0
-  );
+  const totalGongsu = filteredLogs.reduce((acc, l) => {
+    if (l.workers && l.workers.length > 0) {
+      return acc + l.workers.reduce((wAcc, w) => wAcc + (Number(w.gongsu) || 1), 0);
+    } else if (l.invoiceItems && l.invoiceItems.length > 0) {
+      return acc + l.invoiceItems.reduce((iAcc, i) => iAcc + (Number(i.serviceCount) || 0), 0);
+    } else {
+      return acc + (l.generalGongsuCount || 0) + (l.skillGongsuCount || 0);
+    }
+  }, 0);
   const totalAmount = filteredLogs.reduce((acc, l) => acc + l.totalAmount, 0);
 
   // Client Breakdown
@@ -60,7 +65,7 @@ export const SettlementSummary: React.FC<SettlementSummaryProps> = ({ logs, offi
     }
     clientMap[key].logsCount += 1;
     const logGongsu = log.workers && log.workers.length > 0
-      ? log.workers.reduce((acc, w) => acc + (w.gongsu || 1), 0)
+      ? log.workers.reduce((acc, w) => acc + (Number(w.gongsu) || 1), 0)
       : log.invoiceItems && log.invoiceItems.length > 0
       ? log.invoiceItems.reduce((acc, i) => acc + (Number(i.serviceCount) || 0), 0)
       : (log.generalGongsuCount || 0) + (log.skillGongsuCount || 0);
@@ -90,35 +95,66 @@ export const SettlementSummary: React.FC<SettlementSummaryProps> = ({ logs, offi
 
   filteredLogs.forEach((log) => {
     const logDay = Number(log.date.substring(8, 10)) || 1;
-    log.workers.forEach((w) => {
-      const name = w.name.trim();
-      if (!name) return;
+    if (log.workers && log.workers.length > 0) {
+      log.workers.forEach((w) => {
+        const name = w.name.trim();
+        if (!name) return;
 
-      if (!monthlyMatrixMap[name]) {
-        monthlyMatrixMap[name] = {
-          name,
-          category: w.category || '일반',
-          dailyRate: w.dailyRate || 160000,
-          daysMap: {},
-          totalDaysWorked: 0,
-          totalGongsu: 0,
-          totalCalculatedWage: 0,
+        if (!monthlyMatrixMap[name]) {
+          monthlyMatrixMap[name] = {
+            name,
+            category: w.category || '일반',
+            dailyRate: w.dailyRate || 160000,
+            daysMap: {},
+            totalDaysWorked: 0,
+            totalGongsu: 0,
+            totalCalculatedWage: 0,
+          };
+        }
+
+        const item = monthlyMatrixMap[name];
+        if (w.dailyRate) item.dailyRate = w.dailyRate;
+
+        if (w.workDaysList && w.workDaysList.length > 0) {
+          w.workDaysList.forEach((dNum) => {
+            const prevGongsu = item.daysMap[dNum]?.gongsu || 0;
+            item.daysMap[dNum] = { gongsu: prevGongsu + 1.0, siteName: log.clientName };
+          });
+        } else {
+          const prevGongsu = item.daysMap[logDay]?.gongsu || 0;
+          item.daysMap[logDay] = { gongsu: prevGongsu + (Number(w.gongsu) || 1.0), siteName: log.clientName };
+        }
+      });
+    } else if (log.invoiceItems && log.invoiceItems.length > 0) {
+      log.invoiceItems.forEach((i) => {
+        const name = i.workCategory.trim() || '용역 항목';
+        const serviceCount = Number(i.serviceCount) || 0;
+        if (serviceCount <= 0) return;
+
+        const rate = i.unitPrice || (serviceCount > 0 ? Math.round(i.laborCost / serviceCount) : 160000);
+
+        if (!monthlyMatrixMap[name]) {
+          monthlyMatrixMap[name] = {
+            name,
+            category: name.includes('기공') ? '기공' : '일반',
+            dailyRate: rate,
+            daysMap: {},
+            totalDaysWorked: 0,
+            totalGongsu: 0,
+            totalCalculatedWage: 0,
+          };
+        }
+
+        const item = monthlyMatrixMap[name];
+        if (rate) item.dailyRate = rate;
+
+        const prevGongsu = item.daysMap[logDay]?.gongsu || 0;
+        item.daysMap[logDay] = {
+          gongsu: prevGongsu + serviceCount,
+          siteName: log.clientName,
         };
-      }
-
-      const item = monthlyMatrixMap[name];
-      if (w.dailyRate) item.dailyRate = w.dailyRate;
-
-      if (w.workDaysList && w.workDaysList.length > 0) {
-        w.workDaysList.forEach((dNum) => {
-          if (!item.daysMap[dNum]) {
-            item.daysMap[dNum] = { gongsu: 1.0, siteName: log.clientName };
-          }
-        });
-      } else {
-        item.daysMap[logDay] = { gongsu: w.gongsu || 1.0, siteName: log.clientName };
-      }
-    });
+      });
+    }
   });
 
   const monthlyMatrixList = Object.values(monthlyMatrixMap).map((item) => {
