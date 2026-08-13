@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { DispatchLog, DispatchWorkerItem, InvoiceItem, WorkerMaster, ClientSiteMaster, WorkerCategory } from '../types';
-import { Plus, Trash2, Save, Copy, X, Users, FileText, Calculator, AlertCircle, DollarSign, Clock, Utensils, Fuel } from 'lucide-react';
+import { Plus, Trash2, Save, Copy, X, Users, FileText, Calculator, AlertCircle, DollarSign, Clock, Utensils, Fuel, Check, CheckCircle2 } from 'lucide-react';
 
 interface DispatchLogFormModalProps {
   initialLog?: DispatchLog | null;
@@ -36,6 +36,7 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
   const [clientContact, setClientContact] = useState<string>(initialLog?.clientContact || '');
   const [siteAddress, setSiteAddress] = useState<string>(initialLog?.siteAddress || '');
   const [memo, setMemo] = useState<string>(initialLog?.memo || '');
+  const [isPaid, setIsPaid] = useState<boolean>(initialLog?.isPaid || false);
 
   // Form Mode 1: Workers list state
   const [workers, setWorkers] = useState<DispatchWorkerItem[]>(
@@ -376,6 +377,8 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
       totalAmount: activeGrandTotal,
       grandTotalAmount: activeGrandTotal,
       memo: memo.trim(),
+      isPaid,
+      paidAt: isPaid ? (initialLog?.paidAt || new Date().toISOString()) : undefined,
       createdAt: initialLog?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -428,6 +431,8 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
       totalAmount: activeGrandTotal,
       grandTotalAmount: activeGrandTotal,
       memo: memo.trim() ? `${memo} (반복 복사)` : '반복 일정 등록',
+      isPaid,
+      paidAt: isPaid ? new Date().toISOString() : undefined,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -623,6 +628,34 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
                   className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm font-medium text-slate-800 focus:ring-2 focus:ring-blue-500 outline-none"
                 />
               </div>
+            </div>
+
+            {/* Payment Status Check Control */}
+            <div className="pt-2 border-t border-slate-200/80 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <span className="block text-xs font-bold text-slate-700">
+                  결제(입금) 완료 상태
+                </span>
+                <span className="text-[11px] text-slate-500">
+                  관리자가 체크하면 출력표 및 목록에 '결제완료' 도장/표시가 적용됩니다.
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsPaid(!isPaid)}
+                className={`px-4 py-2 rounded-xl border flex items-center space-x-2 transition-all cursor-pointer font-bold text-xs sm:text-sm ${
+                  isPaid
+                    ? 'bg-emerald-600 text-white border-emerald-700 shadow-sm'
+                    : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-100'
+                }`}
+              >
+                <div className={`w-4 h-4 rounded flex items-center justify-center border ${
+                  isPaid ? 'bg-white text-emerald-600 border-white' : 'bg-slate-200 text-slate-400 border-slate-300'
+                }`}>
+                  {isPaid && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                </div>
+                <span>{isPaid ? '✓ 결제 완료 (입금 확인)' : '미결제 (입금 대기)'}</span>
+              </button>
             </div>
           </div>
 

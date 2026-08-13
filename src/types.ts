@@ -67,6 +67,8 @@ export interface DispatchLog {
   totalAmount: number; // 기존 합계 (인건비 + 기타비용)
   grandTotalAmount?: number; // 최종 총 청구금액
   memo?: string;
+  isPaid?: boolean; // 결제 완료 여부 (true: 결제완료, false/undefined: 미결제)
+  paidAt?: string; // 결제 완료 처리 일시
   createdAt: string;
   updatedAt: string;
   createdByEmail?: string;

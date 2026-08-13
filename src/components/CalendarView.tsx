@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DispatchLog, OfficeSettings } from '../types';
-import { ChevronLeft, ChevronRight, Plus, Printer, Copy, Edit, Trash2, Calendar as CalendarIcon, Users, DollarSign } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Printer, Copy, Edit, Trash2, Calendar as CalendarIcon, Users, DollarSign, CheckCircle2, Clock } from 'lucide-react';
 import { Pagination } from './Pagination';
 
 interface CalendarViewProps {
@@ -12,6 +12,7 @@ interface CalendarViewProps {
   onPrintLog: (log: DispatchLog) => void;
   onDuplicateLog: (log: DispatchLog) => void;
   onDeleteLog: (id: string) => void;
+  onTogglePaidLog?: (log: DispatchLog) => void;
 }
 
 export const CalendarView: React.FC<CalendarViewProps> = ({
@@ -23,6 +24,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   onPrintLog,
   onDuplicateLog,
   onDeleteLog,
+  onTogglePaidLog,
 }) => {
   const [currentDate, setCurrentDate] = useState<Date>(new Date(2026, 7, 1)); // August 2026
   const [selectedDateStr, setSelectedDateStr] = useState<string>(
@@ -238,10 +240,15 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                             setSelectedDateStr(dateStr);
                             onPrintLog(log);
                           }}
-                          className="bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-bold p-1 rounded-lg truncate hover:bg-blue-600 hover:text-white transition-colors"
-                          title={`${log.clientName} (${headcount}명 / ₩${log.totalAmount.toLocaleString()})`}
+                          className={`text-[10px] font-bold p-1 rounded-lg truncate transition-colors flex items-center justify-between gap-1 ${
+                            log.isPaid
+                              ? 'bg-emerald-50 text-emerald-800 border border-emerald-300 hover:bg-emerald-600 hover:text-white'
+                              : 'bg-blue-50 text-blue-700 border border-blue-200 hover:bg-blue-600 hover:text-white'
+                          }`}
+                          title={`${log.clientName} (${headcount}명 / ₩${log.totalAmount.toLocaleString()}) ${log.isPaid ? '[결제완료]' : '[미결제]'}`}
                         >
-                          {log.clientName} ({headcount}명)
+                          <span className="truncate">{log.clientName} ({headcount}명)</span>
+                          {log.isPaid && <span className="text-[9px] font-black bg-emerald-200 text-emerald-900 px-1 rounded shrink-0">✓완료</span>}
                         </div>
                       );
                     })}
@@ -362,43 +369,68 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="pt-2 flex flex-wrap items-center justify-end gap-1.5 border-t border-slate-200">
+                  <div className="pt-2 flex flex-wrap items-center justify-between gap-2 border-t border-slate-200">
                     <button
-                      onClick={() => onDuplicateLog(log)}
-                      title="동일 내용 날짜만 변경 복사"
-                      className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-lg border border-emerald-200 flex items-center space-x-1 cursor-pointer"
+                      type="button"
+                      onClick={() => onTogglePaidLog?.(log)}
+                      title={log.isPaid ? '클릭하여 미결제로 변경' : '클릭하여 결제완료로 변경'}
+                      className={`text-xs font-bold px-2.5 py-1 rounded-lg border flex items-center space-x-1 cursor-pointer transition-all ${
+                        log.isPaid
+                          ? 'bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-emerald-200'
+                          : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
+                      }`}
                     >
-                      <Copy className="w-3 h-3" />
-                      <span>복사</span>
+                      {log.isPaid ? (
+                        <>
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700 stroke-[2.5]" />
+                          <span>✓ 결제 완료</span>
+                        </>
+                      ) : (
+                        <>
+                          <Clock className="w-3.5 h-3.5 text-amber-600" />
+                          <span>미결제 (체크)</span>
+                        </>
+                      )}
                     </button>
 
-                    <button
-                      onClick={() => onEditLog(log)}
-                      className="bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold px-2.5 py-1 rounded-lg border border-slate-300 flex items-center space-x-1 cursor-pointer"
-                    >
-                      <Edit className="w-3 h-3" />
-                      <span>수정</span>
-                    </button>
+                    <div className="flex items-center space-x-1.5">
+                      <button
+                        onClick={() => onDuplicateLog(log)}
+                        title="동일 내용 날짜만 변경 복사"
+                        className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-lg border border-emerald-200 flex items-center space-x-1 cursor-pointer"
+                      >
+                        <Copy className="w-3 h-3" />
+                        <span>복사</span>
+                      </button>
 
-                    <button
-                      onClick={() => onPrintLog(log)}
-                      className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3 py-1 rounded-lg flex items-center space-x-1 cursor-pointer shadow-xs"
-                    >
-                      <Printer className="w-3 h-3" />
-                      <span>출력표 보기</span>
-                    </button>
+                      <button
+                        onClick={() => onEditLog(log)}
+                        className="bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold px-2.5 py-1 rounded-lg border border-slate-300 flex items-center space-x-1 cursor-pointer"
+                      >
+                        <Edit className="w-3 h-3" />
+                        <span>수정</span>
+                      </button>
 
-                    <button
-                      onClick={() => {
-                        if (confirm('이 출력표를 삭제하시겠습니까?')) {
-                          onDeleteLog(log.id);
-                        }
-                      }}
-                      className="text-rose-500 hover:text-rose-600 p-1 rounded-lg cursor-pointer ml-1"
-                      title="삭제"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                      <button
+                        onClick={() => onPrintLog(log)}
+                        className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3 py-1 rounded-lg flex items-center space-x-1 cursor-pointer shadow-xs"
+                      >
+                        <Printer className="w-3 h-3" />
+                        <span>출력표 보기</span>
+                      </button>
+
+                      <button
+                        onClick={() => {
+                          if (confirm('이 출력표를 삭제하시겠습니까?')) {
+                            onDeleteLog(log.id);
+                          }
+                        }}
+                        className="text-rose-500 hover:text-rose-600 p-1 rounded-lg cursor-pointer ml-1"
+                        title="삭제"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
 
                 </div>

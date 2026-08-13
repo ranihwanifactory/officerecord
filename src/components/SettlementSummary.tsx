@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DispatchLog, OfficeSettings } from '../types';
-import { DollarSign, Users, Building, Download, Printer, Calendar, FileSpreadsheet } from 'lucide-react';
+import { DollarSign, Users, Building, Download, Printer, Calendar, FileSpreadsheet, CheckCircle2, Clock } from 'lucide-react';
 import { Pagination } from './Pagination';
 
 interface SettlementSummaryProps {
@@ -40,6 +40,12 @@ export const SettlementSummary: React.FC<SettlementSummaryProps> = ({ logs, offi
     }
   }, 0);
   const totalAmount = filteredLogs.reduce((acc, l) => acc + l.totalAmount, 0);
+
+  // Payment Status Totals
+  const paidLogs = filteredLogs.filter((l) => l.isPaid);
+  const paidTotalAmount = paidLogs.reduce((acc, l) => acc + l.totalAmount, 0);
+  const unpaidLogs = filteredLogs.filter((l) => !l.isPaid);
+  const unpaidTotalAmount = unpaidLogs.reduce((acc, l) => acc + l.totalAmount, 0);
 
   // Client Breakdown
   const clientMap: {
@@ -280,32 +286,52 @@ export const SettlementSummary: React.FC<SettlementSummaryProps> = ({ logs, offi
       </div>
 
       {/* Metric Cards Grid (Bento Grid Style) */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-1">
-          <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-1">
+          <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
             총 출력 일지 건수
           </div>
-          <div className="text-2xl font-black text-slate-800">
+          <div className="text-xl sm:text-2xl font-black text-slate-800">
             {totalLogsCount} <span className="text-xs font-semibold text-slate-400">건</span>
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-1">
-          <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-1">
+          <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
             총 출력 인원 (공수)
           </div>
-          <div className="text-2xl font-black text-blue-600">
+          <div className="text-xl sm:text-2xl font-black text-blue-600">
             {totalGongsu} <span className="text-xs font-semibold text-slate-400">공수</span>
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-1">
-          <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-            총 정산 금액 (합계)
+        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-1">
+          <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+            총 정산 청구 금액
           </div>
-          <div className="text-2xl font-black text-emerald-600 font-mono">
+          <div className="text-xl sm:text-2xl font-black text-slate-900 font-mono">
             ₩{totalAmount.toLocaleString()} <span className="text-xs font-semibold text-slate-400">원</span>
+          </div>
+        </div>
+
+        <div className="bg-emerald-50/80 border border-emerald-200 rounded-2xl p-4 shadow-sm space-y-1">
+          <div className="text-[11px] font-bold text-emerald-800 uppercase tracking-wider flex items-center space-x-1">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+            <span>✓ 결제 완료 ({paidLogs.length}건)</span>
+          </div>
+          <div className="text-xl sm:text-2xl font-black text-emerald-700 font-mono">
+            ₩{paidTotalAmount.toLocaleString()} <span className="text-xs font-semibold text-emerald-600">원</span>
+          </div>
+        </div>
+
+        <div className="bg-amber-50/80 border border-amber-200 rounded-2xl p-4 shadow-sm space-y-1">
+          <div className="text-[11px] font-bold text-amber-800 uppercase tracking-wider flex items-center space-x-1">
+            <Clock className="w-3.5 h-3.5 text-amber-600" />
+            <span>미결제 / 입금대기 ({unpaidLogs.length}건)</span>
+          </div>
+          <div className="text-xl sm:text-2xl font-black text-amber-700 font-mono">
+            ₩{unpaidTotalAmount.toLocaleString()} <span className="text-xs font-semibold text-amber-600">원</span>
           </div>
         </div>
 

@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { DispatchLog, OfficeSettings, InvoiceItem } from '../types';
-import { Printer, Download, Copy, X, Image, Loader2, Calculator, Users } from 'lucide-react';
+import { Printer, Download, Copy, X, Image, Loader2, Calculator, Users, CheckCircle2, Clock, Check } from 'lucide-react';
 import { toPng } from 'html-to-image';
 
 interface PrintableSheetProps {
@@ -8,6 +8,7 @@ interface PrintableSheetProps {
   officeSettings: OfficeSettings;
   onClose?: () => void;
   onDuplicateClick?: (log: DispatchLog) => void;
+  onTogglePaidLog?: (log: DispatchLog) => void;
 }
 
 export const PrintableSheet: React.FC<PrintableSheetProps> = ({
@@ -15,6 +16,7 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
   officeSettings,
   onClose,
   onDuplicateClick,
+  onTogglePaidLog,
 }) => {
   const sheetRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
@@ -200,6 +202,30 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
 
         {/* Action Buttons */}
         <div className="flex items-center space-x-2">
+          {onTogglePaidLog && (
+            <button
+              onClick={() => onTogglePaidLog(log)}
+              className={`text-xs font-bold px-3 py-2 rounded-xl flex items-center space-x-1 shadow-xs transition-colors cursor-pointer border ${
+                log.isPaid
+                  ? 'bg-emerald-500 hover:bg-emerald-600 text-white border-emerald-600'
+                  : 'bg-amber-100 hover:bg-amber-200 text-amber-900 border-amber-300'
+              }`}
+              title={log.isPaid ? '클릭 시 미결제로 변경' : '클릭 시 결제완료로 변경'}
+            >
+              {log.isPaid ? (
+                <>
+                  <CheckCircle2 className="w-4 h-4 stroke-[2.5]" />
+                  <span>✓ 결제 완료 (입금 확인)</span>
+                </>
+              ) : (
+                <>
+                  <Clock className="w-4 h-4" />
+                  <span>미결제 (결제완료 처리)</span>
+                </>
+              )}
+            </button>
+          )}
+
           {onDuplicateClick && (
             <button
               onClick={() => onDuplicateClick(log)}
@@ -252,10 +278,16 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
         {viewMode === 'worker_roster' && (
           <>
             {/* Title */}
-            <div className="text-center mb-6">
+            <div className="relative text-center mb-6">
               <h1 className="text-3xl sm:text-4xl font-extrabold tracking-widest border-b-2 border-black pb-2 inline-block px-8">
                 출 력 표
               </h1>
+              {log.isPaid && (
+                <div className="absolute right-0 top-0 border-2 border-emerald-600 text-emerald-800 bg-emerald-50 font-black text-xs sm:text-sm px-3 py-1 rounded-lg flex items-center space-x-1 tracking-wider rotate-[-2deg] shadow-2xs">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 stroke-[3]" />
+                  <span>결제 완료 (입금확인)</span>
+                </div>
+              )}
             </div>
 
             {/* Top Header Grid Table */}
@@ -431,10 +463,16 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
         {viewMode === 'invoice_summary' && (
           <>
             {/* Title */}
-            <div className="text-center mb-6">
+            <div className="relative text-center mb-6">
               <h1 className="text-3xl sm:text-4xl font-extrabold tracking-widest border-b-2 border-black pb-2 inline-block px-8">
                 출 력 표
               </h1>
+              {log.isPaid && (
+                <div className="absolute right-0 top-0 border-2 border-emerald-600 text-emerald-800 bg-emerald-50 font-black text-xs sm:text-sm px-3 py-1 rounded-lg flex items-center space-x-1 tracking-wider rotate-[-2deg] shadow-2xs">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 stroke-[3]" />
+                  <span>결제 완료 (입금확인)</span>
+                </div>
+              )}
             </div>
 
             {/* Top Header Grid Table */}

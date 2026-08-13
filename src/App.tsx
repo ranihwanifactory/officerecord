@@ -209,6 +209,20 @@ export default function App() {
     }
   };
 
+  const handleTogglePaidLog = async (log: DispatchLog) => {
+    if (!checkAdminPermission()) return;
+    const updatedLog: DispatchLog = {
+      ...log,
+      isPaid: !log.isPaid,
+      paidAt: !log.isPaid ? new Date().toISOString() : undefined,
+      updatedAt: new Date().toISOString(),
+    };
+    await saveDispatchLog(updatedLog);
+    if (logToPrint?.id === log.id) {
+      setLogToPrint(updatedLog);
+    }
+  };
+
   const handleDeleteLog = async (id: string) => {
     if (!checkAdminPermission()) return;
     if (confirm('정말로 이 출력표 일지를 삭제하시겠습니까?')) {
@@ -322,6 +336,7 @@ export default function App() {
             onPrintLog={handlePrintLog}
             onDuplicateLog={handleDuplicateLog}
             onDeleteLog={handleDeleteLog}
+            onTogglePaidLog={handleTogglePaidLog}
           />
         )}
 
@@ -333,6 +348,7 @@ export default function App() {
             onPrintLog={handlePrintLog}
             onDuplicateLog={handleDuplicateLog}
             onDeleteLog={handleDeleteLog}
+            onTogglePaidLog={handleTogglePaidLog}
           />
         )}
 
@@ -387,6 +403,7 @@ export default function App() {
                 handleClosePrintModal();
                 handleDuplicateLog(log);
               }}
+              onTogglePaidLog={handleTogglePaidLog}
             />
           </div>
         </div>

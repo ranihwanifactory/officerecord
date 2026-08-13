@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DispatchLog } from '../types';
-import { Search, Printer, Copy, Edit, Trash2, Calendar, Users, Building, Plus } from 'lucide-react';
+import { Search, Printer, Copy, Edit, Trash2, Calendar, Users, Building, Plus, CheckCircle2, Check, Clock } from 'lucide-react';
 import { Pagination } from './Pagination';
 
 interface DispatchLogListProps {
@@ -10,6 +10,7 @@ interface DispatchLogListProps {
   onPrintLog: (log: DispatchLog) => void;
   onDuplicateLog: (log: DispatchLog) => void;
   onDeleteLog: (id: string) => void;
+  onTogglePaidLog?: (log: DispatchLog) => void;
 }
 
 export const DispatchLogList: React.FC<DispatchLogListProps> = ({
@@ -19,9 +20,11 @@ export const DispatchLogList: React.FC<DispatchLogListProps> = ({
   onPrintLog,
   onDuplicateLog,
   onDeleteLog,
+  onTogglePaidLog,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterMonth, setFilterMonth] = useState(''); // YYYY-MM or empty
+  const [filterPaidStatus, setFilterPaidStatus] = useState<'all' | 'paid' | 'unpaid'>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
 
@@ -35,12 +38,19 @@ export const DispatchLogList: React.FC<DispatchLogListProps> = ({
     
     const matchesMonth = filterMonth ? log.date.startsWith(filterMonth) : true;
 
-    return matchesSearch && matchesMonth;
+    const matchesPaid =
+      filterPaidStatus === 'all'
+        ? true
+        : filterPaidStatus === 'paid'
+        ? !!log.isPaid
+        : !log.isPaid;
+
+    return matchesSearch && matchesMonth && matchesPaid;
   });
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, filterMonth]);
+  }, [searchTerm, filterMonth, filterPaidStatus]);
 
   const totalPages = Math.ceil(filteredLogs.length / ITEMS_PER_PAGE) || 1;
   const paginatedLogs = filteredLogs.slice(
@@ -76,9 +86,23 @@ export const DispatchLogList: React.FC<DispatchLogListProps> = ({
             className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs sm:text-sm font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500"
           />
 
-          {filterMonth && (
+          {/* Payment Status Filter */}
+          <select
+            value={filterPaidStatus}
+            onChange={(e) => setFilterPaidStatus(e.target.value as any)}
+            className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs sm:text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+          >
+            <option value="all">전체 결제 상태</option>
+            <option value="paid">✓ 결제 완료만</option>
+            <option value="unpaid">미결제만 (입금대기)</option>
+          </select>
+
+          {(filterMonth || filterPaidStatus !== 'all') && (
             <button
-              onClick={() => setFilterMonth('')}
+              onClick={() => {
+                setFilterMonth('');
+                setFilterPaidStatus('all');
+              }}
               className="text-xs font-bold text-blue-600 underline cursor-pointer"
             >
               전체 보기
@@ -104,6 +128,7 @@ export const DispatchLogList: React.FC<DispatchLogListProps> = ({
               <tr>
                 <th className="p-3.5">출력 날짜</th>
                 <th className="p-3.5">업체 / 현장명</th>
+                <th className="p-3.5">결제 상태</th>
                 <th className="p-3.5">구인자 연락처</th>
                 <th className="p-3.5">출력 인부</th>
                 <th className="p-3.5 text-center">공수 (일반/기공)</th>
@@ -114,7 +139,7 @@ export const DispatchLogList: React.FC<DispatchLogListProps> = ({
             <tbody className="divide-y divide-slate-100">
               {filteredLogs.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="p-12 text-center text-slate-400 space-y-2">
+                  <td colSpan={8} className="p-12 text-center text-slate-400 space-y-2">
                     <p className="text-sm font-medium">검색 조건에 일치하는 출력 일지가 없습니다.</p>
                     <button
                       onClick={onNewLogClick}
@@ -152,6 +177,32 @@ export const DispatchLogList: React.FC<DispatchLogListProps> = ({
                           📍 {log.siteAddress}
                         </div>
                       )}
+                    </td>
+
+                    {/* Payment Status Toggle Cell */}
+                    <td className="p-3.5 whitespace-nowrap">
+                      <button
+                        type="button"
+                        onClick={() => onTogglePaidLog?.(log)}
+                        title={log.isPaid ? '클릭 시 미결제로 변경' : '클릭 시 결제완료로 변경'}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer flex items-center space-x-1 ${
+                          log.isPaid
+                            ? 'bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-emerald-200 shadow-2xs'
+                            : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
+                        }`}
+                      >
+                        {log.isPaid ? (
+                          <>
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700 stroke-[2.5]" />
+                            <span>결제 완료</span>
+                          </>
+                        ) : (
+                          <>
+                            <Clock className="w-3.5 h-3.5 text-amber-600" />
+                            <span>미결제 (대기)</span>
+                          </>
+                        )}
+                      </button>
                     </td>
 
                     {/* Contact */}
