@@ -60,7 +60,7 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
         fuelFee: 0,
         otherFee: 0,
         totalItemAmount: 320000,
-        remarks: '보통인부 2명 작업',
+        remarks: '',
       },
       {
         id: 'inv-2',
@@ -74,7 +74,7 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
         fuelFee: 0,
         otherFee: 0,
         totalItemAmount: 220000,
-        remarks: '기공 1명 작업',
+        remarks: '',
       },
     ]
   );
