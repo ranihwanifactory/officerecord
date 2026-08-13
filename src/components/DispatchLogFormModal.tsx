@@ -446,20 +446,20 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-xl w-full max-w-5xl max-h-[94vh] flex flex-col my-auto">
+    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl w-full max-w-5xl max-h-[94vh] flex flex-col my-auto transition-colors">
         
         {/* Modal Header */}
-        <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/80 rounded-t-2xl">
+        <div className="px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/80 dark:bg-slate-800/80 rounded-t-2xl">
           <div className="flex items-center space-x-2.5">
             <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-sm">
               출
             </div>
             <div>
-              <h2 className="text-base sm:text-lg font-bold text-slate-800">
+              <h2 className="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-100">
                 {initialLog ? '출력표 일지 수정' : '새 출력표 일지 작성'}
               </h2>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 인부별 출근표 작성 및 일별 용역수/인건비/기타비용을 기록합니다.
               </p>
             </div>
@@ -467,7 +467,7 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
 
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg transition-colors cursor-pointer"
+            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1.5 rounded-lg transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -477,8 +477,8 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
         <form onSubmit={handleSubmit} className="p-4 sm:p-6 overflow-y-auto space-y-5 flex-1">
           
           {/* Form Type Selector Tabs */}
-          <div className="bg-slate-100 p-1.5 rounded-2xl border border-slate-200">
-            <div className="text-[11px] font-bold text-slate-500 px-3 pt-1 pb-1 uppercase tracking-wider">
+          <div className="bg-slate-100 dark:bg-slate-800/80 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-700">
+            <div className="text-[11px] font-bold text-slate-500 dark:text-slate-400 px-3 pt-1 pb-1 uppercase tracking-wider">
               작업 양식 선택 (입력폼 모드)
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -487,16 +487,16 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
                 onClick={() => setFormType('worker_roster')}
                 className={`flex items-center space-x-3 p-3 rounded-xl transition-all cursor-pointer text-left ${
                   formType === 'worker_roster'
-                    ? 'bg-white text-blue-700 shadow-sm border border-blue-200 font-bold'
-                    : 'bg-transparent text-slate-600 hover:bg-slate-200/60 font-semibold'
+                    ? 'bg-white dark:bg-slate-900 text-blue-700 dark:text-blue-400 shadow-sm border border-blue-200 dark:border-blue-800 font-bold'
+                    : 'bg-transparent text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-700/60 font-semibold'
                 }`}
               >
-                <div className={`p-2 rounded-lg ${formType === 'worker_roster' ? 'bg-blue-50 text-blue-600' : 'bg-slate-200 text-slate-500'}`}>
+                <div className={`p-2 rounded-lg ${formType === 'worker_roster' ? 'bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400' : 'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400'}`}>
                   <Users className="w-5 h-5" />
                 </div>
                 <div>
                   <div className="text-xs sm:text-sm font-bold">📋 [양식 1] 인부별 출근 출력표</div>
-                  <div className="text-[11px] text-slate-500 font-normal">
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400 font-normal">
                     인부별 출근일수(1~31일) 지정 + 단가 & 기타비용 기록
                   </div>
                 </div>
@@ -507,16 +507,16 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
                 onClick={() => setFormType('invoice_summary')}
                 className={`flex items-center space-x-3 p-3 rounded-xl transition-all cursor-pointer text-left ${
                   formType === 'invoice_summary'
-                    ? 'bg-white text-emerald-700 shadow-sm border border-emerald-200 font-bold'
-                    : 'bg-transparent text-slate-600 hover:bg-slate-200/60 font-semibold'
+                    ? 'bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-sm border border-emerald-200 dark:border-emerald-800 font-bold'
+                    : 'bg-transparent text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-700/60 font-semibold'
                 }`}
               >
-                <div className={`p-2 rounded-lg ${formType === 'invoice_summary' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-200 text-slate-500'}`}>
+                <div className={`p-2 rounded-lg ${formType === 'invoice_summary' ? 'bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400' : 'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400'}`}>
                   <Calculator className="w-5 h-5" />
                 </div>
                 <div>
                   <div className="text-xs sm:text-sm font-bold">📋 [양식 2] 일별 용역수 & 인건비 출력표</div>
-                  <div className="text-[11px] text-slate-500 font-normal">
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400 font-normal">
                     일별 용역수(공수), 단가, 인건비 및 기타비용(잔업/식대/주유비) 정산
                   </div>
                 </div>
@@ -525,11 +525,11 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
           </div>
 
           {/* Top Metadata Row */}
-          <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200/80">
+          <div className="space-y-3 bg-slate-50 dark:bg-slate-800/60 p-4 rounded-xl border border-slate-200/80 dark:border-slate-700">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {/* Date */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                   작성 기준일 <span className="text-rose-500">*</span>
                 </label>
                 <input
@@ -542,13 +542,13 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
                     if (!startDate) setStartDate(v);
                     if (!endDate) setEndDate(v);
                   }}
-                  className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm font-semibold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 outline-none"
                 />
               </div>
 
               {/* Work Period Range */}
               <div className="sm:col-span-2">
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                   작업 기간 (시작일 ~ 종료일)
                 </label>
                 <div className="flex items-center space-x-2">
@@ -556,35 +556,35 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
                     type="date"
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs sm:text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 outline-none"
                   />
                   <span className="text-slate-400 font-bold text-sm">~</span>
                   <input
                     type="date"
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
-                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs sm:text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 outline-none"
                   />
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1 border-t border-slate-200/60">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1 border-t border-slate-200/60 dark:border-slate-700/60">
               {/* Client / Site Name */}
               <div>
                 <div className="flex items-center justify-between mb-1">
-                  <label className="block text-xs font-bold text-slate-700">
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
                     업체 / 현장명 <span className="text-rose-500">*</span>
                   </label>
                   {clientsRoster.length > 0 && (
                     <select
                       onChange={handleClientSelect}
                       defaultValue=""
-                      className="text-[11px] text-blue-600 bg-transparent border-none outline-none font-semibold cursor-pointer"
+                      className="text-[11px] text-blue-600 dark:text-blue-400 bg-transparent border-none outline-none font-semibold cursor-pointer"
                     >
-                      <option value="" disabled>자주 쓰는 현장 선택</option>
+                      <option value="" disabled className="dark:bg-slate-800 dark:text-slate-200">자주 쓰는 현장 선택</option>
                       {clientsRoster.map((c) => (
-                        <option key={c.id} value={c.clientName}>
+                        <option key={c.id} value={c.clientName} className="dark:bg-slate-800 dark:text-slate-200">
                           {c.clientName}
                         </option>
                       ))}
@@ -597,13 +597,13 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
                   placeholder="예: 신성에스엔티"
                   value={clientName}
                   onChange={(e) => setClientName(e.target.value)}
-                  className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm font-medium text-slate-800 focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm font-medium text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 outline-none placeholder-slate-400 dark:placeholder-slate-500"
                 />
               </div>
 
               {/* Client Contact Phone */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                   구인자 연락처
                 </label>
                 <input
@@ -611,13 +611,13 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
                   placeholder="예: 010-2998-1757"
                   value={clientContact}
                   onChange={(e) => setClientContact(e.target.value)}
-                  className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm font-medium text-slate-800 focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm font-medium text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 outline-none placeholder-slate-400 dark:placeholder-slate-500"
                 />
               </div>
 
               {/* Site Address */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                   현장 주소
                 </label>
                 <input
@@ -625,18 +625,18 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
                   placeholder="예: 경북 성주군 성주읍 성주순환로 123"
                   value={siteAddress}
                   onChange={(e) => setSiteAddress(e.target.value)}
-                  className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm font-medium text-slate-800 focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm font-medium text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 outline-none placeholder-slate-400 dark:placeholder-slate-500"
                 />
               </div>
             </div>
 
             {/* Payment Status Check Control */}
-            <div className="pt-2 border-t border-slate-200/80 flex flex-wrap items-center justify-between gap-3">
+            <div className="pt-2 border-t border-slate-200/80 dark:border-slate-700/80 flex flex-wrap items-center justify-between gap-3">
               <div>
-                <span className="block text-xs font-bold text-slate-700">
+                <span className="block text-xs font-bold text-slate-700 dark:text-slate-300">
                   결제(입금) 완료 상태
                 </span>
-                <span className="text-[11px] text-slate-500">
+                <span className="text-[11px] text-slate-500 dark:text-slate-400">
                   관리자가 체크하면 출력표 및 목록에 '결제완료' 도장/표시가 적용됩니다.
                 </span>
               </div>
@@ -646,7 +646,7 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
                 className={`px-4 py-2 rounded-xl border flex items-center space-x-2 transition-all cursor-pointer font-bold text-xs sm:text-sm ${
                   isPaid
                     ? 'bg-emerald-600 text-white border-emerald-700 shadow-sm'
-                    : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-100'
+                    : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
                 }`}
               >
                 <div className={`w-4 h-4 rounded flex items-center justify-center border ${
