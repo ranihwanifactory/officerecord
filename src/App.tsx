@@ -42,7 +42,62 @@ export default function App() {
   // Navigation State
   const [activeTab, setActiveTab] = useState<'calendar' | 'list' | 'settlement' | 'roster' | 'settings'>('calendar');
 
-  // Firebase Auth User State
+  // Modals & Active Log States
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+  const [editingLog, setEditingLog] = useState<DispatchLog | null>(null);
+  const [selectedDateForForm, setSelectedDateForForm] = useState<string>('');
+
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  const [logToPrint, setLogToPrint] = useState<DispatchLog | null>(null);
+
+  // Sync activeTab & modal open state with URL hash and browser history (PopState)
+  useEffect(() => {
+    const handlePopState = () => {
+      const url = new URL(window.location.href);
+      const hash = url.hash.replace('#', '').split('?')[0];
+      const hasModalParam = url.hash.includes('modal=');
+
+      // 1. Close modals if url hash no longer contains modal parameter
+      if (!hasModalParam) {
+        setIsFormModalOpen(false);
+        setEditingLog(null);
+        setIsPrintModalOpen(false);
+        setLogToPrint(null);
+      }
+
+      // 2. Sync tab state from hash
+      if (['calendar', 'list', 'settlement', 'roster', 'settings'].includes(hash)) {
+        setActiveTab(hash as any);
+      } else if (!hash) {
+        setActiveTab('calendar');
+      }
+    };
+
+    // Initial check on page mount
+    if (window.location.hash) {
+      const hash = window.location.hash.replace('#', '').split('?')[0];
+      if (['calendar', 'list', 'settlement', 'roster', 'settings'].includes(hash)) {
+        setActiveTab(hash as any);
+      }
+    } else {
+      window.history.replaceState({ tab: 'calendar' }, '', '#calendar');
+    }
+
+    window.addEventListener('popstate', handlePopState);
+    window.addEventListener('hashchange', handlePopState);
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('hashchange', handlePopState);
+    };
+  }, []);
+
+  const handleTabChange = (tab: 'calendar' | 'list' | 'settlement' | 'roster' | 'settings') => {
+    setActiveTab(tab);
+    if (window.location.hash !== `#${tab}`) {
+      window.history.pushState({ tab }, '', `#${tab}`);
+    }
+  };
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
 
@@ -58,14 +113,6 @@ export default function App() {
     bankAccount: '농협 302-65550038-11 손영란',
     adminEmails: ['acehwan69@gmail.com', 'hwanace@gmail.com'],
   });
-
-  // Modals & Active Log States
-  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
-  const [editingLog, setEditingLog] = useState<DispatchLog | null>(null);
-  const [selectedDateForForm, setSelectedDateForForm] = useState<string>('');
-
-  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
-  const [logToPrint, setLogToPrint] = useState<DispatchLog | null>(null);
 
   // Check Admin Permission
   const isAdmin = Boolean(
@@ -127,6 +174,9 @@ export default function App() {
     setEditingLog(null);
     setSelectedDateForForm(dateStr || new Date().toISOString().substring(0, 10));
     setIsFormModalOpen(true);
+    if (!window.location.hash.includes('modal=')) {
+      window.history.pushState({ modal: 'form', tab: activeTab }, '', `#${activeTab}?modal=form`);
+    }
   };
 
   const handleOpenEditLogModal = (log: DispatchLog) => {
@@ -134,6 +184,9 @@ export default function App() {
     setEditingLog(log);
     setSelectedDateForForm(log.date);
     setIsFormModalOpen(true);
+    if (!window.location.hash.includes('modal=')) {
+      window.history.pushState({ modal: 'form', tab: activeTab }, '', `#${activeTab}?modal=form`);
+    }
   };
 
   const handleSaveLog = async (log: DispatchLog) => {
@@ -141,6 +194,9 @@ export default function App() {
     await saveDispatchLog(log);
     setIsFormModalOpen(false);
     setEditingLog(null);
+    if (window.location.hash.includes('modal=')) {
+      window.history.pushState({ tab: activeTab }, '', `#${activeTab}`);
+    }
   };
 
   const handleDuplicateLog = (log: DispatchLog) => {
@@ -148,6 +204,9 @@ export default function App() {
     setEditingLog(log);
     setSelectedDateForForm(log.date);
     setIsFormModalOpen(true);
+    if (!window.location.hash.includes('modal=')) {
+      window.history.pushState({ modal: 'form', tab: activeTab }, '', `#${activeTab}?modal=form`);
+    }
   };
 
   const handleDeleteLog = async (id: string) => {
@@ -157,6 +216,9 @@ export default function App() {
       if (logToPrint?.id === id) {
         setIsPrintModalOpen(false);
         setLogToPrint(null);
+        if (window.location.hash.includes('modal=')) {
+          window.history.pushState({ tab: activeTab }, '', `#${activeTab}`);
+        }
       }
     }
   };
@@ -190,6 +252,25 @@ export default function App() {
   const handlePrintLog = (log: DispatchLog) => {
     setLogToPrint(log);
     setIsPrintModalOpen(true);
+    if (!window.location.hash.includes('modal=')) {
+      window.history.pushState({ modal: 'print', tab: activeTab }, '', `#${activeTab}?modal=print`);
+    }
+  };
+
+  const handleCloseFormModal = () => {
+    setIsFormModalOpen(false);
+    setEditingLog(null);
+    if (window.location.hash.includes('modal=')) {
+      window.history.pushState({ tab: activeTab }, '', `#${activeTab}`);
+    }
+  };
+
+  const handleClosePrintModal = () => {
+    setIsPrintModalOpen(false);
+    setLogToPrint(null);
+    if (window.location.hash.includes('modal=')) {
+      window.history.pushState({ tab: activeTab }, '', `#${activeTab}`);
+    }
   };
 
   // Loading Screen while Firebase Auth initializes
@@ -220,7 +301,7 @@ export default function App() {
       {/* Top Navigation */}
       <Navbar
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={handleTabChange}
         user={user}
         onLogin={handleLogin}
         onLogout={handleLogout}
@@ -290,10 +371,7 @@ export default function App() {
           clientsRoster={clientsRoster}
           onSave={handleSaveLog}
           onDuplicateSave={handleSaveLog}
-          onClose={() => {
-            setIsFormModalOpen(false);
-            setEditingLog(null);
-          }}
+          onClose={handleCloseFormModal}
         />
       )}
 
@@ -304,12 +382,9 @@ export default function App() {
             <PrintableSheet
               log={logToPrint}
               officeSettings={officeSettings}
-              onClose={() => {
-                setIsPrintModalOpen(false);
-                setLogToPrint(null);
-              }}
+              onClose={handleClosePrintModal}
               onDuplicateClick={(log) => {
-                setIsPrintModalOpen(false);
+                handleClosePrintModal();
                 handleDuplicateLog(log);
               }}
             />
