@@ -41,14 +41,10 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
         quality: 1.0,
         pixelRatio: 2,
         backgroundColor: '#ffffff',
-        width: element.offsetWidth,
+        width: 800,
         height: element.offsetHeight,
         style: {
           margin: '0',
-          marginLeft: '0',
-          marginRight: '0',
-          marginTop: '0',
-          marginBottom: '0',
           transform: 'none',
           boxShadow: 'none',
         },
@@ -56,7 +52,7 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
 
       const link = document.createElement('a');
       const prefix = '출력표';
-      link.download = `${prefix}_${log.clientName}_${log.date}.png`;
+      link.download = `${prefix}_${log.clientName || '현장'}_${log.date}.png`;
       link.href = dataUrl;
       link.click();
     } catch (err) {
@@ -269,34 +265,38 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
       </div>
 
       {/* PRINT AREA CONTAINER */}
-      <div className="max-w-[800px] w-full mx-auto shadow-xl print:shadow-none print:max-w-none print:w-full">
-        <div ref={sheetRef} className="bg-white text-black p-6 sm:p-10 w-full font-sans border border-slate-300 print:border-none">
-        
-        {/* ========================================================== */}
-        {/* PRINT MODE 1: WORKER ATTENDANCE ROSTER SHEET */}
-        {/* ========================================================== */}
-        {viewMode === 'worker_roster' && (
-          <>
-            {/* Title */}
-            <div className="relative text-center mb-6">
-              <h1 className="text-3xl sm:text-4xl font-extrabold tracking-widest border-b-2 border-black pb-2 inline-block px-8">
-                출 력 표
-              </h1>
-              {log.isPaid && (
-                <div className="absolute right-0 top-0 border-2 border-emerald-600 text-emerald-800 bg-emerald-50 font-black text-xs sm:text-sm px-3 py-1 rounded-lg flex items-center space-x-1 tracking-wider rotate-[-2deg] shadow-2xs">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600 stroke-[3]" />
-                  <span>결제 완료 (입금확인)</span>
-                </div>
-              )}
-            </div>
+      <div className="w-full overflow-x-auto pb-4 print:overflow-visible flex flex-col items-center">
+        <div className="text-[11px] text-slate-500 font-medium text-center pb-2 sm:hidden">
+          💡 모바일에서는 좌우로 스크롤하여 A4 전체 서식을 확인할 수 있으며, 이미지(PNG) 저장은 PC와 동일한 고해상도 원본 양식으로 저장됩니다.
+        </div>
+        <div className="w-[800px] min-w-[800px] shadow-xl print:shadow-none print:w-full print:min-w-0">
+          <div ref={sheetRef} className="bg-white text-black p-8 w-[800px] min-w-[800px] font-sans border border-slate-300 print:border-none print:w-full print:min-w-0 print:p-0">
+          
+          {/* ========================================================== */}
+          {/* PRINT MODE 1: WORKER ATTENDANCE ROSTER SHEET */}
+          {/* ========================================================== */}
+          {viewMode === 'worker_roster' && (
+            <>
+              {/* Title */}
+              <div className="relative text-center mb-6">
+                <h1 className="text-3xl font-extrabold tracking-widest border-b-2 border-black pb-2 inline-block px-8">
+                  출 력 표
+                </h1>
+                {log.isPaid && (
+                  <div className="absolute right-0 top-0 border-2 border-emerald-600 text-emerald-800 bg-emerald-50 font-black text-xs px-3 py-1 rounded-lg flex items-center space-x-1 tracking-wider rotate-[-2deg] shadow-2xs">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 stroke-[3]" />
+                    <span>결제 완료 (입금확인)</span>
+                  </div>
+                )}
+              </div>
 
-            {/* Top Header Grid Table */}
-            <div className="border-2 border-black mb-0">
-              <table className="w-full text-sm border-collapse">
-                <tbody>
-                  <tr className="border-b border-black">
-                    <td className="w-24 bg-slate-100 font-bold text-center py-2 px-2 border-r border-black">작업기간</td>
-                    <td className="text-center font-bold text-sm sm:text-base py-2 px-3 border-r border-black">{workPeriodText}</td>
+              {/* Top Header Grid Table */}
+              <div className="border-2 border-black mb-0">
+                <table className="w-full text-sm border-collapse">
+                  <tbody>
+                    <tr className="border-b border-black">
+                      <td className="w-24 bg-slate-100 font-bold text-center py-2 px-2 border-r border-black">작업기간</td>
+                      <td className="text-center font-bold text-sm py-2 px-3 border-r border-black">{workPeriodText}</td>
                     <td rowSpan={5} className="w-44 text-center align-middle p-2 bg-white relative">
                       <div className="font-bold text-base mb-1">{officeSettings.officeName}</div>
                       <div className="w-20 h-20 mx-auto relative flex items-center justify-center">
@@ -435,7 +435,7 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
                   })}
 
                   {/* Sum / Total Calculation Row */}
-                  <tr className="border-t-2 border-black font-bold text-sm sm:text-base h-10">
+                  <tr className="border-t-2 border-black font-bold text-sm h-10">
                     <td className="text-center border-r border-black bg-slate-100">합 계</td>
                     <td className="border-r border-black text-center text-xs text-slate-600">
                       {log.workers.length}명
@@ -464,11 +464,11 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
           <>
             {/* Title */}
             <div className="relative text-center mb-6">
-              <h1 className="text-3xl sm:text-4xl font-extrabold tracking-widest border-b-2 border-black pb-2 inline-block px-8">
+              <h1 className="text-3xl font-extrabold tracking-widest border-b-2 border-black pb-2 inline-block px-8">
                 출 력 표
               </h1>
               {log.isPaid && (
-                <div className="absolute right-0 top-0 border-2 border-emerald-600 text-emerald-800 bg-emerald-50 font-black text-xs sm:text-sm px-3 py-1 rounded-lg flex items-center space-x-1 tracking-wider rotate-[-2deg] shadow-2xs">
+                <div className="absolute right-0 top-0 border-2 border-emerald-600 text-emerald-800 bg-emerald-50 font-black text-xs px-3 py-1 rounded-lg flex items-center space-x-1 tracking-wider rotate-[-2deg] shadow-2xs">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600 stroke-[3]" />
                   <span>결제 완료 (입금확인)</span>
                 </div>
@@ -481,7 +481,7 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
                 <tbody>
                   <tr className="border-b border-black">
                     <td className="w-28 bg-slate-100 font-bold text-center py-2 px-2 border-r border-black">작업기간</td>
-                    <td className="text-center font-bold text-sm sm:text-base py-2 px-3 border-r border-black">{workPeriodText}</td>
+                    <td className="text-center font-bold text-sm py-2 px-3 border-r border-black">{workPeriodText}</td>
                     <td rowSpan={5} className="w-44 text-center align-middle p-2 bg-white relative">
                       <div className="font-bold text-base mb-1">{officeSettings.officeName}</div>
                       <div className="w-20 h-20 mx-auto relative flex items-center justify-center">
@@ -655,5 +655,6 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
         </div>
       </div>
     </div>
-  );
+  </div>
+);
 };
