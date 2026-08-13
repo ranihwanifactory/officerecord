@@ -62,7 +62,7 @@ export const DispatchLogList: React.FC<DispatchLogListProps> = ({
     <div className="space-y-6">
       
       {/* Top Filter & Action Header */}
-      <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-4">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-wrap items-center justify-between gap-4 transition-colors">
         
         {/* Search & Month Filter */}
         <div className="flex flex-wrap items-center gap-3 flex-1">
@@ -74,7 +74,7 @@ export const DispatchLogList: React.FC<DispatchLogListProps> = ({
               placeholder="업체명, 구인자 연락처, 인부 이름 검색..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-4 py-2 text-xs sm:text-sm text-slate-800 outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-4 py-2 text-xs sm:text-sm text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-400 dark:placeholder-slate-500"
             />
           </div>
 
@@ -83,14 +83,14 @@ export const DispatchLogList: React.FC<DispatchLogListProps> = ({
             type="month"
             value={filterMonth}
             onChange={(e) => setFilterMonth(e.target.value)}
-            className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs sm:text-sm font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500"
+            className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500"
           />
 
           {/* Payment Status Filter */}
           <select
             value={filterPaidStatus}
             onChange={(e) => setFilterPaidStatus(e.target.value as any)}
-            className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs sm:text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+            className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
           >
             <option value="all">전체 결제 상태</option>
             <option value="paid">✓ 결제 완료만</option>
@@ -103,7 +103,7 @@ export const DispatchLogList: React.FC<DispatchLogListProps> = ({
                 setFilterMonth('');
                 setFilterPaidStatus('all');
               }}
-              className="text-xs font-bold text-blue-600 underline cursor-pointer"
+              className="text-xs font-bold text-blue-600 dark:text-blue-400 underline cursor-pointer"
             >
               전체 보기
             </button>
@@ -121,10 +121,10 @@ export const DispatchLogList: React.FC<DispatchLogListProps> = ({
       </div>
 
       {/* Logs Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden transition-colors">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50 text-slate-500 font-bold text-[11px] uppercase tracking-wider border-b border-slate-200">
+            <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 font-bold text-[11px] uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
               <tr>
                 <th className="p-3.5">출력 날짜</th>
                 <th className="p-3.5">업체 / 현장명</th>
@@ -136,14 +136,14 @@ export const DispatchLogList: React.FC<DispatchLogListProps> = ({
                 <th className="p-3.5 text-center w-48">관리 및 인쇄</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {filteredLogs.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="p-12 text-center text-slate-400 space-y-2">
+                  <td colSpan={8} className="p-12 text-center text-slate-400 dark:text-slate-500 space-y-2">
                     <p className="text-sm font-medium">검색 조건에 일치하는 출력 일지가 없습니다.</p>
                     <button
                       onClick={onNewLogClick}
-                      className="text-xs text-blue-600 font-bold underline"
+                      className="text-xs text-blue-600 dark:text-blue-400 font-bold underline"
                     >
                       + 새로 작성하기
                     </button>
@@ -151,29 +151,29 @@ export const DispatchLogList: React.FC<DispatchLogListProps> = ({
                 </tr>
               ) : (
                 paginatedLogs.map((log) => (
-                  <tr key={log.id} className="hover:bg-slate-50/80 transition-colors">
+                  <tr key={log.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
                     
                     {/* Date */}
-                    <td className="p-3.5 font-bold text-slate-800 whitespace-nowrap">
+                    <td className="p-3.5 font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
                       {log.date}
                     </td>
 
                     {/* Client */}
-                    <td className="p-3.5 font-bold text-slate-900 whitespace-nowrap">
+                    <td className="p-3.5 font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">
                       <div className="flex items-center space-x-1.5">
                         <span>{log.clientName}</span>
                         {log.formType === 'invoice_summary' ? (
-                          <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded border border-emerald-200">
+                          <span className="text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
                             양식 2 (용역수)
                           </span>
                         ) : (
-                          <span className="text-[10px] font-bold bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded border border-blue-200">
+                          <span className="text-[10px] font-bold bg-blue-100 dark:bg-blue-950/80 text-blue-800 dark:text-blue-300 px-1.5 py-0.5 rounded border border-blue-200 dark:border-blue-800">
                             양식 1 (출근표)
                           </span>
                         )}
                       </div>
                       {log.siteAddress && (
-                        <div className="text-[11px] font-normal text-slate-500 max-w-[180px] truncate">
+                        <div className="text-[11px] font-normal text-slate-500 dark:text-slate-400 max-w-[180px] truncate">
                           📍 {log.siteAddress}
                         </div>
                       )}
@@ -187,8 +187,8 @@ export const DispatchLogList: React.FC<DispatchLogListProps> = ({
                         title={log.isPaid ? '클릭 시 미결제로 변경' : '클릭 시 결제완료로 변경'}
                         className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition-all cursor-pointer flex items-center space-x-1 ${
                           log.isPaid
-                            ? 'bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-emerald-200 shadow-2xs'
-                            : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
+                            ? 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-200 border-emerald-300 dark:border-emerald-700 hover:bg-emerald-200 dark:hover:bg-emerald-900 shadow-2xs'
+                            : 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900'
                         }`}
                       >
                         {log.isPaid ? (
@@ -206,7 +206,7 @@ export const DispatchLogList: React.FC<DispatchLogListProps> = ({
                     </td>
 
                     {/* Contact */}
-                    <td className="p-3.5 text-xs text-slate-500 font-medium whitespace-nowrap">
+                    <td className="p-3.5 text-xs text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap">
                       {log.clientContact || '-'}
                     </td>
 
@@ -217,7 +217,7 @@ export const DispatchLogList: React.FC<DispatchLogListProps> = ({
                           {log.workers.map((w, idx) => (
                             <span
                               key={idx}
-                              className="text-[11px] font-semibold bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md border border-slate-200"
+                              className="text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700"
                             >
                               {w.name}
                             </span>
@@ -225,25 +225,25 @@ export const DispatchLogList: React.FC<DispatchLogListProps> = ({
                         </div>
                       ) : log.invoiceItems && log.invoiceItems.length > 0 ? (
                         <div className="flex flex-wrap items-center gap-1 max-w-xs">
-                          <span className="text-[11px] font-bold bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded-md border border-emerald-200">
+                          <span className="text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800">
                             총 {log.invoiceItems.reduce((acc, i) => acc + (Number(i.serviceCount) || 0), 0)}명/공수
                           </span>
                           {Array.from(new Set(log.invoiceItems.map((i) => i.workCategory).filter(Boolean))).map((cat, idx) => (
                             <span
                               key={idx}
-                              className="text-[10px] font-medium bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200"
+                              className="text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700"
                             >
                               {cat}
                             </span>
                           ))}
                         </div>
                       ) : (
-                        <span className="text-xs text-slate-400 font-medium">-</span>
+                        <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">-</span>
                       )}
                     </td>
 
                     {/* Gongsu */}
-                    <td className="p-3.5 text-center text-xs font-bold whitespace-nowrap text-slate-600">
+                    <td className="p-3.5 text-center text-xs font-bold whitespace-nowrap text-slate-600 dark:text-slate-300">
                       {(() => {
                         let general = log.generalGongsuCount || 0;
                         let skill = log.skillGongsuCount || 0;
@@ -262,7 +262,7 @@ export const DispatchLogList: React.FC<DispatchLogListProps> = ({
                     </td>
 
                     {/* Total Amount */}
-                    <td className="p-3.5 text-right font-black text-blue-600 text-base whitespace-nowrap font-mono">
+                    <td className="p-3.5 text-right font-black text-blue-600 dark:text-blue-400 text-base whitespace-nowrap font-mono">
                       ₩{log.totalAmount.toLocaleString()}원
                     </td>
 
@@ -274,7 +274,7 @@ export const DispatchLogList: React.FC<DispatchLogListProps> = ({
                         <button
                           onClick={() => onDuplicateLog(log)}
                           title="날짜 변경 후 반복 복사 저장"
-                          className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-lg border border-emerald-200 flex items-center space-x-1 cursor-pointer"
+                          className="bg-emerald-50 dark:bg-emerald-950/80 hover:bg-emerald-100 dark:hover:bg-emerald-900 text-emerald-700 dark:text-emerald-300 text-xs font-bold px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800 flex items-center space-x-1 cursor-pointer"
                         >
                           <Copy className="w-3 h-3" />
                           <span>복사</span>
@@ -284,7 +284,7 @@ export const DispatchLogList: React.FC<DispatchLogListProps> = ({
                         <button
                           onClick={() => onEditLog(log)}
                           title="수정"
-                          className="bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold px-2.5 py-1 rounded-lg border border-slate-300 flex items-center space-x-1 cursor-pointer"
+                          className="bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold px-2.5 py-1 rounded-lg border border-slate-300 dark:border-slate-700 flex items-center space-x-1 cursor-pointer"
                         >
                           <Edit className="w-3 h-3" />
                           <span>수정</span>

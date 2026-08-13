@@ -156,14 +156,14 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
     <div className="space-y-6">
       
       {/* Navigation Sub-Tabs */}
-      <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex flex-wrap items-center justify-between gap-4">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-wrap items-center justify-between gap-4 transition-colors">
         <div className="flex space-x-2">
           <button
             onClick={() => setActiveSubTab('workers')}
             className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-sm font-bold transition-all cursor-pointer ${
               activeSubTab === 'workers'
                 ? 'bg-blue-600 text-white shadow-xs'
-                : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+                : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
             }`}
           >
             <Users className="w-4 h-4" />
@@ -175,7 +175,7 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
             className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-sm font-bold transition-all cursor-pointer ${
               activeSubTab === 'clients'
                 ? 'bg-blue-600 text-white shadow-xs'
-                : 'bg-slate-50 text-slate-600 hover:bg-slate-100'
+                : 'bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'
             }`}
           >
             <Building className="w-4 h-4" />
@@ -206,7 +206,7 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
 
       {/* Workers Roster SubTab */}
       {activeSubTab === 'workers' && (
-        <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4 transition-colors">
           {/* Search bar */}
           <div className="relative max-w-xs">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
@@ -215,13 +215,13 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
               placeholder="인부 이름, 직종, 연락처 검색..."
               value={workerSearch}
               onChange={(e) => setWorkerSearch(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-800 outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-400 dark:placeholder-slate-500"
             />
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-slate-400 font-bold text-[10px] uppercase tracking-wider border-b border-slate-100">
+              <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-400 dark:text-slate-400 font-bold text-[10px] uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
                 <tr>
                   <th className="p-3">인부 이름</th>
                   <th className="p-3 text-center">구분</th>
@@ -230,49 +230,49 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
                   <th className="p-3 text-center w-28">관리</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {paginatedWorkers.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="p-8 text-center text-slate-400 text-xs">
+                    <td colSpan={5} className="p-8 text-center text-slate-400 dark:text-slate-500 text-xs">
                       등록된 인부가 없거나 검색 결과가 없습니다.
                     </td>
                   </tr>
                 ) : (
                   paginatedWorkers.map((w) => (
-                    <tr key={w.id} className="hover:bg-slate-50/80">
-                      <td className="p-3 font-bold text-slate-800">
+                    <tr key={w.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50">
+                      <td className="p-3 font-bold text-slate-800 dark:text-slate-100">
                         {w.name}
                       </td>
                       <td className="p-3 text-center">
-                        <span className="text-xs font-bold bg-blue-50 text-blue-600 px-2.5 py-0.5 rounded-full border border-blue-100">
+                        <span className="text-xs font-bold bg-blue-50 dark:bg-blue-950/80 text-blue-600 dark:text-blue-300 px-2.5 py-0.5 rounded-full border border-blue-100 dark:border-blue-800">
                           {w.category}
                         </span>
                       </td>
-                      <td className="p-3 text-right font-black text-blue-600 font-mono">
+                      <td className="p-3 text-right font-black text-blue-600 dark:text-blue-400 font-mono">
                         ₩{w.defaultDailyRate.toLocaleString()}원
                       </td>
                       <td className="p-3">
                         {w.phone ? (
                           <div className="flex items-center space-x-2">
-                            <span className="font-mono text-slate-700 font-medium text-xs">{w.phone}</span>
+                            <span className="font-mono text-slate-700 dark:text-slate-300 font-medium text-xs">{w.phone}</span>
                             <a
                               href={`tel:${w.phone.replace(/[^0-9+]/g, '')}`}
-                              className="inline-flex items-center space-x-1 px-2 py-0.5 text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-lg transition-colors cursor-pointer"
+                              className="inline-flex items-center space-x-1 px-2 py-0.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/80 hover:bg-emerald-100 dark:hover:bg-emerald-900 border border-emerald-300 dark:border-emerald-800 rounded-lg transition-colors cursor-pointer"
                               title={`${w.name} 님에게 바로 전화걸기`}
                             >
-                              <Phone className="w-3 h-3 text-emerald-600 fill-emerald-100" />
+                              <Phone className="w-3 h-3 text-emerald-600 dark:text-emerald-400 fill-emerald-100 dark:fill-emerald-900" />
                               <span>전화</span>
                             </a>
                           </div>
                         ) : (
-                          <span className="text-slate-400 font-mono text-xs">-</span>
+                          <span className="text-slate-400 dark:text-slate-500 font-mono text-xs">-</span>
                         )}
                       </td>
                       <td className="p-3 text-center">
                         <div className="flex items-center justify-center space-x-1">
                           <button
                             onClick={() => handleOpenWorkerModal(w)}
-                            className="p-1.5 text-slate-400 hover:text-blue-600 rounded-lg hover:bg-slate-100 cursor-pointer"
+                            className="p-1.5 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
                             title="수정"
                           >
                             <Edit className="w-4 h-4" />
@@ -283,7 +283,7 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
                                 onDeleteWorker(w.id);
                               }
                             }}
-                            className="p-1.5 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-slate-100 cursor-pointer"
+                            className="p-1.5 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
                             title="삭제"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -309,7 +309,7 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
 
       {/* Clients SubTab */}
       {activeSubTab === 'clients' && (
-        <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4 transition-colors">
           {/* Search bar */}
           <div className="relative max-w-xs">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
@@ -318,13 +318,13 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
               placeholder="업체/현장명, 연락처, 주소 검색..."
               value={clientSearch}
               onChange={(e) => setClientSearch(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-800 outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-400 dark:placeholder-slate-500"
             />
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-slate-400 font-bold text-[10px] uppercase tracking-wider border-b border-slate-100">
+              <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-400 dark:text-slate-400 font-bold text-[10px] uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
                 <tr>
                   <th className="p-3">업체 / 현장명</th>
                   <th className="p-3">구인자 연락처</th>
@@ -332,44 +332,44 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
                   <th className="p-3 text-center w-28">관리</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {paginatedClients.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="p-8 text-center text-slate-400 text-xs">
+                    <td colSpan={4} className="p-8 text-center text-slate-400 dark:text-slate-500 text-xs">
                       등록된 업체/현장이 없거나 검색 결과가 없습니다.
                     </td>
                   </tr>
                 ) : (
                   paginatedClients.map((c) => (
-                    <tr key={c.id} className="hover:bg-slate-50/80">
-                      <td className="p-3 font-bold text-slate-800">
+                    <tr key={c.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50">
+                      <td className="p-3 font-bold text-slate-800 dark:text-slate-100">
                         {c.clientName}
                       </td>
                       <td className="p-3">
                         {c.contactPhone ? (
                           <div className="flex items-center space-x-2">
-                            <span className="font-mono text-slate-700 font-medium text-xs">{c.contactPhone}</span>
+                            <span className="font-mono text-slate-700 dark:text-slate-300 font-medium text-xs">{c.contactPhone}</span>
                             <a
                               href={`tel:${c.contactPhone.replace(/[^0-9+]/g, '')}`}
-                              className="inline-flex items-center space-x-1 px-2 py-0.5 text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-lg transition-colors cursor-pointer"
+                              className="inline-flex items-center space-x-1 px-2 py-0.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/80 hover:bg-emerald-100 dark:hover:bg-emerald-900 border border-emerald-300 dark:border-emerald-800 rounded-lg transition-colors cursor-pointer"
                               title={`${c.clientName} 담당자에게 전화 연결`}
                             >
-                              <Phone className="w-3 h-3 text-emerald-600 fill-emerald-100" />
+                              <Phone className="w-3 h-3 text-emerald-600 dark:text-emerald-400 fill-emerald-100 dark:fill-emerald-900" />
                               <span>전화</span>
                             </a>
                           </div>
                         ) : (
-                          <span className="text-slate-400 font-mono text-xs">-</span>
+                          <span className="text-slate-400 dark:text-slate-500 font-mono text-xs">-</span>
                         )}
                       </td>
-                      <td className="p-3 text-slate-500 text-xs">
+                      <td className="p-3 text-slate-500 dark:text-slate-400 text-xs">
                         {c.address || '-'}
                       </td>
                       <td className="p-3 text-center">
                         <div className="flex items-center justify-center space-x-1">
                           <button
                             onClick={() => handleOpenClientModal(c)}
-                            className="p-1.5 text-slate-400 hover:text-blue-600 rounded-lg hover:bg-slate-100 cursor-pointer"
+                            className="p-1.5 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
                             title="수정"
                           >
                             <Edit className="w-4 h-4" />
@@ -380,7 +380,7 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
                                 onDeleteClient(c.id);
                               }
                             }}
-                            className="p-1.5 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-slate-100 cursor-pointer"
+                            className="p-1.5 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
                             title="삭제"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -406,36 +406,36 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
 
       {/* Worker Edit Modal */}
       {isWorkerModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4">
-            <div className="flex justify-between items-center pb-3 border-b border-slate-100">
-              <h3 className="font-bold text-lg text-slate-800">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-slate-800">
+              <h3 className="font-bold text-lg text-slate-800 dark:text-slate-100">
                 {editingWorker ? '인부 정보 수정' : '새 인부 등록'}
               </h3>
-              <button onClick={() => setIsWorkerModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+              <button onClick={() => setIsWorkerModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleWorkerSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">인부 이름 *</label>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">인부 이름 *</label>
                 <input
                   type="text"
                   required
                   value={wName}
                   onChange={(e) => setWName(e.target.value)}
                   placeholder="예: 홍길동"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-sm font-semibold text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">구분</label>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">구분</label>
                 <select
                   value={wCategory}
                   onChange={(e) => setWCategory(e.target.value as WorkerCategory)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-sm font-bold text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="일반">일반</option>
                   <option value="기공">기공</option>
@@ -443,24 +443,24 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">기본 일단가 (원)</label>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">기본 일단가 (원)</label>
                 <input
                   type="number"
                   step={5000}
                   value={wRate}
                   onChange={(e) => setWRate(Number(e.target.value))}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm font-bold text-blue-600 font-mono outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-sm font-bold text-blue-600 dark:text-blue-400 font-mono outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">연락처</label>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">연락처</label>
                 <input
                   type="text"
                   value={wPhone}
                   onChange={(e) => setWPhone(e.target.value)}
                   placeholder="예: 010-1234-5678"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm font-medium text-slate-800 outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-sm font-medium text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -468,7 +468,7 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsWorkerModalOpen(false)}
-                  className="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-xl"
+                  className="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl"
                 >
                   취소
                 </button>
@@ -486,49 +486,49 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
 
       {/* Client Edit Modal */}
       {isClientModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4">
-            <div className="flex justify-between items-center pb-3 border-b border-slate-100">
-              <h3 className="font-bold text-lg text-slate-800">
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4">
+            <div className="flex justify-between items-center pb-3 border-b border-slate-100 dark:border-slate-800">
+              <h3 className="font-bold text-lg text-slate-800 dark:text-slate-100">
                 {editingClient ? '현장/업체 정보 수정' : '새 현장/업체 등록'}
               </h3>
-              <button onClick={() => setIsClientModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+              <button onClick={() => setIsClientModalOpen(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleClientSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">업체 / 현장명 *</label>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">업체 / 현장명 *</label>
                 <input
                   type="text"
                   required
                   value={cName}
                   onChange={(e) => setCName(e.target.value)}
                   placeholder="예: 신성에스엔티"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-sm font-semibold text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">구인자 연락처</label>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">구인자 연락처</label>
                 <input
                   type="text"
                   value={cPhone}
                   onChange={(e) => setCPhone(e.target.value)}
                   placeholder="예: 010-2998-1757"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm font-medium text-slate-800 outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-sm font-medium text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">현장 주소</label>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">현장 주소</label>
                 <input
                   type="text"
                   value={cAddress}
                   onChange={(e) => setCAddress(e.target.value)}
                   placeholder="예: 경북 성주군 성주읍"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-sm font-medium text-slate-800 outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-sm font-medium text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
@@ -536,7 +536,7 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsClientModalOpen(false)}
-                  className="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 rounded-xl"
+                  className="px-4 py-2 text-xs font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl"
                 >
                   취소
                 </button>

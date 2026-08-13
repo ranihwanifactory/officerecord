@@ -38,10 +38,10 @@ export const Pagination: React.FC<PaginationProps> = ({
   };
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 bg-slate-50/80 border-t border-slate-200 text-xs text-slate-600">
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 bg-slate-50/80 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400 transition-colors">
       <div>
-        전체 <span className="font-bold text-slate-900">{totalItems}</span>개 중{' '}
-        <span className="font-semibold text-slate-800">{startItem}-{endItem}</span>번째 표시 중
+        전체 <span className="font-bold text-slate-900 dark:text-slate-100">{totalItems}</span>개 중{' '}
+        <span className="font-semibold text-slate-800 dark:text-slate-200">{startItem}-{endItem}</span>번째 표시 중
       </div>
 
       <div className="flex items-center space-x-1">
@@ -49,7 +49,7 @@ export const Pagination: React.FC<PaginationProps> = ({
           type="button"
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
-          className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:hover:bg-white disabled:cursor-not-allowed transition-colors cursor-pointer"
+          className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-40 disabled:hover:bg-white dark:disabled:hover:bg-slate-800 disabled:cursor-not-allowed transition-colors cursor-pointer"
           title="이전 페이지"
         >
           <ChevronLeft className="w-4 h-4" />
@@ -64,13 +64,13 @@ export const Pagination: React.FC<PaginationProps> = ({
               className={`min-w-[28px] h-7 px-2 rounded-lg font-bold text-xs transition-colors cursor-pointer ${
                 currentPage === p
                   ? 'bg-blue-600 text-white shadow-xs'
-                  : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700'
               }`}
             >
               {p}
             </button>
           ) : (
-            <span key={idx} className="px-1 text-slate-400 font-bold">
+            <span key={idx} className="px-1 text-slate-400 dark:text-slate-500 font-bold">
               ...
             </span>
           )
@@ -80,7 +80,7 @@ export const Pagination: React.FC<PaginationProps> = ({
           type="button"
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
-          className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:hover:bg-white disabled:cursor-not-allowed transition-colors cursor-pointer"
+          className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-40 disabled:hover:bg-white dark:disabled:hover:bg-slate-800 disabled:cursor-not-allowed transition-colors cursor-pointer"
           title="다음 페이지"
         >
           <ChevronRight className="w-4 h-4" />
