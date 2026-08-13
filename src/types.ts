@@ -57,6 +57,7 @@ export interface DispatchLog {
   clientName: string; // 업체/현장명
   clientContact: string; // 구인자연락처
   siteAddress?: string; // 현장 주소
+  officeProfileId?: string; // 발행 사무소 프로필 ID
   generalGongsuCount: number; // 일반 공수 합계
   skillGongsuCount: number; // 기공 공수 합계
   workers: DispatchWorkerItem[];
@@ -75,10 +76,13 @@ export interface DispatchLog {
 }
 
 export interface OfficeSettings {
+  id?: string; // 프로필 고유 ID (예: 'office-1', 'default')
+  profileName?: string; // 프로필 관리용 명칭 (예: '젊은인력사무소 (본점)', '대구 지점')
   officeName: string; // e.g. "젊은인력사무소"
   phone1: string; // e.g. "054-933-1566"
   phone2: string; // e.g. "010-7545-0038"
   address: string; // e.g. "경북 성주군 성주읍 성주순환로2길 69"
   bankAccount: string; // e.g. "농협 302-65550038-11 손영란"
   adminEmails: string[]; // e.g. ["acehwan69@gmail.com"]
+  isDefault?: boolean; // 기본 사무소 여부
 }

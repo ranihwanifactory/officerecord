@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, FileText, Users, Building, Settings, LogIn, LogOut, ShieldCheck, Printer, Plus, Sun, Moon } from 'lucide-react';
+import { Calendar, FileText, Users, Building, Settings, LogIn, LogOut, ShieldCheck, Printer, Plus, Sun, Moon, ChevronDown } from 'lucide-react';
 import { User } from 'firebase/auth';
 import { OfficeSettings } from '../types';
 
@@ -10,6 +10,9 @@ interface NavbarProps {
   onLogin: () => void;
   onLogout: () => void;
   officeSettings: OfficeSettings;
+  officeProfiles?: OfficeSettings[];
+  activeOfficeId?: string;
+  onSelectActiveProfile?: (id: string) => void;
   onNewLogClick: () => void;
   isDarkMode: boolean;
   onToggleDarkMode: () => void;
@@ -22,6 +25,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   onLogin,
   onLogout,
   officeSettings,
+  officeProfiles = [],
+  activeOfficeId = 'default',
+  onSelectActiveProfile,
   onNewLogClick,
   isDarkMode,
   onToggleDarkMode,
@@ -35,19 +41,44 @@ export const Navbar: React.FC<NavbarProps> = ({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           
-          {/* Logo & Office Title */}
-          <div className="flex items-center space-x-3 cursor-pointer" onClick={() => setActiveTab('calendar')}>
-            <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center font-black text-white text-lg shadow-sm">
+          {/* Logo & Office Title with Office Profile Switcher */}
+          <div className="flex items-center space-x-3">
+            <div
+              className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center font-black text-white text-lg shadow-sm cursor-pointer"
+              onClick={() => setActiveTab('calendar')}
+            >
               젊
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <h1 className="font-extrabold text-base sm:text-lg tracking-tight text-slate-800 dark:text-slate-100">{officeSettings.officeName}</h1>
+                {/* Office Profile Selector Dropdown */}
+                {officeProfiles.length > 1 && onSelectActiveProfile ? (
+                  <div className="relative flex items-center">
+                    <select
+                      value={activeOfficeId}
+                      onChange={(e) => onSelectActiveProfile(e.target.value)}
+                      className="font-extrabold text-base sm:text-lg tracking-tight text-slate-800 dark:text-slate-100 bg-transparent border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-0.5 outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer pr-6"
+                    >
+                      {officeProfiles.map((p) => (
+                        <option key={p.id || p.officeName} value={p.id || 'default'} className="dark:bg-slate-800 font-bold text-slate-900 dark:text-slate-100">
+                          {p.profileName || p.officeName}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : (
+                  <h1 className="font-extrabold text-base sm:text-lg tracking-tight text-slate-800 dark:text-slate-100">
+                    {officeSettings.officeName}
+                  </h1>
+                )}
+
                 <span className="text-xs bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-bold px-2.5 py-0.5 rounded-full border border-blue-100 dark:border-blue-900/50">
                   Labor Flow
                 </span>
               </div>
-              <p className="text-xs text-slate-400 dark:text-slate-500 hidden sm:block font-medium">{officeSettings.phone1} / {officeSettings.phone2}</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 hidden sm:block font-medium">
+                {officeSettings.phone1} {officeSettings.phone2 ? `/ ${officeSettings.phone2}` : ''}
+              </p>
             </div>
           </div>
 

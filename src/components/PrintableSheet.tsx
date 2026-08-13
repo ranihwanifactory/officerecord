@@ -6,6 +6,7 @@ import { toPng } from 'html-to-image';
 interface PrintableSheetProps {
   log: DispatchLog;
   officeSettings: OfficeSettings;
+  officeProfiles?: OfficeSettings[];
   onClose?: () => void;
   onDuplicateClick?: (log: DispatchLog) => void;
   onTogglePaidLog?: (log: DispatchLog) => void;
@@ -14,12 +15,21 @@ interface PrintableSheetProps {
 export const PrintableSheet: React.FC<PrintableSheetProps> = ({
   log,
   officeSettings,
+  officeProfiles = [],
   onClose,
   onDuplicateClick,
   onTogglePaidLog,
 }) => {
   const sheetRef = useRef<HTMLDivElement>(null);
   const [isExporting, setIsExporting] = useState(false);
+
+  const [selectedOfficeId, setSelectedOfficeId] = useState<string>(
+    log.officeProfileId || officeSettings.id || 'default'
+  );
+
+  const activeOffice = (officeProfiles.length > 0
+    ? (officeProfiles.find((p) => p.id === selectedOfficeId) || officeProfiles.find((p) => p.id === log.officeProfileId) || officeSettings)
+    : officeSettings);
   
   // Allow switching view between Worker Roster Sheet and Invoice Summary Sheet in preview
   const [viewMode, setViewMode] = useState<'worker_roster' | 'invoice_summary'>(
@@ -167,33 +177,52 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
       {/* Top Controller Bar (Hidden in Print) */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-4 bg-white p-3.5 rounded-2xl shadow-xs print:hidden border border-slate-200">
         
-        {/* Print Form Mode Toggle */}
-        <div className="flex items-center space-x-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200">
-          <button
-            type="button"
-            onClick={() => setViewMode('worker_roster')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center space-x-1.5 transition-all cursor-pointer ${
-              viewMode === 'worker_roster'
-                ? 'bg-blue-600 text-white shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Users className="w-3.5 h-3.5" />
-            <span>📋 [양식 1] 인부별 출근 출력표</span>
-          </button>
+        {/* Print Form Mode Toggle & Office Profile Selector */}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center space-x-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200">
+            <button
+              type="button"
+              onClick={() => setViewMode('worker_roster')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center space-x-1.5 transition-all cursor-pointer ${
+                viewMode === 'worker_roster'
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Users className="w-3.5 h-3.5" />
+              <span>📋 [양식 1] 인부별 출근 출력표</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setViewMode('invoice_summary')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center space-x-1.5 transition-all cursor-pointer ${
-              viewMode === 'invoice_summary'
-                ? 'bg-emerald-600 text-white shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <Calculator className="w-3.5 h-3.5" />
-            <span>📋 [양식 2] 일별 용역/인건비 출력표</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('invoice_summary')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center space-x-1.5 transition-all cursor-pointer ${
+                viewMode === 'invoice_summary'
+                  ? 'bg-emerald-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Calculator className="w-3.5 h-3.5" />
+              <span>📋 [양식 2] 일별 용역/인건비 출력표</span>
+            </button>
+          </div>
+
+          {officeProfiles.length > 1 && (
+            <div className="flex items-center space-x-1 bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs">
+              <span className="font-bold text-slate-600 px-1.5">발행 사무소:</span>
+              <select
+                value={selectedOfficeId}
+                onChange={(e) => setSelectedOfficeId(e.target.value)}
+                className="font-bold bg-white text-slate-800 border border-slate-200 rounded-lg px-2 py-1 outline-none cursor-pointer"
+              >
+                {officeProfiles.map((p) => (
+                  <option key={p.id || p.officeName} value={p.id || 'default'}>
+                    {p.profileName || p.officeName}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         {/* Action Buttons */}
@@ -298,7 +327,7 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
                       <td className="w-24 bg-slate-100 font-bold text-center py-2 px-2 border-r border-black">작업기간</td>
                       <td className="text-center font-bold text-sm py-2 px-3 border-r border-black">{workPeriodText}</td>
                     <td rowSpan={5} className="w-44 text-center align-middle p-2 bg-white relative">
-                      <div className="font-bold text-base mb-1">{officeSettings.officeName}</div>
+                      <div className="font-bold text-base mb-1">{activeOffice.officeName}</div>
                       <div className="w-20 h-20 mx-auto relative flex items-center justify-center">
                         <img
                           src="/stamp.png"
@@ -448,7 +477,7 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
                     </td>
                     <td className="text-right px-4 text-xs font-black align-middle text-black">
                       총 청구금액: ₩{workerGrandTotal.toLocaleString()}원 &nbsp;
-                      <span className="text-[11px] font-normal text-slate-700">({officeSettings.bankAccount})</span>
+                      <span className="text-[11px] font-normal text-slate-700">({activeOffice.bankAccount})</span>
                     </td>
                   </tr>
                 </tbody>
@@ -483,7 +512,7 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
                     <td className="w-28 bg-slate-100 font-bold text-center py-2 px-2 border-r border-black">작업기간</td>
                     <td className="text-center font-bold text-sm py-2 px-3 border-r border-black">{workPeriodText}</td>
                     <td rowSpan={5} className="w-44 text-center align-middle p-2 bg-white relative">
-                      <div className="font-bold text-base mb-1">{officeSettings.officeName}</div>
+                      <div className="font-bold text-base mb-1">{activeOffice.officeName}</div>
                       <div className="w-20 h-20 mx-auto relative flex items-center justify-center">
                         <img
                           src="/stamp.png"
@@ -635,20 +664,20 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
 
         {/* Bank Account Banner Box */}
         <div className="mt-4 border border-black p-2.5 bg-slate-50 text-center text-xs font-bold flex items-center justify-between">
-          <span>입금 계좌 안내: {officeSettings.bankAccount}</span>
-          <span>(청구/발행 담당: {officeSettings.officeName})</span>
+          <span>입금 계좌 안내: {activeOffice.bankAccount}</span>
+          <span>(청구/발행 담당: {activeOffice.officeName})</span>
         </div>
 
         {/* Bottom Office Footer Section */}
         <div className="mt-8 text-center space-y-1">
           <div className="text-2xl font-black tracking-tight text-black">
-            {officeSettings.officeName}
+            {activeOffice.officeName}
           </div>
           <div className="text-sm font-semibold text-slate-800">
-            ({officeSettings.phone1} / {officeSettings.phone2})
+            ({activeOffice.phone1} / {activeOffice.phone2})
           </div>
           <div className="text-xs text-slate-700">
-            {officeSettings.address}
+            {activeOffice.address}
           </div>
         </div>
 

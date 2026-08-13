@@ -3,13 +3,15 @@ import {
 } from 'firebase/firestore';
 import { db, getLocalData, setLocalData, initLocalData } from '../firebase';
 import { DispatchLog, WorkerMaster, ClientSiteMaster, OfficeSettings } from '../types';
-import { DEFAULT_OFFICE_SETTINGS, INITIAL_DISPATCH_LOGS, INITIAL_WORKERS, INITIAL_CLIENTS } from '../constants/defaultData';
+import { DEFAULT_OFFICE_SETTINGS, DEFAULT_OFFICE_PROFILES, INITIAL_DISPATCH_LOGS, INITIAL_WORKERS, INITIAL_CLIENTS } from '../constants/defaultData';
 
 const KEYS = {
   LOGS: 'jeolmeun_dispatch_logs_v1',
   WORKERS: 'jeolmeun_workers_v1',
   CLIENTS: 'jeolmeun_clients_v1',
   OFFICE: 'jeolmeun_office_settings_v1',
+  OFFICE_PROFILES: 'jeolmeun_office_profiles_v2',
+  ACTIVE_OFFICE_ID: 'jeolmeun_active_office_id_v2',
 };
 
 // Initialize default local storage
@@ -175,20 +177,76 @@ export async function deleteClient(id: string): Promise<void> {
   }
 }
 
-// Office Settings
-export function subscribeOfficeSettings(onUpdate: (settings: OfficeSettings) => void): () => void {
-  const localSettings = getLocalData<OfficeSettings>(KEYS.OFFICE, DEFAULT_OFFICE_SETTINGS);
-  onUpdate(localSettings);
+// Office Profiles & Settings
+let activeOfficeListeners: ((id: string) => void)[] = [];
+
+export function getActiveOfficeId(): string {
+  return localStorage.getItem(KEYS.ACTIVE_OFFICE_ID) || 'default';
+}
+
+export function getActiveOfficeProfileId(): string {
+  return getActiveOfficeId();
+}
+
+export function setActiveOfficeId(id: string): void {
+  localStorage.setItem(KEYS.ACTIVE_OFFICE_ID, id);
+  activeOfficeListeners.forEach((cb) => cb(id));
+}
+
+export function setActiveOfficeProfileId(id: string): void {
+  setActiveOfficeId(id);
+}
+
+export function subscribeActiveOfficeId(onUpdate: (activeId: string) => void): () => void {
+  onUpdate(getActiveOfficeId());
+  activeOfficeListeners.push(onUpdate);
+  return () => {
+    activeOfficeListeners = activeOfficeListeners.filter((cb) => cb !== onUpdate);
+  };
+}
+
+export function subscribeOfficeProfiles(
+  onUpdate: (profiles: OfficeSettings[], activeId: string) => void
+): () => void {
+  let localProfiles = getLocalData<OfficeSettings[]>(KEYS.OFFICE_PROFILES, []);
+  if (!localProfiles || localProfiles.length === 0) {
+    const oldSettings = getLocalData<OfficeSettings | null>(KEYS.OFFICE, null);
+    if (oldSettings && oldSettings.officeName) {
+      localProfiles = [
+        {
+          id: 'default',
+          profileName: oldSettings.profileName || `${oldSettings.officeName} (본점)`,
+          officeName: oldSettings.officeName,
+          phone1: oldSettings.phone1 || '',
+          phone2: oldSettings.phone2 || '',
+          address: oldSettings.address || '',
+          bankAccount: oldSettings.bankAccount || '',
+          adminEmails: oldSettings.adminEmails || ['acehwan69@gmail.com'],
+          isDefault: true,
+        },
+      ];
+    } else {
+      localProfiles = DEFAULT_OFFICE_PROFILES;
+    }
+    setLocalData(KEYS.OFFICE_PROFILES, localProfiles);
+  }
+
+  const activeId = getActiveOfficeProfileId();
+  onUpdate(localProfiles, activeId);
 
   try {
-    const unsubscribe = onSnapshot(doc(db, 'settings', 'office_info'), (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data() as OfficeSettings;
-        setLocalData(KEYS.OFFICE, data);
-        onUpdate(data);
+    const unsubscribe = onSnapshot(collection(db, 'office_profiles'), (snapshot) => {
+      if (!snapshot.empty) {
+        const firestoreProfiles: OfficeSettings[] = [];
+        snapshot.forEach((docSnap) => {
+          firestoreProfiles.push({ id: docSnap.id, ...docSnap.data() } as OfficeSettings);
+        });
+        setLocalData(KEYS.OFFICE_PROFILES, firestoreProfiles);
+        const currentActiveId = getActiveOfficeProfileId();
+        onUpdate(firestoreProfiles, currentActiveId);
       }
     }, (err) => {
-      console.warn('Firestore settings snapshot error:', err);
+      console.warn('Firestore office_profiles snapshot error:', err);
     });
     return unsubscribe;
   } catch (err) {
@@ -196,11 +254,77 @@ export function subscribeOfficeSettings(onUpdate: (settings: OfficeSettings) => 
   }
 }
 
-export async function saveOfficeSettings(settings: OfficeSettings): Promise<void> {
-  setLocalData(KEYS.OFFICE, settings);
-  try {
-    await setDoc(doc(db, 'settings', 'office_info'), settings);
-  } catch (err) {
-    console.warn('Firestore save settings error:', err);
+export async function saveOfficeProfile(profile: OfficeSettings): Promise<void> {
+  const profileId = profile.id || `office_${Date.now()}`;
+  const profileToSave: OfficeSettings = {
+    ...profile,
+    id: profileId,
+    profileName: profile.profileName || profile.officeName,
+  };
+
+  const currentProfiles = getLocalData<OfficeSettings[]>(KEYS.OFFICE_PROFILES, DEFAULT_OFFICE_PROFILES);
+  const idx = currentProfiles.findIndex((p) => p.id === profileId);
+
+  let updatedProfiles: OfficeSettings[];
+  if (profileToSave.isDefault) {
+    updatedProfiles = currentProfiles.map((p) => ({ ...p, isDefault: false }));
+  } else {
+    updatedProfiles = [...currentProfiles];
   }
+
+  if (idx >= 0) {
+    updatedProfiles[idx] = profileToSave;
+  } else {
+    updatedProfiles.push(profileToSave);
+  }
+
+  if (!updatedProfiles.some((p) => p.isDefault) && updatedProfiles.length > 0) {
+    updatedProfiles[0].isDefault = true;
+  }
+
+  setLocalData(KEYS.OFFICE_PROFILES, updatedProfiles);
+
+  const defaultProfile = updatedProfiles.find((p) => p.isDefault) || updatedProfiles[0];
+  if (defaultProfile) {
+    setLocalData(KEYS.OFFICE, defaultProfile);
+  }
+
+  try {
+    await setDoc(doc(db, 'office_profiles', profileId), profileToSave);
+    if (defaultProfile) {
+      await setDoc(doc(db, 'settings', 'office_info'), defaultProfile);
+    }
+  } catch (err) {
+    console.warn('Firestore saveOfficeProfile error:', err);
+  }
+}
+
+export async function deleteOfficeProfile(id: string): Promise<void> {
+  const currentProfiles = getLocalData<OfficeSettings[]>(KEYS.OFFICE_PROFILES, []);
+  const updatedProfiles = currentProfiles.filter((p) => p.id !== id);
+  if (updatedProfiles.length > 0 && !updatedProfiles.some((p) => p.isDefault)) {
+    updatedProfiles[0].isDefault = true;
+  }
+  setLocalData(KEYS.OFFICE_PROFILES, updatedProfiles);
+
+  try {
+    await deleteDoc(doc(db, 'office_profiles', id));
+  } catch (err) {
+    console.warn('Firestore deleteOfficeProfile error:', err);
+  }
+}
+
+// Legacy Backward Compatibility
+export function subscribeOfficeSettings(onUpdate: (settings: OfficeSettings) => void): () => void {
+  return subscribeOfficeProfiles((profiles, activeId) => {
+    const active = profiles.find((p) => p.id === activeId) || profiles.find((p) => p.isDefault) || profiles[0] || DEFAULT_OFFICE_SETTINGS;
+    onUpdate(active);
+  });
+}
+
+export async function saveOfficeSettings(settings: OfficeSettings): Promise<void> {
+  await saveOfficeProfile({
+    ...settings,
+    id: settings.id || 'default',
+  });
 }

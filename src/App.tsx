@@ -28,6 +28,11 @@ import {
   deleteClient,
   subscribeOfficeSettings,
   saveOfficeSettings,
+  subscribeOfficeProfiles,
+  saveOfficeProfile,
+  deleteOfficeProfile,
+  subscribeActiveOfficeId,
+  setActiveOfficeId,
 } from './services/dataService';
 import {
   auth,
@@ -128,11 +133,17 @@ export default function App() {
     bankAccount: '농협 302-65550038-11 손영란',
     adminEmails: ['acehwan69@gmail.com', 'hwanace@gmail.com'],
   });
+  const [officeProfiles, setOfficeProfiles] = useState<OfficeSettings[]>([]);
+  const [activeOfficeId, setActiveOfficeIdState] = useState<string>('default');
 
   // Check Admin Permission
+  const allAdminEmails = officeProfiles.length > 0
+    ? Array.from(new Set(officeProfiles.flatMap((p) => p.adminEmails || [])))
+    : officeSettings.adminEmails;
+
   const isAdmin = Boolean(
     user &&
-    officeSettings.adminEmails.some(
+    allAdminEmails.some(
       (e) => e.toLowerCase() === user.email?.toLowerCase()
     )
   );
@@ -161,12 +172,16 @@ export default function App() {
     const unsubWorkers = subscribeWorkers((workers) => setWorkersRoster(workers));
     const unsubClients = subscribeClients((clients) => setClientsRoster(clients));
     const unsubSettings = subscribeOfficeSettings((settings) => setOfficeSettings(settings));
+    const unsubProfiles = subscribeOfficeProfiles((profiles) => setOfficeProfiles(profiles));
+    const unsubActiveId = subscribeActiveOfficeId((id) => setActiveOfficeIdState(id));
 
     return () => {
       unsubLogs();
       unsubWorkers();
       unsubClients();
       unsubSettings();
+      unsubProfiles();
+      unsubActiveId();
     };
   }, []);
 
@@ -272,9 +287,18 @@ export default function App() {
     await deleteClient(id);
   };
 
-  const handleSaveOfficeSettings = async (settings: OfficeSettings) => {
+  const handleSaveOfficeProfile = async (profile: OfficeSettings) => {
     if (!checkAdminPermission()) return;
-    await saveOfficeSettings(settings);
+    await saveOfficeProfile(profile);
+  };
+
+  const handleDeleteOfficeProfile = async (id: string) => {
+    if (!checkAdminPermission()) return;
+    await deleteOfficeProfile(id);
+  };
+
+  const handleSelectActiveOffice = (id: string) => {
+    setActiveOfficeId(id);
   };
 
   // Print Modal Trigger
@@ -335,6 +359,9 @@ export default function App() {
         onLogin={handleLogin}
         onLogout={handleLogout}
         officeSettings={officeSettings}
+        officeProfiles={officeProfiles}
+        activeOfficeId={activeOfficeId}
+        onSelectActiveProfile={handleSelectActiveOffice}
         onNewLogClick={() => handleOpenNewLogModal()}
         isDarkMode={isDarkMode}
         onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
@@ -390,7 +417,11 @@ export default function App() {
         {activeTab === 'settings' && (
           <OfficeSettingsModal
             officeSettings={officeSettings}
-            onSave={handleSaveOfficeSettings}
+            officeProfiles={officeProfiles}
+            activeOfficeId={activeOfficeId}
+            onSave={handleSaveOfficeProfile}
+            onDeleteProfile={handleDeleteOfficeProfile}
+            onSelectActiveProfile={handleSelectActiveOffice}
           />
         )}
       </main>
@@ -402,6 +433,8 @@ export default function App() {
           selectedDate={selectedDateForForm}
           workersRoster={workersRoster}
           clientsRoster={clientsRoster}
+          officeProfiles={officeProfiles}
+          activeOfficeId={activeOfficeId}
           onSave={handleSaveLog}
           onDuplicateSave={handleSaveLog}
           onClose={handleCloseFormModal}
@@ -415,6 +448,7 @@ export default function App() {
             <PrintableSheet
               log={logToPrint}
               officeSettings={officeSettings}
+              officeProfiles={officeProfiles}
               onClose={handleClosePrintModal}
               onDuplicateClick={(log) => {
                 handleClosePrintModal();

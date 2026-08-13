@@ -7,6 +7,8 @@ interface DispatchLogFormModalProps {
   selectedDate?: string;
   workersRoster: WorkerMaster[];
   clientsRoster: ClientSiteMaster[];
+  officeProfiles?: OfficeSettings[];
+  activeOfficeId?: string;
   onSave: (log: DispatchLog) => void;
   onClose: () => void;
   onDuplicateSave?: (log: DispatchLog) => void;
@@ -17,11 +19,17 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
   selectedDate,
   workersRoster,
   clientsRoster,
+  officeProfiles = [],
+  activeOfficeId = 'default',
   onSave,
   onClose,
   onDuplicateSave,
 }) => {
   const todayStr = new Date().toISOString().substring(0, 10);
+
+  const [officeProfileId, setOfficeProfileId] = useState<string>(
+    initialLog?.officeProfileId || activeOfficeId || officeProfiles[0]?.id || 'default'
+  );
   
   const [formType, setFormType] = useState<'worker_roster' | 'invoice_summary'>(
     initialLog?.formType || 'worker_roster'
@@ -362,6 +370,7 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
     const logToSave: DispatchLog = {
       id: initialLog?.id || `log-${date}-${Date.now()}`,
       date,
+      officeProfileId,
       startDate: startDate || date,
       endDate: endDate || date,
       clientName: clientName.trim(),
@@ -416,6 +425,7 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
     const newLog: DispatchLog = {
       id: `log-${duplicateTargetDate}-${Date.now()}`,
       date: duplicateTargetDate,
+      officeProfileId,
       startDate: duplicateTargetDate,
       endDate: duplicateTargetDate,
       clientName: clientName.trim(),
@@ -526,6 +536,27 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
 
           {/* Top Metadata Row */}
           <div className="space-y-3 bg-slate-50 dark:bg-slate-800/60 p-4 rounded-xl border border-slate-200/80 dark:border-slate-700">
+            {/* Issuing Office Profile Selector */}
+            {officeProfiles.length > 0 && (
+              <div className="pb-1 border-b border-slate-200/60 dark:border-slate-700/60">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center space-x-1">
+                  <Building className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                  <span>발행 사무소 선택 (출력표 표기 직인 / 계좌 / 연락처)</span>
+                </label>
+                <select
+                  value={officeProfileId}
+                  onChange={(e) => setOfficeProfileId(e.target.value)}
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer"
+                >
+                  {officeProfiles.map((p) => (
+                    <option key={p.id || p.officeName} value={p.id || 'default'} className="dark:bg-slate-800">
+                      {p.profileName || p.officeName} ({p.officeName} / {p.phone1 || '연락처'})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {/* Date */}
               <div>

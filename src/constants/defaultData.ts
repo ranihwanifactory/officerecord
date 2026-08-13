@@ -1,13 +1,20 @@
 import { DispatchLog, OfficeSettings, WorkerMaster, ClientSiteMaster } from '../types';
 
-export const DEFAULT_OFFICE_SETTINGS: OfficeSettings = {
-  officeName: '젊은인력사무소',
-  phone1: '054-933-1566',
-  phone2: '010-7545-0038',
-  address: '경북 성주군 성주읍 성주순환로2길 69',
-  bankAccount: '농협 302-65550038-11 손영란',
-  adminEmails: ['acehwan69@gmail.com', 'hwanace@gmail.com'],
-};
+export const DEFAULT_OFFICE_PROFILES: OfficeSettings[] = [
+  {
+    id: 'default',
+    profileName: '젊은인력사무소 (본점)',
+    officeName: '젊은인력사무소',
+    phone1: '054-933-1566',
+    phone2: '010-7545-0038',
+    address: '경북 성주군 성주읍 성주순환로2길 69',
+    bankAccount: '농협 302-65550038-11 손영란',
+    adminEmails: ['acehwan69@gmail.com', 'hwanace@gmail.com'],
+    isDefault: true,
+  },
+];
+
+export const DEFAULT_OFFICE_SETTINGS: OfficeSettings = DEFAULT_OFFICE_PROFILES[0];
 
 export const INITIAL_WORKERS: WorkerMaster[] = [
   { id: 'w1', name: '이성복', category: '일반', defaultDailyRate: 160000, phone: '010-1234-5678' },
