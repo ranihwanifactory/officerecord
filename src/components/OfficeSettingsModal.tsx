@@ -34,6 +34,9 @@ export const OfficeSettingsModal: React.FC<OfficeSettingsModalProps> = ({
   const [phone2, setPhone2] = useState('');
   const [address, setAddress] = useState('');
   const [bankAccount, setBankAccount] = useState('');
+  const [representativeName, setRepresentativeName] = useState('김진환');
+  const [representativeResidentId, setRepresentativeResidentId] = useState('801121-1795828');
+  const [representativeAccount, setRepresentativeAccount] = useState('기업은행 69301137601015 김진환');
   const [adminEmailsStr, setAdminEmailsStr] = useState('');
   const [isDefault, setIsDefault] = useState(false);
 
@@ -49,6 +52,9 @@ export const OfficeSettingsModal: React.FC<OfficeSettingsModalProps> = ({
       setPhone2(target.phone2 || '');
       setAddress(target.address || '');
       setBankAccount(target.bankAccount || '');
+      setRepresentativeName(target.representativeName || '김진환');
+      setRepresentativeResidentId(target.representativeResidentId || '801121-1795828');
+      setRepresentativeAccount(target.representativeAccount || '기업은행 69301137601015 김진환');
       setAdminEmailsStr((target.adminEmails || ['acehwan69@gmail.com']).join(', '));
       setIsDefault(Boolean(target.isDefault));
     } else {
@@ -59,6 +65,9 @@ export const OfficeSettingsModal: React.FC<OfficeSettingsModalProps> = ({
       setPhone2('');
       setAddress('');
       setBankAccount('');
+      setRepresentativeName('김진환');
+      setRepresentativeResidentId('801121-1795828');
+      setRepresentativeAccount('기업은행 69301137601015 김진환');
       setAdminEmailsStr('acehwan69@gmail.com, hwanace@gmail.com');
       setIsDefault(profiles.length === 0);
     }
@@ -91,6 +100,9 @@ export const OfficeSettingsModal: React.FC<OfficeSettingsModalProps> = ({
       phone2: phone2.trim(),
       address: address.trim(),
       bankAccount: bankAccount.trim(),
+      representativeName: representativeName.trim(),
+      representativeResidentId: representativeResidentId.trim(),
+      representativeAccount: representativeAccount.trim(),
       adminEmails: emailsList.length > 0 ? emailsList : ['acehwan69@gmail.com'],
       isDefault,
     };
@@ -349,6 +361,53 @@ export const OfficeSettingsModal: React.FC<OfficeSettingsModalProps> = ({
               placeholder="농협 302-65550038-11 손영란"
               className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-sm font-bold text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-400 dark:placeholder-slate-500"
             />
+          </div>
+
+          {/* Representative / Delegation Info Section */}
+          <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-xl border border-slate-200 dark:border-slate-700/80 space-y-3">
+            <h4 className="text-xs font-black text-slate-800 dark:text-slate-200 flex items-center space-x-1.5">
+              <span>✍️ 위임장 수임인 (대표자) 기본 정보</span>
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
+                  수임인 성명
+                </label>
+                <input
+                  type="text"
+                  value={representativeName}
+                  onChange={(e) => setRepresentativeName(e.target.value)}
+                  placeholder="예: 김진환"
+                  className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs font-bold text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
+                  수임인 주민등록번호
+                </label>
+                <input
+                  type="text"
+                  value={representativeResidentId}
+                  onChange={(e) => setRepresentativeResidentId(e.target.value)}
+                  placeholder="예: 801121-1795828"
+                  className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs font-mono font-semibold text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
+                수임인 수령 계좌번호
+              </label>
+              <input
+                type="text"
+                value={representativeAccount}
+                onChange={(e) => setRepresentativeAccount(e.target.value)}
+                placeholder="예: 기업은행 69301137601015 김진환"
+                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs font-bold text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
           </div>
 
           {/* Admin Emails */}

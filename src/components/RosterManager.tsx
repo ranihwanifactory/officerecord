@@ -75,6 +75,7 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
   const [wName, setWName] = useState('');
   const [wCategory, setWCategory] = useState<WorkerCategory>('일반');
   const [wRate, setWRate] = useState(160000);
+  const [wResidentId, setWResidentId] = useState('');
   const [wPhone, setWPhone] = useState('');
 
   // Client Form Fields
@@ -89,12 +90,14 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
       setWName(worker.name);
       setWCategory(worker.category);
       setWRate(worker.defaultDailyRate);
+      setWResidentId(worker.residentId || '');
       setWPhone(worker.phone || '');
     } else {
       setEditingWorker(null);
       setWName('');
       setWCategory('일반');
       setWRate(160000);
+      setWResidentId('');
       setWPhone('');
     }
     setIsWorkerModalOpen(true);
@@ -112,6 +115,7 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
       name: wName.trim(),
       category: wCategory,
       defaultDailyRate: Number(wRate) || 160000,
+      residentId: wResidentId.trim(),
       phone: wPhone.trim(),
       createdAt: editingWorker?.createdAt || new Date().toISOString(),
     };
@@ -226,6 +230,7 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
                   <th className="p-3">인부 이름</th>
                   <th className="p-3 text-center">구분</th>
                   <th className="p-3 text-right">기본 일단가</th>
+                  <th className="p-3">주민등록번호</th>
                   <th className="p-3">연락처</th>
                   <th className="p-3 text-center w-28">관리</th>
                 </tr>
@@ -233,7 +238,7 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {paginatedWorkers.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="p-8 text-center text-slate-400 dark:text-slate-500 text-xs">
+                    <td colSpan={6} className="p-8 text-center text-slate-400 dark:text-slate-500 text-xs">
                       등록된 인부가 없거나 검색 결과가 없습니다.
                     </td>
                   </tr>
@@ -250,6 +255,9 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
                       </td>
                       <td className="p-3 text-right font-black text-blue-600 dark:text-blue-400 font-mono">
                         ₩{w.defaultDailyRate.toLocaleString()}원
+                      </td>
+                      <td className="p-3 font-mono text-xs text-slate-600 dark:text-slate-400">
+                        {w.residentId || <span className="text-slate-300 dark:text-slate-600">-</span>}
                       </td>
                       <td className="p-3">
                         {w.phone ? (
@@ -450,6 +458,19 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
                   value={wRate}
                   onChange={(e) => setWRate(Number(e.target.value))}
                   className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-sm font-bold text-blue-600 dark:text-blue-400 font-mono outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  주민등록번호 (위임장 표기용)
+                </label>
+                <input
+                  type="text"
+                  value={wResidentId}
+                  onChange={(e) => setWResidentId(e.target.value)}
+                  placeholder="예: 750101-1234567"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-sm font-mono text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 

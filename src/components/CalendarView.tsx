@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DispatchLog, OfficeSettings } from '../types';
-import { ChevronLeft, ChevronRight, Plus, Printer, Copy, Edit, Trash2, Calendar as CalendarIcon, Users, DollarSign, CheckCircle2, Clock } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Printer, Copy, Edit, Trash2, Calendar as CalendarIcon, Users, DollarSign, CheckCircle2, Clock, FileSignature } from 'lucide-react';
 import { Pagination } from './Pagination';
 
 interface CalendarViewProps {
@@ -9,7 +9,7 @@ interface CalendarViewProps {
   onSelectDate: (dateStr: string) => void;
   onNewLogForDate: (dateStr: string) => void;
   onEditLog: (log: DispatchLog) => void;
-  onPrintLog: (log: DispatchLog) => void;
+  onPrintLog: (log: DispatchLog, initialFormType?: 'worker_roster' | 'invoice_summary' | 'delegation_letter') => void;
   onDuplicateLog: (log: DispatchLog) => void;
   onDeleteLog: (id: string) => void;
   onTogglePaidLog?: (log: DispatchLog) => void;
@@ -412,11 +412,21 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                       </button>
 
                       <button
-                        onClick={() => onPrintLog(log)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3 py-1 rounded-lg flex items-center space-x-1 cursor-pointer shadow-xs"
+                        onClick={() => onPrintLog(log, 'worker_roster')}
+                        className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-2.5 py-1 rounded-lg flex items-center space-x-1 cursor-pointer shadow-xs"
+                        title="출력표 보기 및 인쇄"
                       >
                         <Printer className="w-3 h-3" />
-                        <span>출력표 보기</span>
+                        <span>출력표</span>
+                      </button>
+
+                      <button
+                        onClick={() => onPrintLog(log, 'delegation_letter')}
+                        className="bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold px-2.5 py-1 rounded-lg flex items-center space-x-1 cursor-pointer shadow-xs"
+                        title="임금 수령 위임장 작성 및 서명 날인"
+                      >
+                        <FileSignature className="w-3 h-3" />
+                        <span>위임장</span>
                       </button>
 
                       <button

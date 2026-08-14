@@ -137,6 +137,7 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
       name: w.name,
       category: w.category || '일반',
       dailyRate: w.defaultDailyRate || 160000,
+      residentId: w.residentId || '',
       gongsu: 1.0,
       remarks: '',
       overtimeFee: 0,
@@ -159,6 +160,9 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
           item.workerId = found.id;
           item.category = found.category || '일반';
           item.dailyRate = found.defaultDailyRate || 160000;
+          if (found.residentId) {
+            item.residentId = found.residentId;
+          }
         }
       }
 

@@ -1,12 +1,16 @@
 import React, { useRef, useState } from 'react';
-import { DispatchLog, OfficeSettings, InvoiceItem } from '../types';
-import { Printer, Download, Copy, X, Image, Loader2, Calculator, Users, CheckCircle2, Clock, Check } from 'lucide-react';
+import { DispatchLog, OfficeSettings, InvoiceItem, WorkerMaster } from '../types';
+import { Printer, Download, Copy, X, Image, Loader2, Calculator, Users, CheckCircle2, Clock, Check, FileSignature } from 'lucide-react';
 import { toPng } from 'html-to-image';
+import { DelegationSheet } from './DelegationSheet';
 
 interface PrintableSheetProps {
   log: DispatchLog;
   officeSettings: OfficeSettings;
   officeProfiles?: OfficeSettings[];
+  workersRoster?: WorkerMaster[];
+  initialViewMode?: 'worker_roster' | 'invoice_summary' | 'delegation_letter';
+  onUpdateLog?: (updatedLog: DispatchLog) => void;
   onClose?: () => void;
   onDuplicateClick?: (log: DispatchLog) => void;
   onTogglePaidLog?: (log: DispatchLog) => void;
@@ -16,6 +20,9 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
   log,
   officeSettings,
   officeProfiles = [],
+  workersRoster = [],
+  initialViewMode,
+  onUpdateLog,
   onClose,
   onDuplicateClick,
   onTogglePaidLog,
@@ -31,9 +38,9 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
     ? (officeProfiles.find((p) => p.id === selectedOfficeId) || officeProfiles.find((p) => p.id === log.officeProfileId) || officeSettings)
     : officeSettings);
   
-  // Allow switching view between Worker Roster Sheet and Invoice Summary Sheet in preview
-  const [viewMode, setViewMode] = useState<'worker_roster' | 'invoice_summary'>(
-    log.formType || 'worker_roster'
+  // Allow switching view between Worker Roster Sheet, Invoice Summary Sheet, and Delegation Letter
+  const [viewMode, setViewMode] = useState<'worker_roster' | 'invoice_summary' | 'delegation_letter'>(
+    initialViewMode || log.formType || 'worker_roster'
   );
 
   const handlePrint = () => {
@@ -61,7 +68,7 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
       });
 
       const link = document.createElement('a');
-      const prefix = '출력표';
+      const prefix = viewMode === 'delegation_letter' ? '위임장' : '출력표';
       link.download = `${prefix}_${log.clientName || '현장'}_${log.date}.png`;
       link.href = dataUrl;
       link.click();
@@ -204,6 +211,19 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
             >
               <Calculator className="w-3.5 h-3.5" />
               <span>📋 [양식 2] 일별 용역/인건비 출력표</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setViewMode('delegation_letter')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center space-x-1.5 transition-all cursor-pointer ${
+                viewMode === 'delegation_letter'
+                  ? 'bg-purple-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <FileSignature className="w-3.5 h-3.5" />
+              <span>✍️ [양식 3] 임금 수령 위임장 (서명/날인)</span>
             </button>
           </div>
 
@@ -662,24 +682,42 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
           </>
         )}
 
-        {/* Bank Account Banner Box */}
-        <div className="mt-4 border border-black p-2.5 bg-slate-50 text-center text-xs font-bold flex items-center justify-between">
-          <span>입금 계좌 안내: {activeOffice.bankAccount}</span>
-          <span>(청구/발행 담당: {activeOffice.officeName})</span>
-        </div>
+        {/* ========================================================== */}
+        {/* PRINT MODE 3: WAGE DELEGATION LETTER (임금 수령 위임장) */}
+        {/* ========================================================== */}
+        {viewMode === 'delegation_letter' && (
+          <DelegationSheet
+            log={log}
+            officeSettings={officeSettings}
+            activeOffice={activeOffice}
+            workersRoster={workersRoster}
+            onUpdateLog={onUpdateLog}
+          />
+        )}
 
-        {/* Bottom Office Footer Section */}
-        <div className="mt-8 text-center space-y-1">
-          <div className="text-2xl font-black tracking-tight text-black">
-            {activeOffice.officeName}
-          </div>
-          <div className="text-sm font-semibold text-slate-800">
-            ({activeOffice.phone1} / {activeOffice.phone2})
-          </div>
-          <div className="text-xs text-slate-700">
-            {activeOffice.address}
-          </div>
-        </div>
+        {/* Bank Account Banner Box & Office Footer (Only for Standard Dispatch Output Forms) */}
+        {viewMode !== 'delegation_letter' && (
+          <>
+            {/* Bank Account Banner Box */}
+            <div className="mt-4 border border-black p-2.5 bg-slate-50 text-center text-xs font-bold flex items-center justify-between">
+              <span>입금 계좌 안내: {activeOffice.bankAccount}</span>
+              <span>(청구/발행 담당: {activeOffice.officeName})</span>
+            </div>
+
+            {/* Bottom Office Footer Section */}
+            <div className="mt-8 text-center space-y-1">
+              <div className="text-2xl font-black tracking-tight text-black">
+                {activeOffice.officeName}
+              </div>
+              <div className="text-sm font-semibold text-slate-800">
+                ({activeOffice.phone1} / {activeOffice.phone2})
+              </div>
+              <div className="text-xs text-slate-700">
+                {activeOffice.address}
+              </div>
+            </div>
+          </>
+        )}
 
         </div>
       </div>

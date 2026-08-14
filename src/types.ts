@@ -5,6 +5,7 @@ export interface WorkerMaster {
   name: string;
   category: WorkerCategory;
   defaultDailyRate: number; // e.g. 160000
+  residentId?: string; // 주민등록번호 (예: 801121-1795828)
   phone?: string;
   memo?: string;
   createdAt?: string;
@@ -25,6 +26,8 @@ export interface DispatchWorkerItem {
   category: WorkerCategory; // '일반' | '기공'
   dailyRate: number; // e.g. 160000
   gongsu: number; // e.g. 1.0 (공수) or total days worked
+  residentId?: string; // 주민등록번호 (위임장 표기용)
+  signatureDataUrl?: string; // 서명날인 이미지 (Base64 Data URL)
   remarks?: string; // 비고
   workDaysList?: number[]; // [1, 2, 3, 5, 12, 15, ...] selected day numbers (1..31)
   overtimeFee?: number; // 잔업비 (원)
@@ -61,7 +64,7 @@ export interface DispatchLog {
   generalGongsuCount: number; // 일반 공수 합계
   skillGongsuCount: number; // 기공 공수 합계
   workers: DispatchWorkerItem[];
-  formType?: 'worker_roster' | 'invoice_summary'; // 양식 선택: 'worker_roster' (인부별 출근 출력표) | 'invoice_summary' (계산서용 출력표)
+  formType?: 'worker_roster' | 'invoice_summary' | 'delegation_letter'; // 양식 선택: 'worker_roster' (인부별 출근 출력표) | 'invoice_summary' (계산서용 출력표) | 'delegation_letter' (임금 수령 위임장)
   invoiceItems?: InvoiceItem[]; // 계산서용 일별 용역수 & 인건비 정산 항목들
   totalLaborCost?: number; // 총 인건비 합계
   totalExtraFee?: number; // 기타비용 총합계 (잔업/식대/주유비)
@@ -70,6 +73,14 @@ export interface DispatchLog {
   memo?: string;
   isPaid?: boolean; // 결제 완료 여부 (true: 결제완료, false/undefined: 미결제)
   paidAt?: string; // 결제 완료 처리 일시
+  
+  // 위임장 전용 커스텀 필드 (옵션)
+  delegationWorkTitle?: string; // 작업명 (기본: "[업체명] 작업지원")
+  delegationRecipientName?: string; // 수임인 성명
+  delegationRecipientResidentId?: string; // 수임인 주민등록번호
+  delegationRecipientAddress?: string; // 수임인 주소
+  delegationRecipientAccount?: string; // 수임인 계좌번호
+
   createdAt: string;
   updatedAt: string;
   createdByEmail?: string;
@@ -83,6 +94,12 @@ export interface OfficeSettings {
   phone2: string; // e.g. "010-7545-0038"
   address: string; // e.g. "경북 성주군 성주읍 성주순환로2길 69"
   bankAccount: string; // e.g. "농협 302-65550038-11 손영란"
+  
+  // 위임장 수임인 기본 정보
+  representativeName?: string; // 수임인 성명 (기본: "김진환")
+  representativeResidentId?: string; // 수임인 주민등록번호 (기본: "801121-1795828")
+  representativeAccount?: string; // 수임인 입금계좌 (기본: "기업은행 69301137601015 김진환")
+
   adminEmails: string[]; // e.g. ["acehwan69@gmail.com"]
   isDefault?: boolean; // 기본 사무소 여부
 }

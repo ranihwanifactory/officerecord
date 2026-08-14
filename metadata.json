@@ -1,6 +1,6 @@
 {
   "name": "젊은인력사무소 출력표 관리 앱",
-  "description": "매일 출근 인원 기록, 달력 정산, 인부 및 현장 관리, 출력표 자동 생성 및 인쇄, 동일 일정 반복 복사 기능을 제공하는 관리자 전용 일지 관리 시스템",
+  "description": "매일 출근 인원 기록, 달력 정산, 인부 및 현장 관리, 출력표/임금수령위임장 자동 생성, 전자서명/도장 날인 및 고해상도 이미지(PNG) 저장 기능을 제공하는 관리자 전용 일지 관리 시스템",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

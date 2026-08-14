@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { DispatchLog } from '../types';
-import { Search, Printer, Copy, Edit, Trash2, Calendar, Users, Building, Plus, CheckCircle2, Check, Clock } from 'lucide-react';
+import { Search, Printer, Copy, Edit, Trash2, Calendar, Users, Building, Plus, CheckCircle2, Check, Clock, FileSignature } from 'lucide-react';
 import { Pagination } from './Pagination';
 
 interface DispatchLogListProps {
   logs: DispatchLog[];
   onNewLogClick: () => void;
   onEditLog: (log: DispatchLog) => void;
-  onPrintLog: (log: DispatchLog) => void;
+  onPrintLog: (log: DispatchLog, initialFormType?: 'worker_roster' | 'invoice_summary' | 'delegation_letter') => void;
   onDuplicateLog: (log: DispatchLog) => void;
   onDeleteLog: (id: string) => void;
   onTogglePaidLog?: (log: DispatchLog) => void;
@@ -290,14 +290,24 @@ export const DispatchLogList: React.FC<DispatchLogListProps> = ({
                           <span>수정</span>
                         </button>
 
-                        {/* Print Button */}
+                        {/* Print Output Sheet Button */}
                         <button
-                          onClick={() => onPrintLog(log)}
+                          onClick={() => onPrintLog(log, 'worker_roster')}
                           title="출력표 미리보기 및 인쇄"
                           className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-2.5 py-1 rounded-lg shadow-xs flex items-center space-x-1 cursor-pointer"
                         >
                           <Printer className="w-3 h-3" />
                           <span>출력표</span>
+                        </button>
+
+                        {/* Delegation Letter Button */}
+                        <button
+                          onClick={() => onPrintLog(log, 'delegation_letter')}
+                          title="임금 수령 위임장 작성 및 서명 날인"
+                          className="bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold px-2.5 py-1 rounded-lg shadow-xs flex items-center space-x-1 cursor-pointer"
+                        >
+                          <FileSignature className="w-3 h-3" />
+                          <span>위임장</span>
                         </button>
 
                         {/* Delete Button */}

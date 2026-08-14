@@ -69,6 +69,9 @@ export default function App() {
 
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [logToPrint, setLogToPrint] = useState<DispatchLog | null>(null);
+  const [printInitialViewMode, setPrintInitialViewMode] = useState<
+    'worker_roster' | 'invoice_summary' | 'delegation_letter' | undefined
+  >();
 
   // Sync activeTab & modal open state with URL hash and browser history (PopState)
   useEffect(() => {
@@ -302,8 +305,12 @@ export default function App() {
   };
 
   // Print Modal Trigger
-  const handlePrintLog = (log: DispatchLog) => {
+  const handlePrintLog = (
+    log: DispatchLog,
+    initialViewMode?: 'worker_roster' | 'invoice_summary' | 'delegation_letter'
+  ) => {
     setLogToPrint(log);
+    setPrintInitialViewMode(initialViewMode);
     setIsPrintModalOpen(true);
     if (!window.location.hash.includes('modal=')) {
       window.history.pushState({ modal: 'print', tab: activeTab }, '', `#${activeTab}?modal=print`);
@@ -321,6 +328,7 @@ export default function App() {
   const handleClosePrintModal = () => {
     setIsPrintModalOpen(false);
     setLogToPrint(null);
+    setPrintInitialViewMode(undefined);
     if (window.location.hash.includes('modal=')) {
       window.history.pushState({ tab: activeTab }, '', `#${activeTab}`);
     }
@@ -449,6 +457,9 @@ export default function App() {
               log={logToPrint}
               officeSettings={officeSettings}
               officeProfiles={officeProfiles}
+              workersRoster={workersRoster}
+              initialViewMode={printInitialViewMode}
+              onUpdateLog={handleSaveLog}
               onClose={handleClosePrintModal}
               onDuplicateClick={(log) => {
                 handleClosePrintModal();
