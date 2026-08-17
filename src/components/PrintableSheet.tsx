@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { DispatchLog, OfficeSettings, InvoiceItem, WorkerMaster } from '../types';
+import { DispatchLog, OfficeSettings, InvoiceItem, WorkerMaster, DispatchWorkerItem } from '../types';
 import { Printer, Download, Copy, X, Image, Loader2, Calculator, Users, CheckCircle2, Clock, Check, FileSignature } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import { DelegationSheet } from './DelegationSheet';
@@ -78,6 +78,17 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
     } finally {
       setIsExporting(false);
     }
+  };
+
+  // Helper to get worker's resident registration number
+  const getWorkerResidentId = (worker: DispatchWorkerItem) => {
+    if (worker.residentId && worker.residentId.trim()) {
+      return worker.residentId.trim();
+    }
+    const matched = workersRoster.find(
+      (m) => (worker.workerId && m.id === worker.workerId) || (worker.name && m.name.trim() === worker.name.trim())
+    );
+    return matched?.residentId?.trim() || '';
   };
 
   // Format Date strings (e.g., "2026-08-11" -> "2026년 08월 11일")
@@ -404,6 +415,7 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
                 <tbody>
                   {displayWorkers.map((worker, index) => {
                     const isHasData = worker.name !== '';
+                    const residentId = isHasData ? getWorkerResidentId(worker) : '';
                     const extraTotal = (worker.overtimeFee || 0) + (worker.mealFee || 0) + (worker.fuelFee || 0) + (worker.otherFee || 0);
 
                     // Extra fee detail string
@@ -414,14 +426,19 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
                     if (worker.otherFee) extraList.push(`기타 ₩${worker.otherFee.toLocaleString()}`);
 
                     return (
-                      <tr key={worker.id || index} className="border-b border-black/30 h-9">
-                        <td className="text-center border-r border-black font-medium text-xs">
+                      <tr key={worker.id || index} className="border-b border-black/30 min-h-[36px] h-auto">
+                        <td className="text-center border-r border-black font-medium text-xs py-1">
                           {isHasData ? shortDateKorean : ''}
                         </td>
-                        <td className="text-center border-r border-black font-semibold text-sm">
-                          {worker.name}
+                        <td className="text-center border-r border-black font-semibold text-sm px-1 py-1">
+                          <div className="leading-tight">{worker.name}</div>
+                          {residentId && (
+                            <div className="text-[10px] font-normal text-slate-700 font-mono tracking-tight leading-tight mt-0.5">
+                              ({residentId})
+                            </div>
+                          )}
                         </td>
-                        <td className="text-center border-r border-black font-bold text-xs">
+                        <td className="text-center border-r border-black font-bold text-xs py-1">
                           {isHasData ? `₩${worker.dailyRate.toLocaleString()}` : ''}
                         </td>
                         <td className="text-center border-r border-black px-1 text-[11px] font-mono">

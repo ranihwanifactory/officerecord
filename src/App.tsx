@@ -13,7 +13,7 @@ import { OfficeSettingsModal } from './components/OfficeSettingsModal';
 import { DispatchLogFormModal } from './components/DispatchLogFormModal';
 import { PrintableSheet } from './components/PrintableSheet';
 import { AdminLoginScreen } from './components/AdminLoginScreen';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Plus } from 'lucide-react';
 
 import { DispatchLog, WorkerMaster, ClientSiteMaster, OfficeSettings } from './types';
 import {
@@ -376,7 +376,7 @@ export default function App() {
       />
 
       {/* Main App Container */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-3 sm:pt-6 pb-24 md:pb-12">
 
         {activeTab === 'calendar' && (
           <CalendarView
@@ -433,6 +433,19 @@ export default function App() {
           />
         )}
       </main>
+
+      {/* Mobile Floating Action Button (FAB) for 1-Tap Fast Log Registration */}
+      <div className="md:hidden fixed right-4 bottom-20 z-30 print:hidden">
+        <button
+          type="button"
+          onClick={() => handleOpenNewLogModal()}
+          className="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-full p-3.5 shadow-2xl flex items-center space-x-1.5 font-bold text-xs cursor-pointer active:scale-95 transition-all border-2 border-white/20"
+          title="새 출력표 빠른 등록"
+        >
+          <Plus className="w-5 h-5 stroke-[2.5]" />
+          <span>새 출력표</span>
+        </button>
+      </div>
 
       {/* Form Modal (Create / Edit / Duplicate Dispatch Log) */}
       {isFormModalOpen && (

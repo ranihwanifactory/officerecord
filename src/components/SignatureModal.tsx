@@ -26,10 +26,11 @@ export const SignatureModal: React.FC<SignatureModalProps> = ({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Set high DPI display
+    // Set high DPI display responsive to container
     const ratio = Math.max(window.devicePixelRatio || 1, 2);
-    const width = 500;
-    const height = 220;
+    const containerWidth = canvas.parentElement?.clientWidth || 450;
+    const width = Math.min(500, Math.max(280, containerWidth));
+    const height = Math.min(220, Math.max(180, Math.round(width * 0.45)));
 
     canvas.width = width * ratio;
     canvas.height = height * ratio;

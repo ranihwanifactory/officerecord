@@ -120,9 +120,11 @@ export const DispatchLogList: React.FC<DispatchLogListProps> = ({
         </button>
       </div>
 
-      {/* Logs Table */}
+      {/* Logs View Container: Desktop Table (hidden md:block) & Mobile Cards (block md:hidden) */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden transition-colors">
-        <div className="overflow-x-auto">
+        
+        {/* Desktop / Tablet Table View */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 font-bold text-[11px] uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
               <tr>
@@ -207,7 +209,16 @@ export const DispatchLogList: React.FC<DispatchLogListProps> = ({
 
                     {/* Contact */}
                     <td className="p-3.5 text-xs text-slate-500 dark:text-slate-400 font-medium whitespace-nowrap">
-                      {log.clientContact || '-'}
+                      {log.clientContact ? (
+                        <a
+                          href={`tel:${log.clientContact.replace(/[^0-9+]/g, '')}`}
+                          className="hover:text-blue-600 dark:hover:text-blue-400 hover:underline"
+                        >
+                          {log.clientContact}
+                        </a>
+                      ) : (
+                        '-'
+                      )}
                     </td>
 
                     {/* Workers list preview */}
@@ -332,6 +343,182 @@ export const DispatchLogList: React.FC<DispatchLogListProps> = ({
             </tbody>
           </table>
         </div>
+
+        {/* Mobile Cards View (block md:hidden) */}
+        <div className="block md:hidden divide-y divide-slate-100 dark:divide-slate-800">
+          {filteredLogs.length === 0 ? (
+            <div className="p-8 text-center text-slate-400 dark:text-slate-500 space-y-2">
+              <p className="text-sm font-medium">검색 조건에 일치하는 출력 일지가 없습니다.</p>
+              <button
+                onClick={onNewLogClick}
+                className="text-xs text-blue-600 dark:text-blue-400 font-bold underline"
+              >
+                + 새로 작성하기
+              </button>
+            </div>
+          ) : (
+            paginatedLogs.map((log) => (
+              <div key={log.id} className="p-4 space-y-3 hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors">
+                
+                {/* Header: Date + Client + Paid Toggle */}
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <div className="flex items-center space-x-1.5 mb-1">
+                      <span className="text-xs font-black text-slate-900 dark:text-slate-100 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md font-mono">
+                        {log.date}
+                      </span>
+                      {log.formType === 'invoice_summary' ? (
+                        <span className="text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
+                          양식 2
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-bold bg-blue-100 dark:bg-blue-950/80 text-blue-800 dark:text-blue-300 px-1.5 py-0.5 rounded border border-blue-200 dark:border-blue-800">
+                          양식 1
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                      {log.clientName}
+                    </h3>
+                    {log.clientContact && (
+                      <a
+                        href={`tel:${log.clientContact.replace(/[^0-9+]/g, '')}`}
+                        className="text-xs text-blue-600 dark:text-blue-400 font-semibold hover:underline mt-0.5 inline-block"
+                      >
+                        📞 {log.clientContact}
+                      </a>
+                    )}
+                  </div>
+
+                  <div className="text-right flex flex-col items-end space-y-1">
+                    <button
+                      type="button"
+                      onClick={() => onTogglePaidLog?.(log)}
+                      className={`px-2 py-1 rounded-lg text-[11px] font-bold border transition-all cursor-pointer flex items-center space-x-1 ${
+                        log.isPaid
+                          ? 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-200 border-emerald-300 dark:border-emerald-700'
+                          : 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800'
+                      }`}
+                    >
+                      {log.isPaid ? (
+                        <>
+                          <CheckCircle2 className="w-3 h-3 text-emerald-700 stroke-[2.5]" />
+                          <span>결제완료</span>
+                        </>
+                      ) : (
+                        <>
+                          <Clock className="w-3 h-3 text-amber-600" />
+                          <span>미결제</span>
+                        </>
+                      )}
+                    </button>
+
+                    <div className="text-base font-black text-blue-600 dark:text-blue-400 font-mono">
+                      ₩{log.totalAmount.toLocaleString()}원
+                    </div>
+                  </div>
+                </div>
+
+                {/* Worker summary tags */}
+                <div className="bg-slate-50 dark:bg-slate-800/60 rounded-xl p-2.5 border border-slate-200 dark:border-slate-750 text-xs">
+                  <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 mb-1.5 font-semibold">
+                    <span>
+                      {log.workers && log.workers.length > 0 ? `출력 인부 (${log.workers.length}명)` : '용역 항목'}
+                    </span>
+                    <span className="font-bold text-slate-700 dark:text-slate-300">
+                      {(() => {
+                        let general = log.generalGongsuCount || 0;
+                        let skill = log.skillGongsuCount || 0;
+                        if (general === 0 && skill === 0 && log.invoiceItems && log.invoiceItems.length > 0) {
+                          log.invoiceItems.forEach((i) => {
+                            const count = Number(i.serviceCount) || 0;
+                            if (i.workCategory && i.workCategory.includes('기공')) skill += count;
+                            else general += count;
+                          });
+                        }
+                        return `일반 ${general} / 기공 ${skill}공수`;
+                      })()}
+                    </span>
+                  </div>
+
+                  {log.workers && log.workers.length > 0 ? (
+                    <div className="flex flex-wrap gap-1">
+                      {log.workers.map((w, idx) => (
+                        <span
+                          key={idx}
+                          className="text-[11px] font-semibold bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700"
+                        >
+                          {w.name} <span className="text-[9px] text-slate-400">({w.category})</span>
+                        </span>
+                      ))}
+                    </div>
+                  ) : log.invoiceItems && log.invoiceItems.length > 0 ? (
+                    <div className="flex flex-wrap gap-1">
+                      {log.invoiceItems.map((item, idx) => (
+                        <span
+                          key={idx}
+                          className="text-[11px] font-semibold bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700"
+                        >
+                          {item.workCategory || '용역'} ({item.serviceCount}명)
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+
+                {/* Mobile Action Buttons Grid */}
+                <div className="grid grid-cols-4 gap-1.5 pt-1">
+                  <button
+                    onClick={() => onPrintLog(log, 'worker_roster')}
+                    className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold py-2 rounded-xl flex items-center justify-center space-x-1 cursor-pointer shadow-2xs active:scale-95"
+                  >
+                    <Printer className="w-3.5 h-3.5" />
+                    <span>출력표</span>
+                  </button>
+
+                  <button
+                    onClick={() => onPrintLog(log, 'delegation_letter')}
+                    className="bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold py-2 rounded-xl flex items-center justify-center space-x-1 cursor-pointer shadow-2xs active:scale-95"
+                  >
+                    <FileSignature className="w-3.5 h-3.5" />
+                    <span>위임장</span>
+                  </button>
+
+                  <button
+                    onClick={() => onEditLog(log)}
+                    className="bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold py-2 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-center space-x-1 cursor-pointer active:scale-95"
+                  >
+                    <Edit className="w-3.5 h-3.5" />
+                    <span>수정</span>
+                  </button>
+
+                  <div className="flex items-center space-x-1">
+                    <button
+                      onClick={() => onDuplicateLog(log)}
+                      title="복사"
+                      className="flex-1 bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 text-xs font-bold py-2 rounded-xl border border-emerald-200 dark:border-emerald-800 flex items-center justify-center cursor-pointer active:scale-95"
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (confirm(`'${log.date} ${log.clientName}' 출력 일지를 삭제하시겠습니까?`)) {
+                          onDeleteLog(log.id);
+                        }
+                      }}
+                      className="p-2 text-rose-500 hover:text-rose-600 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 rounded-xl cursor-pointer active:scale-95"
+                      title="삭제"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+            ))
+          )}
+        </div>
+
         <Pagination
           currentPage={currentPage}
           totalPages={totalPages}

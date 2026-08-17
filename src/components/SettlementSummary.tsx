@@ -338,19 +338,19 @@ export const SettlementSummary: React.FC<SettlementSummaryProps> = ({ logs, offi
       </div>
 
       {/* 1~31일 인부별 월간 출근 및 공수/임금 관리 대장 (Interactive Grid) */}
-      <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-100">
+      <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4 transition-colors">
+        <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-100 dark:border-slate-800">
           <div>
-            <h3 className="font-bold text-base text-slate-800 flex items-center space-x-2">
-              <Users className="w-5 h-5 text-blue-600" />
+            <h3 className="font-bold text-base text-slate-800 dark:text-slate-100 flex items-center space-x-2">
+              <Users className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               <span>{selectedYear}년 {selectedMonth}월 1~31일 인부별 출근 및 임금 관리 대장</span>
             </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               각 인부의 1일~31일 출력 여부를 한눈에 파악하며, 일한 날수(공수)와 단가를 곱한 총임금이 자동 계산됩니다.
             </p>
           </div>
           <div className="flex items-center space-x-2">
-            <span className="text-xs bg-blue-50 text-blue-700 font-bold px-2.5 py-1 rounded-lg border border-blue-100">
+            <span className="text-xs bg-blue-50 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 font-bold px-2.5 py-1 rounded-lg border border-blue-100 dark:border-blue-800">
               총 {monthlyMatrixList.length}명 집계
             </span>
           </div>
@@ -358,43 +358,43 @@ export const SettlementSummary: React.FC<SettlementSummaryProps> = ({ logs, offi
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
-            <thead className="bg-slate-50 text-slate-500 font-bold border-b border-slate-200">
+            <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-bold border-b border-slate-200 dark:border-slate-700">
               <tr>
-                <th className="p-2.5 min-w-[100px] border-r border-slate-200 sticky left-0 bg-slate-50 z-10">인부 이름</th>
-                <th className="p-2 text-center min-w-[50px] border-r border-slate-200">구분</th>
-                <th className="p-2 text-right min-w-[90px] border-r border-slate-200">일단가</th>
+                <th className="p-2.5 min-w-[100px] border-r border-slate-200 dark:border-slate-700 sticky left-0 bg-slate-50 dark:bg-slate-800 z-10">인부 이름</th>
+                <th className="p-2 text-center min-w-[50px] border-r border-slate-200 dark:border-slate-700">구분</th>
+                <th className="p-2 text-right min-w-[90px] border-r border-slate-200 dark:border-slate-700">일단가</th>
                 {Array.from({ length: 31 }, (_, i) => i + 1).map((dNum) => (
-                  <th key={dNum} className="p-1 text-center w-7 border-r border-slate-200 text-[11px] font-mono">
+                  <th key={dNum} className="p-1 text-center w-7 border-r border-slate-200 dark:border-slate-700 text-[11px] font-mono">
                     {dNum}
                   </th>
                 ))}
-                <th className="p-2 text-center min-w-[90px] border-r border-slate-200 text-blue-700 font-bold bg-blue-50/50">
+                <th className="p-2 text-center min-w-[90px] border-r border-slate-200 dark:border-slate-700 text-blue-700 dark:text-blue-300 font-bold bg-blue-50/50 dark:bg-blue-950/40">
                   출력일수(공수)
                 </th>
-                <th className="p-2.5 text-right min-w-[120px] text-emerald-700 font-bold bg-emerald-50/50">
+                <th className="p-2.5 text-right min-w-[120px] text-emerald-700 dark:text-emerald-300 font-bold bg-emerald-50/50 dark:bg-emerald-950/40">
                   총임금 (단가×일수)
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200">
+            <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
               {paginatedMatrixList.length === 0 ? (
                 <tr>
-                  <td colSpan={36} className="p-8 text-center text-slate-400 font-medium">
+                  <td colSpan={36} className="p-8 text-center text-slate-400 dark:text-slate-500 font-medium">
                     해당 월에 등록된 인부 출력 일지 내역이 없습니다.
                   </td>
                 </tr>
               ) : (
                 paginatedMatrixList.map((m, idx) => (
-                  <tr key={idx} className="hover:bg-slate-50/80">
-                    <td className="p-2.5 font-bold text-slate-800 border-r border-slate-200 sticky left-0 bg-white z-10 shadow-xs">
+                  <tr key={idx} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/60">
+                    <td className="p-2.5 font-bold text-slate-800 dark:text-slate-100 border-r border-slate-200 dark:border-slate-700 sticky left-0 bg-white dark:bg-slate-900 z-10 shadow-xs">
                       {m.name}
                     </td>
-                    <td className="p-2 text-center border-r border-slate-200">
-                      <span className="text-[10px] font-bold bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded">
+                    <td className="p-2 text-center border-r border-slate-200 dark:border-slate-700">
+                      <span className="text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-1.5 py-0.5 rounded">
                         {m.category}
                       </span>
                     </td>
-                    <td className="p-2 text-right font-bold text-slate-700 border-r border-slate-200 font-mono">
+                    <td className="p-2 text-right font-bold text-slate-700 dark:text-slate-200 border-r border-slate-200 dark:border-slate-700 font-mono">
                       ₩{m.dailyRate.toLocaleString()}
                     </td>
                     {Array.from({ length: 31 }, (_, i) => i + 1).map((dNum) => {
@@ -402,10 +402,10 @@ export const SettlementSummary: React.FC<SettlementSummaryProps> = ({ logs, offi
                       return (
                         <td
                           key={dNum}
-                          className={`p-1 text-center border-r border-slate-200 text-[10px] font-bold ${
+                          className={`p-1 text-center border-r border-slate-200 dark:border-slate-700 text-[10px] font-bold ${
                             dayDetail
                               ? 'bg-blue-600 text-white font-black'
-                              : 'text-slate-200'
+                              : 'text-slate-200 dark:text-slate-700'
                           }`}
                           title={dayDetail ? `${dNum}일: ${dayDetail.siteName} (${dayDetail.gongsu}공수)` : `${dNum}일: 미출력`}
                         >
@@ -413,10 +413,10 @@ export const SettlementSummary: React.FC<SettlementSummaryProps> = ({ logs, offi
                         </td>
                       );
                     })}
-                    <td className="p-2 text-center font-black text-blue-600 border-r border-slate-200 bg-blue-50/30">
+                    <td className="p-2 text-center font-black text-blue-600 dark:text-blue-400 border-r border-slate-200 dark:border-slate-700 bg-blue-50/30 dark:bg-blue-950/20">
                       {m.totalDaysWorked}일 ({m.totalGongsu}공수)
                     </td>
-                    <td className="p-2.5 text-right font-black text-emerald-600 font-mono bg-emerald-50/30 text-sm">
+                    <td className="p-2.5 text-right font-black text-emerald-600 dark:text-emerald-400 font-mono bg-emerald-50/30 dark:bg-emerald-950/20 text-sm">
                       ₩{m.totalCalculatedWage.toLocaleString()}원
                     </td>
                   </tr>
@@ -425,19 +425,19 @@ export const SettlementSummary: React.FC<SettlementSummaryProps> = ({ logs, offi
 
               {/* Total Summary Row */}
               {monthlyMatrixList.length > 0 && (
-                <tr className="bg-slate-100 font-bold border-t-2 border-slate-300">
-                  <td className="p-2.5 text-slate-900 border-r border-slate-300 sticky left-0 bg-slate-100 z-10">
+                <tr className="bg-slate-100 dark:bg-slate-800 font-bold border-t-2 border-slate-300 dark:border-slate-700">
+                  <td className="p-2.5 text-slate-900 dark:text-slate-100 border-r border-slate-300 dark:border-slate-700 sticky left-0 bg-slate-100 dark:bg-slate-800 z-10">
                     총 합 계
                   </td>
-                  <td className="border-r border-slate-300"></td>
-                  <td className="border-r border-slate-300"></td>
-                  <td colSpan={31} className="p-2 text-center text-xs text-slate-500 border-r border-slate-300">
+                  <td className="border-r border-slate-300 dark:border-slate-700"></td>
+                  <td className="border-r border-slate-300 dark:border-slate-700"></td>
+                  <td colSpan={31} className="p-2 text-center text-xs text-slate-500 dark:text-slate-400 border-r border-slate-300 dark:border-slate-700">
                     월간 출력 일수 및 임금 정산 집계
                   </td>
-                  <td className="p-2 text-center font-black text-blue-700 border-r border-slate-300 bg-blue-100/50">
+                  <td className="p-2 text-center font-black text-blue-700 dark:text-blue-300 border-r border-slate-300 dark:border-slate-700 bg-blue-100/50 dark:bg-blue-950/60">
                     {grandTotalMatrixGongsu}공수
                   </td>
-                  <td className="p-2.5 text-right font-black text-emerald-700 font-mono text-base bg-emerald-100/50">
+                  <td className="p-2.5 text-right font-black text-emerald-700 dark:text-emerald-300 font-mono text-base bg-emerald-100/50 dark:bg-emerald-950/60">
                     ₩{grandTotalMatrixWage.toLocaleString()}원
                   </td>
                 </tr>
@@ -459,18 +459,18 @@ export const SettlementSummary: React.FC<SettlementSummaryProps> = ({ logs, offi
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
         {/* Table 1: Client / Site Settlement */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-            <h3 className="font-bold text-base text-slate-800 flex items-center space-x-2">
-              <Building className="w-4 h-4 text-blue-600" />
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4 transition-colors">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+            <h3 className="font-bold text-base text-slate-800 dark:text-slate-100 flex items-center space-x-2">
+              <Building className="w-4 h-4 text-blue-600 dark:text-blue-400" />
               <span>업체/현장별 정산 집계</span>
             </h3>
-            <span className="text-xs font-bold text-slate-400">{clientList.length}개 업체</span>
+            <span className="text-xs font-bold text-slate-400 dark:text-slate-500">{clientList.length}개 업체</span>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-slate-400 font-bold text-[10px] uppercase tracking-wider border-b border-slate-100">
+              <thead className="bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-400 font-bold text-[10px] uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
                 <tr>
                   <th className="p-2.5">업체/현장명</th>
                   <th className="p-2.5 text-center">출력건수</th>
@@ -478,27 +478,27 @@ export const SettlementSummary: React.FC<SettlementSummaryProps> = ({ logs, offi
                   <th className="p-2.5 text-right">정산금액</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {paginatedClientList.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="p-6 text-center text-xs text-slate-400">
+                    <td colSpan={4} className="p-6 text-center text-xs text-slate-400 dark:text-slate-500">
                       해당 월의 업체 정산 내역이 없습니다.
                     </td>
                   </tr>
                 ) : (
                   paginatedClientList.map((c, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50/80">
-                      <td className="p-2.5 font-bold text-slate-800">
+                    <tr key={idx} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/60">
+                      <td className="p-2.5 font-bold text-slate-800 dark:text-slate-100">
                         {c.clientName}
-                        {c.contact && <div className="text-[11px] font-normal text-slate-400">{c.contact}</div>}
+                        {c.contact && <div className="text-[11px] font-normal text-slate-400 dark:text-slate-500">{c.contact}</div>}
                       </td>
-                      <td className="p-2.5 text-center font-semibold text-slate-600">
+                      <td className="p-2.5 text-center font-semibold text-slate-600 dark:text-slate-300">
                         {c.logsCount}건
                       </td>
-                      <td className="p-2.5 text-center font-bold text-blue-600">
+                      <td className="p-2.5 text-center font-bold text-blue-600 dark:text-blue-400">
                         {c.gongsuSum}공수
                       </td>
-                      <td className="p-2.5 text-right font-black text-slate-900 font-mono">
+                      <td className="p-2.5 text-right font-black text-slate-900 dark:text-slate-100 font-mono">
                         ₩{c.amountSum.toLocaleString()}원
                       </td>
                     </tr>
@@ -518,18 +518,18 @@ export const SettlementSummary: React.FC<SettlementSummaryProps> = ({ logs, offi
         </div>
 
         {/* Table 2: Worker Earnings Breakdown */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-            <h3 className="font-bold text-base text-slate-800 flex items-center space-x-2">
-              <Users className="w-4 h-4 text-blue-600" />
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4 transition-colors">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+            <h3 className="font-bold text-base text-slate-800 dark:text-slate-100 flex items-center space-x-2">
+              <Users className="w-4 h-4 text-blue-600 dark:text-blue-400" />
               <span>인부별 출력 및 총임금 정산 집계</span>
             </h3>
-            <span className="text-xs font-bold text-slate-400">{monthlyMatrixList.length}명 인부</span>
+            <span className="text-xs font-bold text-slate-400 dark:text-slate-500">{monthlyMatrixList.length}명 인부</span>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-50 text-slate-400 font-bold text-[10px] uppercase tracking-wider border-b border-slate-100">
+              <thead className="bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-400 font-bold text-[10px] uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
                 <tr>
                   <th className="p-2.5">인부 이름</th>
                   <th className="p-2.5 text-center">구분</th>
@@ -537,28 +537,28 @@ export const SettlementSummary: React.FC<SettlementSummaryProps> = ({ logs, offi
                   <th className="p-2.5 text-right">총 임금 (단가×일수)</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {paginatedWorkerSummaryList.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="p-6 text-center text-xs text-slate-400">
+                    <td colSpan={4} className="p-6 text-center text-xs text-slate-400 dark:text-slate-500">
                       해당 월의 인부 지급 내역이 없습니다.
                     </td>
                   </tr>
                 ) : (
                   paginatedWorkerSummaryList.map((m, idx) => (
-                    <tr key={idx} className="hover:bg-slate-50/80">
-                      <td className="p-2.5 font-bold text-slate-800">
+                    <tr key={idx} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/60">
+                      <td className="p-2.5 font-bold text-slate-800 dark:text-slate-100">
                         {m.name}
                       </td>
                       <td className="p-2.5 text-center">
-                        <span className="text-[11px] font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md">
+                        <span className="text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded-md">
                           {m.category}
                         </span>
                       </td>
-                      <td className="p-2.5 text-center font-bold text-blue-600">
+                      <td className="p-2.5 text-center font-bold text-blue-600 dark:text-blue-400">
                         {m.totalGongsu}공수 ({m.totalDaysWorked}일)
                       </td>
-                      <td className="p-2.5 text-right font-black text-emerald-600 font-mono">
+                      <td className="p-2.5 text-right font-black text-emerald-600 dark:text-emerald-400 font-mono">
                         ₩{m.totalCalculatedWage.toLocaleString()}원
                       </td>
                     </tr>

@@ -96,48 +96,48 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     <div className="space-y-6">
       
       {/* Monthly Summary Banner (Bento Dark Stat Card) */}
-      <div className="bg-slate-900 text-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-800 flex flex-wrap items-center justify-between gap-4">
+      <div className="bg-slate-900 text-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-2">
           <div className="flex items-center space-x-2 text-blue-400 font-bold text-xs uppercase tracking-widest">
             <CalendarIcon className="w-4 h-4" />
             <span>Monthly Insights ({year}년 {month + 1}월)</span>
           </div>
-          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-white">
+          <h2 className="text-lg sm:text-2xl font-bold tracking-tight text-white">
             누적 출력 현황 및 집계
           </h2>
-          <div className="flex flex-wrap gap-3 pt-1">
-            <div className="bg-white/10 px-3.5 py-2 rounded-xl border border-white/10">
-              <p className="text-[10px] text-slate-400 font-semibold uppercase">총 출력 공수/인원</p>
-              <p className="text-base sm:text-lg font-black text-blue-400">{monthlyTotalWorkers} 명 (공수)</p>
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-3 pt-1">
+            <div className="bg-white/10 p-2.5 sm:px-3.5 sm:py-2 rounded-xl border border-white/10">
+              <p className="text-[10px] text-slate-400 font-semibold uppercase">총 출력 인원</p>
+              <p className="text-sm sm:text-lg font-black text-blue-400">{monthlyTotalWorkers} 명 (공수)</p>
             </div>
-            <div className="bg-white/10 px-3.5 py-2 rounded-xl border border-white/10">
+            <div className="bg-white/10 p-2.5 sm:px-3.5 sm:py-2 rounded-xl border border-white/10">
               <p className="text-[10px] text-slate-400 font-semibold uppercase">총 정산 금액</p>
-              <p className="text-base sm:text-lg font-black text-emerald-400">₩{monthlyTotalAmount.toLocaleString()}원</p>
+              <p className="text-sm sm:text-lg font-black text-emerald-400 truncate">₩{monthlyTotalAmount.toLocaleString()}원</p>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center justify-between md:justify-end space-x-2 pt-2 md:pt-0 border-t md:border-t-0 border-slate-800">
           <button
             onClick={handleToday}
-            className="bg-white/10 hover:bg-white/20 text-slate-200 text-xs font-bold px-3 py-2 rounded-xl border border-white/10 transition-colors cursor-pointer"
+            className="bg-white/10 hover:bg-white/20 active:bg-white/30 text-slate-200 text-xs font-bold px-3 py-2 rounded-xl border border-white/10 transition-colors cursor-pointer"
           >
             오늘
           </button>
           <div className="flex items-center bg-white/10 rounded-xl p-1 border border-white/10">
             <button
               onClick={handlePrevMonth}
-              className="p-1 hover:bg-white/20 rounded-lg text-slate-300 transition-colors cursor-pointer"
+              className="p-1.5 hover:bg-white/20 active:bg-white/30 rounded-lg text-slate-300 transition-colors cursor-pointer"
               title="이전 달"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
-            <span className="font-bold text-sm px-3 text-white">
+            <span className="font-bold text-xs sm:text-sm px-2 sm:px-3 text-white">
               {year}년 {month + 1}월
             </span>
             <button
               onClick={handleNextMonth}
-              className="p-1 hover:bg-white/20 rounded-lg text-slate-300 transition-colors cursor-pointer"
+              className="p-1.5 hover:bg-white/20 active:bg-white/30 rounded-lg text-slate-300 transition-colors cursor-pointer"
               title="다음 달"
             >
               <ChevronRight className="w-5 h-5" />
@@ -147,13 +147,13 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       </div>
 
       {/* Main Calendar Grid & Selected Day Panel */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         
         {/* Calendar Grid (2 Cols wide on Desktop) */}
-        <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
+        <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-2xl p-3 sm:p-5 border border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
           
           {/* Weekday Headers */}
-          <div className="grid grid-cols-7 gap-1 text-center font-bold text-xs py-2 text-slate-400 dark:text-slate-500 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 mb-2">
+          <div className="grid grid-cols-7 gap-1 text-center font-bold text-xs py-1.5 text-slate-400 dark:text-slate-500 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800 mb-1.5 sm:mb-2">
             <div className="text-rose-500 dark:text-rose-400">일</div>
             <div>월</div>
             <div>화</div>
@@ -164,11 +164,11 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           </div>
 
           {/* Day Cells Grid */}
-          <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
+          <div className="grid grid-cols-7 gap-1 sm:gap-2">
             {calendarCells.map((cell, idx) => {
               if (!cell) {
                 return (
-                  <div key={`empty-${idx}`} className="h-24 sm:h-28 bg-slate-50/50 dark:bg-slate-950/40 rounded-xl border border-dashed border-slate-200 dark:border-slate-850" />
+                  <div key={`empty-${idx}`} className="h-16 sm:h-28 bg-slate-50/50 dark:bg-slate-950/40 rounded-xl border border-dashed border-slate-200 dark:border-slate-850" />
                 );
               }
 
@@ -192,7 +192,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                     setSelectedDateStr(dateStr);
                     onSelectDate(dateStr);
                   }}
-                  className={`h-24 sm:h-28 p-2 rounded-xl border flex flex-col justify-between transition-all cursor-pointer group relative overflow-hidden ${
+                  className={`h-16 sm:h-28 p-1 sm:p-2 rounded-xl border flex flex-col justify-between transition-all cursor-pointer group relative overflow-hidden select-none active:scale-[0.98] ${
                     isSelected
                       ? 'border-blue-500 bg-blue-50/80 dark:bg-blue-950/60 shadow-xs ring-2 ring-blue-500/30'
                       : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/90 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-xs'
@@ -201,7 +201,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                   {/* Top Day Number & Add Quick Button */}
                   <div className="flex items-center justify-between">
                     <span
-                      className={`text-xs sm:text-sm font-bold ${
+                      className={`text-[11px] sm:text-sm font-bold ${
                         isSunday
                           ? 'text-rose-500 dark:text-rose-400'
                           : isSaturday
@@ -219,14 +219,19 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                         onNewLogForDate(dateStr);
                       }}
                       title="이 날짜에 새 출력표 작성"
-                      className="opacity-0 group-hover:opacity-100 bg-blue-600 hover:bg-blue-700 text-white p-1 rounded-lg transition-opacity cursor-pointer shadow-xs"
+                      className="hidden sm:block opacity-0 group-hover:opacity-100 bg-blue-600 hover:bg-blue-700 text-white p-1 rounded-lg transition-opacity cursor-pointer shadow-xs"
                     >
                       <Plus className="w-3 h-3 stroke-[2.5]" />
                     </button>
+
+                    {/* Mobile log count indicator dot */}
+                    {dayLogs.length > 0 && (
+                      <span className="sm:hidden w-1.5 h-1.5 rounded-full bg-blue-600 dark:bg-blue-400" />
+                    )}
                   </div>
 
                   {/* Day Log Badges */}
-                  <div className="space-y-1 overflow-y-auto max-h-16 scrollbar-none my-0.5">
+                  <div className="space-y-1 overflow-y-auto max-h-8 sm:max-h-16 scrollbar-none my-0.5">
                     {dayLogs.map((log) => {
                       const headcount = log.workers && log.workers.length > 0
                         ? log.workers.length
@@ -240,15 +245,15 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                             setSelectedDateStr(dateStr);
                             onPrintLog(log);
                           }}
-                          className={`text-[10px] font-bold p-1 rounded-lg truncate transition-colors flex items-center justify-between gap-1 ${
+                          className={`text-[9px] sm:text-[10px] font-bold p-0.5 sm:p-1 rounded sm:rounded-lg truncate transition-colors flex items-center justify-between gap-1 ${
                             log.isPaid
                               ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 hover:bg-emerald-600 dark:hover:bg-emerald-600 hover:text-white'
                               : 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 hover:bg-blue-600 dark:hover:bg-blue-600 hover:text-white'
                           }`}
                           title={`${log.clientName} (${headcount}명 / ₩${log.totalAmount.toLocaleString()}) ${log.isPaid ? '[결제완료]' : '[미결제]'}`}
                         >
-                          <span className="truncate">{log.clientName} ({headcount}명)</span>
-                          {log.isPaid && <span className="text-[9px] font-black bg-emerald-200 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-100 px-1 rounded shrink-0">✓완료</span>}
+                          <span className="truncate">{log.clientName}</span>
+                          <span className="shrink-0 text-[8px] sm:text-[9px]">{headcount}명</span>
                         </div>
                       );
                     })}
@@ -256,7 +261,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
                   {/* Bottom Daily Total */}
                   {dayLogs.length > 0 && (
-                    <div className="text-[10px] font-black text-right text-blue-600 dark:text-blue-400 truncate pt-0.5 border-t border-slate-100 dark:border-slate-800">
+                    <div className="text-[9px] sm:text-[10px] font-black text-right text-blue-600 dark:text-blue-400 truncate pt-0.5 border-t border-slate-100 dark:border-slate-800">
                       ₩{(totalDailyAmount / 10000).toFixed(0)}만
                     </div>
                   )}
@@ -267,18 +272,18 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
         </div>
 
         {/* Selected Date Detail Drawer Panel */}
-        <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col transition-colors">
-          <div className="flex items-center justify-between pb-3.5 border-b border-slate-200 dark:border-slate-800">
+        <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col transition-colors">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">Selected Date</div>
-              <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">선택한 날짜</div>
+              <h3 className="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-100">
                 {selectedDateStr}
               </h3>
             </div>
 
             <button
               onClick={() => onNewLogForDate(selectedDateStr)}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-3 py-1.5 rounded-xl flex items-center space-x-1 shadow-xs transition-colors cursor-pointer"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-3 py-1.5 rounded-xl flex items-center space-x-1 shadow-xs transition-colors cursor-pointer active:scale-95"
             >
               <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
               <span>새 출력표</span>
@@ -286,9 +291,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           </div>
 
           {/* Logs List for selected date */}
-          <div className="py-4 space-y-4 flex-1 overflow-y-auto">
+          <div className="py-3 sm:py-4 space-y-3 sm:space-y-4 flex-1 overflow-y-auto">
             {selectedDateLogs.length === 0 ? (
-              <div className="text-center py-12 text-slate-400 space-y-2">
+              <div className="text-center py-10 text-slate-400 space-y-2">
                 <CalendarIcon className="w-10 h-10 mx-auto opacity-30 text-slate-400" />
                 <p className="text-sm font-medium text-slate-500">선택한 날짜에 등록된 출력일지가 없습니다.</p>
                 <button
@@ -302,7 +307,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               paginatedSelectedDateLogs.map((log) => (
                 <div
                   key={log.id}
-                  className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-750 rounded-xl p-4 space-y-3 hover:border-blue-300 dark:hover:border-blue-700 transition-all shadow-xs"
+                  className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-750 rounded-xl p-3 sm:p-4 space-y-3 hover:border-blue-300 dark:hover:border-blue-700 transition-all shadow-xs"
                 >
                   <div className="flex items-start justify-between">
                     <div>
@@ -315,7 +320,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                     </div>
 
                     <div className="text-right">
-                      <div className="text-lg font-black text-blue-600 dark:text-blue-400">
+                      <div className="text-base sm:text-lg font-black text-blue-600 dark:text-blue-400">
                         ₩{log.totalAmount.toLocaleString()}원
                       </div>
                       <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
@@ -336,7 +341,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                   </div>
 
                   {/* Workers List Preview */}
-                  <div className="bg-white dark:bg-slate-900 rounded-xl p-3 text-xs space-y-1 border border-slate-200 dark:border-slate-800">
+                  <div className="bg-white dark:bg-slate-900 rounded-xl p-2.5 sm:p-3 text-xs space-y-1 border border-slate-200 dark:border-slate-800">
                     {log.workers && log.workers.length > 0 ? (
                       <>
                         <div className="font-bold text-slate-400 dark:text-slate-500 mb-1 flex justify-between uppercase text-[10px] tracking-wider">
@@ -344,9 +349,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                           <span>단가</span>
                         </div>
                         {log.workers.map((w, wIdx) => (
-                          <div key={wIdx} className="flex justify-between font-semibold text-slate-700 dark:text-slate-200">
-                            <span>• {w.name} <span className="text-[10px] text-slate-400 dark:text-slate-500">({w.category})</span></span>
-                            <span className="font-mono">₩{w.dailyRate.toLocaleString()}원</span>
+                          <div key={wIdx} className="flex justify-between font-semibold text-slate-700 dark:text-slate-200 text-xs">
+                            <span className="truncate mr-2">• {w.name} <span className="text-[10px] text-slate-400 dark:text-slate-500">({w.category})</span></span>
+                            <span className="font-mono shrink-0">₩{w.dailyRate.toLocaleString()}원</span>
                           </div>
                         ))}
                       </>
@@ -357,9 +362,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                           <span>단가</span>
                         </div>
                         {log.invoiceItems.map((item, iIdx) => (
-                          <div key={iIdx} className="flex justify-between font-semibold text-slate-700 dark:text-slate-200">
-                            <span>• {item.workCategory || '용역'} ({item.serviceCount}명)</span>
-                            <span className="font-mono">₩{item.unitPrice.toLocaleString()}원</span>
+                          <div key={iIdx} className="flex justify-between font-semibold text-slate-700 dark:text-slate-200 text-xs">
+                            <span className="truncate mr-2">• {item.workCategory || '용역'} ({item.serviceCount}명)</span>
+                            <span className="font-mono shrink-0">₩{item.unitPrice.toLocaleString()}원</span>
                           </div>
                         ))}
                       </>
@@ -369,43 +374,43 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="pt-2 flex flex-wrap items-center justify-between gap-2 border-t border-slate-200">
+                  <div className="pt-2 flex flex-wrap items-center justify-between gap-1.5 border-t border-slate-200 dark:border-slate-700">
                     <button
                       type="button"
                       onClick={() => onTogglePaidLog?.(log)}
                       title={log.isPaid ? '클릭하여 미결제로 변경' : '클릭하여 결제완료로 변경'}
-                      className={`text-xs font-bold px-2.5 py-1 rounded-lg border flex items-center space-x-1 cursor-pointer transition-all ${
+                      className={`text-xs font-bold px-2.5 py-1.5 rounded-lg border flex items-center space-x-1 cursor-pointer transition-all ${
                         log.isPaid
-                          ? 'bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-emerald-200'
-                          : 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
+                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700 hover:bg-emerald-200'
+                          : 'bg-amber-50 text-amber-700 dark:bg-amber-950/80 dark:text-amber-300 border-amber-200 dark:border-amber-700 hover:bg-amber-100'
                       }`}
                     >
                       {log.isPaid ? (
                         <>
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700 stroke-[2.5]" />
-                          <span>✓ 결제 완료</span>
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400 stroke-[2.5]" />
+                          <span>✓ 결제완료</span>
                         </>
                       ) : (
                         <>
-                          <Clock className="w-3.5 h-3.5 text-amber-600" />
-                          <span>미결제 (체크)</span>
+                          <Clock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                          <span>미결제</span>
                         </>
                       )}
                     </button>
 
-                    <div className="flex items-center space-x-1.5">
+                    <div className="flex items-center space-x-1">
                       <button
                         onClick={() => onDuplicateLog(log)}
                         title="동일 내용 날짜만 변경 복사"
-                        className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-lg border border-emerald-200 flex items-center space-x-1 cursor-pointer"
+                        className="bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 text-xs font-bold px-2 py-1.5 rounded-lg border border-emerald-200 dark:border-emerald-800 flex items-center space-x-1 cursor-pointer"
                       >
                         <Copy className="w-3 h-3" />
-                        <span>복사</span>
+                        <span className="hidden xs:inline">복사</span>
                       </button>
 
                       <button
                         onClick={() => onEditLog(log)}
-                        className="bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold px-2.5 py-1 rounded-lg border border-slate-300 flex items-center space-x-1 cursor-pointer"
+                        className="bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold px-2 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 flex items-center space-x-1 cursor-pointer"
                       >
                         <Edit className="w-3 h-3" />
                         <span>수정</span>
@@ -413,7 +418,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
                       <button
                         onClick={() => onPrintLog(log, 'worker_roster')}
-                        className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-2.5 py-1 rounded-lg flex items-center space-x-1 cursor-pointer shadow-xs"
+                        className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-2 py-1.5 rounded-lg flex items-center space-x-1 cursor-pointer shadow-xs"
                         title="출력표 보기 및 인쇄"
                       >
                         <Printer className="w-3 h-3" />
@@ -422,7 +427,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
                       <button
                         onClick={() => onPrintLog(log, 'delegation_letter')}
-                        className="bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold px-2.5 py-1 rounded-lg flex items-center space-x-1 cursor-pointer shadow-xs"
+                        className="bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold px-2 py-1.5 rounded-lg flex items-center space-x-1 cursor-pointer shadow-xs"
                         title="임금 수령 위임장 작성 및 서명 날인"
                       >
                         <FileSignature className="w-3 h-3" />
@@ -435,7 +440,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                             onDeleteLog(log.id);
                           }
                         }}
-                        className="text-rose-500 hover:text-rose-600 p-1 rounded-lg cursor-pointer ml-1"
+                        className="text-rose-500 hover:text-rose-600 p-1.5 rounded-lg cursor-pointer ml-0.5"
                         title="삭제"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
