@@ -582,8 +582,13 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
                   <option value="신호수">신호수</option>
                   <option value="잡급">잡급</option>
                   <option value="반장">반장</option>
+                  <option value="철거작업">철거작업</option>
+                  <option value="미장/목수/타일">미장/목수/타일</option>
                   <option value="기타">기타</option>
                   {wCategory === '일반' && <option value="일반">일반 (보통)</option>}
+                  {wCategory && !['보통', '조공', '기공', '특별기공', '신호수', '잡급', '반장', '철거작업', '미장/목수/타일', '기타', '일반'].includes(wCategory) && (
+                    <option value={wCategory}>{wCategory}</option>
+                  )}
                 </select>
               </div>
 

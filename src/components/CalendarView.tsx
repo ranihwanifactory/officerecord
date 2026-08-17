@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { DispatchLog, OfficeSettings } from '../types';
 import { ChevronLeft, ChevronRight, Plus, Printer, Copy, Edit, Trash2, Calendar as CalendarIcon, Users, DollarSign, CheckCircle2, Clock, FileSignature } from 'lucide-react';
 import { Pagination } from './Pagination';
+import { getTodayDateString } from '../utils/date';
 
 interface CalendarViewProps {
   logs: DispatchLog[];
@@ -26,10 +27,12 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   onDeleteLog,
   onTogglePaidLog,
 }) => {
-  const [currentDate, setCurrentDate] = useState<Date>(new Date(2026, 7, 1)); // August 2026
-  const [selectedDateStr, setSelectedDateStr] = useState<string>(
-    new Date().toISOString().substring(0, 10)
-  );
+  const todayStr = getTodayDateString();
+  const [currentDate, setCurrentDate] = useState<Date>(() => {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth(), 1);
+  });
+  const [selectedDateStr, setSelectedDateStr] = useState<string>(() => todayStr);
 
   // Month navigation helpers
   const year = currentDate.getFullYear();
@@ -44,8 +47,11 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   };
 
   const handleToday = () => {
-    setCurrentDate(new Date());
-    setSelectedDateStr(new Date().toISOString().substring(0, 10));
+    const d = new Date();
+    setCurrentDate(new Date(d.getFullYear(), d.getMonth(), 1));
+    const today = getTodayDateString();
+    setSelectedDateStr(today);
+    onSelectDate(today);
   };
 
   // Calendar generation logic
@@ -177,6 +183,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               const { day, dateStr } = cell;
               const dayLogs = logs.filter((l) => l.date === dateStr);
               const isSelected = dateStr === selectedDateStr;
+              const isToday = dateStr === todayStr;
               const dayOfWeek = new Date(year, month, day).getDay();
               const isSunday = dayOfWeek === 0;
               const isSaturday = dayOfWeek === 6;
@@ -199,22 +206,33 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                   className={`h-16 sm:h-28 p-1 sm:p-2 rounded-xl border flex flex-col justify-between transition-all cursor-pointer group relative overflow-hidden select-none active:scale-[0.98] ${
                     isSelected
                       ? 'border-blue-500 bg-blue-50/80 dark:bg-blue-950/60 shadow-xs ring-2 ring-blue-500/30'
+                      : isToday
+                      ? 'border-blue-300 dark:border-blue-700 bg-blue-50/30 dark:bg-blue-950/20 hover:border-blue-400'
                       : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/90 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-xs'
                   }`}
                 >
                   {/* Top Day Number & Add Quick Button */}
                   <div className="flex items-center justify-between">
-                    <span
-                      className={`text-[11px] sm:text-sm font-bold ${
-                        isSunday
-                          ? 'text-rose-500 dark:text-rose-400'
-                          : isSaturday
-                          ? 'text-blue-600 dark:text-blue-400'
-                          : 'text-slate-700 dark:text-slate-300'
-                      }`}
-                    >
-                      {day}
-                    </span>
+                    <div className="flex items-center space-x-1">
+                      <span
+                        className={`text-[11px] sm:text-sm font-bold flex items-center justify-center ${
+                          isToday
+                            ? 'bg-blue-600 text-white w-5 h-5 sm:w-6 sm:h-6 rounded-full text-[10px] sm:text-xs shadow-xs'
+                            : isSunday
+                            ? 'text-rose-500 dark:text-rose-400'
+                            : isSaturday
+                            ? 'text-blue-600 dark:text-blue-400'
+                            : 'text-slate-700 dark:text-slate-300'
+                        }`}
+                      >
+                        {day}
+                      </span>
+                      {isToday && (
+                        <span className="hidden sm:inline text-[10px] font-bold text-blue-600 dark:text-blue-400">
+                          오늘
+                        </span>
+                      )}
+                    </div>
 
                     {/* Quick Add Button */}
                     <button

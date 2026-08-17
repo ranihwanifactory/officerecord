@@ -42,6 +42,7 @@ import {
   testFirestoreConnection,
   User,
 } from './firebase';
+import { getTodayDateString } from './utils/date';
 
 export default function App() {
   // Navigation State
@@ -216,7 +217,7 @@ export default function App() {
   const handleOpenNewLogModal = (dateStr?: string) => {
     if (!checkAdminPermission()) return;
     setEditingLog(null);
-    setSelectedDateForForm(dateStr || new Date().toISOString().substring(0, 10));
+    setSelectedDateForForm(dateStr || getTodayDateString());
     setIsFormModalOpen(true);
     if (!window.location.hash.includes('modal=')) {
       window.history.pushState({ modal: 'form', tab: activeTab }, '', `#${activeTab}?modal=form`);

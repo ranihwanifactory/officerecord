@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { DispatchLog, DispatchWorkerItem, InvoiceItem, WorkerMaster, ClientSiteMaster, WorkerCategory, OfficeSettings } from '../types';
 import { Plus, Trash2, Save, Copy, X, Users, FileText, Calculator, AlertCircle, DollarSign, Clock, Utensils, Fuel, Check, CheckCircle2, Building } from 'lucide-react';
+import { getTodayDateString } from '../utils/date';
 
 interface DispatchLogFormModalProps {
   initialLog?: DispatchLog | null;
@@ -25,7 +26,7 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
   onClose,
   onDuplicateSave,
 }) => {
-  const todayStr = new Date().toISOString().substring(0, 10);
+  const todayStr = getTodayDateString();
 
   const [officeProfileId, setOfficeProfileId] = useState<string>(
     initialLog?.officeProfileId || activeOfficeId || officeProfiles[0]?.id || 'default'
@@ -776,11 +777,12 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
                           </td>
 
                           {/* Category */}
+                          {/* Category */}
                           <td className="p-2">
                             <select
                               value={item.category || '보통'}
                               onChange={(e) => handleUpdateWorkerRow(idx, 'category', e.target.value as WorkerCategory)}
-                              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500"
+                              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
                             >
                               <option value="보통">보통</option>
                               <option value="조공">조공</option>
@@ -789,8 +791,13 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
                               <option value="신호수">신호수</option>
                               <option value="잡급">잡급</option>
                               <option value="반장">반장</option>
+                              <option value="철거작업">철거작업</option>
+                              <option value="미장/목수/타일">미장/목수/타일</option>
                               <option value="기타">기타</option>
                               {item.category === '일반' && <option value="일반">일반 (보통)</option>}
+                              {item.category && !['보통', '조공', '기공', '특별기공', '신호수', '잡급', '반장', '철거작업', '미장/목수/타일', '기타', '일반'].includes(item.category) && (
+                                <option value={item.category}>{item.category}</option>
+                              )}
                             </select>
                           </td>
 
@@ -1035,26 +1042,26 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
 
                         {/* Work Category */}
                         <td className="p-2">
-                          <input
-                            type="text"
-                            list={`category-list-${idx}`}
-                            value={item.workCategory}
+                          <select
+                            value={item.workCategory || '보통'}
                             onChange={(e) => handleUpdateInvoiceRow(idx, 'workCategory', e.target.value)}
-                            placeholder="보통 / 조공 / 기공 / 특별기공"
-                            className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-emerald-500"
-                          />
-                          <datalist id={`category-list-${idx}`}>
-                            <option value="보통" />
-                            <option value="조공" />
-                            <option value="기공" />
-                            <option value="특별기공" />
-                            <option value="신호수" />
-                            <option value="잡급" />
-                            <option value="반장" />
-                            <option value="철거작업" />
-                            <option value="미장/목수/타일" />
-                            <option value="기타" />
-                          </datalist>
+                            className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
+                          >
+                            <option value="보통">보통</option>
+                            <option value="조공">조공</option>
+                            <option value="기공">기공</option>
+                            <option value="특별기공">특별기공</option>
+                            <option value="신호수">신호수</option>
+                            <option value="잡급">잡급</option>
+                            <option value="반장">반장</option>
+                            <option value="철거작업">철거작업</option>
+                            <option value="미장/목수/타일">미장/목수/타일</option>
+                            <option value="기타">기타</option>
+                            {item.workCategory === '일반' && <option value="일반">일반 (보통)</option>}
+                            {item.workCategory && !['보통', '조공', '기공', '특별기공', '신호수', '잡급', '반장', '철거작업', '미장/목수/타일', '기타', '일반'].includes(item.workCategory) && (
+                              <option value={item.workCategory}>{item.workCategory}</option>
+                            )}
+                          </select>
                         </td>
 
                         {/* Service Count */}
