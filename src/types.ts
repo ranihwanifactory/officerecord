@@ -103,3 +103,20 @@ export interface OfficeSettings {
   adminEmails: string[]; // e.g. ["acehwan69@gmail.com"]
   isDefault?: boolean; // 기본 사무소 여부
 }
+
+export interface DatabaseBackupData {
+  version: string;
+  exportedAt: string;
+  exportedByEmail?: string;
+  dispatchLogs: DispatchLog[];
+  workers: WorkerMaster[];
+  clients: ClientSiteMaster[];
+  officeProfiles: OfficeSettings[];
+  activeOfficeId?: string;
+  summary?: {
+    logsCount: number;
+    workersCount: number;
+    clientsCount: number;
+    officeProfilesCount: number;
+  };
+}

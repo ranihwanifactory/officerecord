@@ -427,6 +427,10 @@ export default function App() {
             officeSettings={officeSettings}
             officeProfiles={officeProfiles}
             activeOfficeId={activeOfficeId}
+            dispatchLogsCount={dispatchLogs.length}
+            workersCount={workersRoster.length}
+            clientsCount={clientsRoster.length}
+            currentUserEmail={user?.email || undefined}
             onSave={handleSaveOfficeProfile}
             onDeleteProfile={handleDeleteOfficeProfile}
             onSelectActiveProfile={handleSelectActiveOffice}

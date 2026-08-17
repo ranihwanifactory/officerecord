@@ -1,11 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import { OfficeSettings } from '../types';
-import { Settings, Save, Shield, Building, Phone, MapPin, CreditCard, Plus, CheckCircle, Trash2, Edit3, Tag } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { OfficeSettings, DatabaseBackupData } from '../types';
+import { 
+  Settings, Save, Shield, Building, Phone, MapPin, CreditCard, Plus, CheckCircle, 
+  Trash2, Edit3, Tag, Database, Download, Upload, RefreshCw, AlertTriangle, CheckCircle2,
+  FileText, Users, Loader2, HardDrive
+} from 'lucide-react';
+import { 
+  downloadDatabaseBackup, 
+  validateBackupFile, 
+  restoreDatabaseFromBackup 
+} from '../services/dataService';
 
 interface OfficeSettingsModalProps {
   officeSettings: OfficeSettings;
   officeProfiles?: OfficeSettings[];
   activeOfficeId?: string;
+  dispatchLogsCount?: number;
+  workersCount?: number;
+  clientsCount?: number;
+  currentUserEmail?: string;
   onSave: (settings: OfficeSettings) => void;
   onDeleteProfile?: (id: string) => void;
   onSelectActiveProfile?: (id: string) => void;
@@ -15,6 +28,10 @@ export const OfficeSettingsModal: React.FC<OfficeSettingsModalProps> = ({
   officeSettings,
   officeProfiles = [],
   activeOfficeId = 'default',
+  dispatchLogsCount = 0,
+  workersCount = 0,
+  clientsCount = 0,
+  currentUserEmail,
   onSave,
   onDeleteProfile,
   onSelectActiveProfile,
@@ -41,6 +58,22 @@ export const OfficeSettingsModal: React.FC<OfficeSettingsModalProps> = ({
   const [isDefault, setIsDefault] = useState(false);
 
   const [isSavedNotice, setIsSavedNotice] = useState(false);
+
+  // Backup & Restore State
+  const [backupDownloadNotice, setBackupDownloadNotice] = useState(false);
+  const [restoreFile, setRestoreFile] = useState<File | null>(null);
+  const [parsedBackup, setParsedBackup] = useState<DatabaseBackupData | null>(null);
+  const [restoreError, setRestoreError] = useState<string | null>(null);
+  const [restoreMode, setRestoreMode] = useState<'overwrite' | 'merge'>('overwrite');
+  const [isRestoring, setIsRestoring] = useState(false);
+  const [restoreResultNotice, setRestoreResultNotice] = useState<{
+    logs: number;
+    workers: number;
+    clients: number;
+    profiles: number;
+  } | null>(null);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Populate form based on selectedEditId
   useEffect(() => {
@@ -111,6 +144,92 @@ export const OfficeSettingsModal: React.FC<OfficeSettingsModalProps> = ({
     setSelectedEditId(targetId);
     setIsSavedNotice(true);
     setTimeout(() => setIsSavedNotice(false), 3000);
+  };
+
+  const handleDownloadBackup = () => {
+    try {
+      downloadDatabaseBackup(currentUserEmail);
+      setBackupDownloadNotice(true);
+      setTimeout(() => setBackupDownloadNotice(false), 4000);
+    } catch (err: any) {
+      alert(`백업 파일 생성 중 오류가 발생했습니다: ${err?.message || err}`);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setRestoreError(null);
+    setRestoreResultNotice(null);
+    const file = e.target.files?.[0];
+    if (!file) {
+      setRestoreFile(null);
+      setParsedBackup(null);
+      return;
+    }
+
+    setRestoreFile(file);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target?.result as string;
+      const validation = validateBackupFile(content);
+      if (validation.isValid && validation.data) {
+        setParsedBackup(validation.data);
+        setRestoreError(null);
+      } else {
+        setParsedBackup(null);
+        setRestoreError(validation.error || '유효하지 않은 백업 파일입니다.');
+      }
+    };
+    reader.onerror = () => {
+      setRestoreError('파일을 읽는 중 오류가 발생했습니다.');
+      setParsedBackup(null);
+    };
+    reader.readAsText(file);
+  };
+
+  const handleExecuteRestore = async () => {
+    if (!parsedBackup) return;
+
+    const summary = parsedBackup.summary || {
+      logsCount: parsedBackup.dispatchLogs?.length || 0,
+      workersCount: parsedBackup.workers?.length || 0,
+      clientsCount: parsedBackup.clients?.length || 0,
+      officeProfilesCount: parsedBackup.officeProfiles?.length || 0,
+    };
+
+    const confirmMsg = restoreMode === 'overwrite'
+      ? `[주의: 전체 덮어쓰기 복원]\n\n현재 시스템의 기존 데이터를 백업 데이터(출력표 ${summary.logsCount}건, 인부 ${summary.workersCount}명, 업체 ${summary.clientsCount}곳, 프로필 ${summary.officeProfilesCount}개)로 완전히 교체합니다.\n\n정말로 복원을 진행하시겠습니까?`
+      : `[병합 추가 복원]\n\n기존 데이터를 유지한 상태로 백업 데이터(출력표 ${summary.logsCount}건, 인부 ${summary.workersCount}명, 업체 ${summary.clientsCount}곳, 프로필 ${summary.officeProfilesCount}개)를 추가 및 병합합니다.\n\n진행하시겠습니까?`;
+
+    if (!confirm(confirmMsg)) return;
+
+    try {
+      setIsRestoring(true);
+      const result = await restoreDatabaseFromBackup(parsedBackup, restoreMode);
+      setRestoreResultNotice({
+        logs: result.logsCount,
+        workers: result.workersCount,
+        clients: result.clientsCount,
+        profiles: result.officeProfilesCount,
+      });
+      setRestoreFile(null);
+      setParsedBackup(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    } catch (err: any) {
+      alert(`데이터베이스 복구 중 오류가 발생했습니다: ${err?.message || err}`);
+    } finally {
+      setIsRestoring(false);
+    }
+  };
+
+  const handleCancelRestore = () => {
+    setRestoreFile(null);
+    setParsedBackup(null);
+    setRestoreError(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   return (
@@ -456,6 +575,309 @@ export const OfficeSettingsModal: React.FC<OfficeSettingsModalProps> = ({
             </button>
           </div>
         </form>
+      </div>
+
+      {/* ========================================================== */}
+      {/* FULL DATABASE BACKUP & RESTORE SECTION (ADMIN EXCLUSIVE)  */}
+      {/* ========================================================== */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm transition-colors space-y-6">
+        
+        {/* Section Header */}
+        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/80 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold">
+              <Database className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">
+                전체 데이터베이스 백업 및 복구 (Admin Backup & Restore)
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                앱에서 기록한 모든 출력표 일지, 인부 명단, 업체 정보, 사무소 프로필을 JSON 파일로 백업하고 언제든지 안전하게 복원할 수 있습니다.
+              </p>
+            </div>
+          </div>
+          <span className="px-2.5 py-1 text-xs font-bold text-purple-700 dark:text-purple-300 bg-purple-100 dark:bg-purple-950 rounded-lg border border-purple-200 dark:border-purple-800">
+            관리자 전용
+          </span>
+        </div>
+
+        {/* Live Database Stats Overview */}
+        <div className="space-y-2">
+          <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+            현재 저장된 데이터베이스 통계
+          </label>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="bg-slate-50 dark:bg-slate-800/70 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center space-x-3">
+              <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                <FileText className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">출력표 일지</div>
+                <div className="text-base font-extrabold text-slate-800 dark:text-slate-100">{dispatchLogsCount}건</div>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 dark:bg-slate-800/70 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center space-x-3">
+              <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                <Users className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">인부 명단</div>
+                <div className="text-base font-extrabold text-slate-800 dark:text-slate-100">{workersCount}명</div>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 dark:bg-slate-800/70 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center space-x-3">
+              <div className="w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-900/50 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                <Building className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">현장/업체</div>
+                <div className="text-base font-extrabold text-slate-800 dark:text-slate-100">{clientsCount}곳</div>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 dark:bg-slate-800/70 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center space-x-3">
+              <div className="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+                <HardDrive className="w-4 h-4" />
+              </div>
+              <div>
+                <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">사무소 프로필</div>
+                <div className="text-base font-extrabold text-slate-800 dark:text-slate-100">{profiles.length}개</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 2-Column Action Panels: Backup (Left) & Restore (Right) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+          
+          {/* 1. Database Backup Panel */}
+          <div className="bg-gradient-to-br from-slate-50 to-purple-50/40 dark:from-slate-800/50 dark:to-purple-950/20 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/80 flex flex-col justify-between space-y-4">
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <Download className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                <h4 className="font-bold text-sm text-slate-800 dark:text-slate-100">
+                  데이터베이스 전체 백업 (다운로드)
+                </h4>
+              </div>
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                현재 등록된 모든 데이터(출력표 일지, 인부, 업체, 사무소 프로필 등)를 타임스탬프가 포함된 단일 <code className="bg-purple-100 dark:bg-purple-900/60 px-1.5 py-0.5 rounded text-purple-700 dark:text-purple-300 font-mono text-[11px]">.json</code> 파일로 즉시 다운로드하여 외장 드라이브나 PC에 안전하게 보관할 수 있습니다.
+              </p>
+            </div>
+
+            <div className="space-y-2 pt-2">
+              <button
+                type="button"
+                onClick={handleDownloadBackup}
+                className="w-full bg-purple-600 hover:bg-purple-700 active:bg-purple-800 text-white font-bold py-2.5 px-4 rounded-xl text-xs sm:text-sm flex items-center justify-center space-x-2 shadow-xs transition-all cursor-pointer active:scale-98"
+              >
+                <Download className="w-4 h-4 stroke-[2.5]" />
+                <span>전체 DB 백업 파일(.json) 다운로드</span>
+              </button>
+
+              {backupDownloadNotice && (
+                <div className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center justify-center space-x-1.5 py-1 animate-pulse">
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>✓ 전체 데이터베이스 백업 파일이 생성되어 다운로드되었습니다!</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* 2. Database Restore Panel */}
+          <div className="bg-gradient-to-br from-slate-50 to-blue-50/40 dark:from-slate-800/50 dark:to-blue-950/20 p-5 rounded-2xl border border-slate-200 dark:border-slate-700/80 flex flex-col justify-between space-y-4">
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <Upload className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <h4 className="font-bold text-sm text-slate-800 dark:text-slate-100">
+                  데이터베이스 복구 / 복원 (가져오기)
+                </h4>
+              </div>
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                이전에 백업해둔 <code className="bg-blue-100 dark:bg-blue-900/60 px-1.5 py-0.5 rounded text-blue-700 dark:text-blue-300 font-mono text-[11px]">.json</code> 파일을 업로드하여 기존 데이터를 복원하거나 새로 추가 병합할 수 있습니다.
+              </p>
+            </div>
+
+            {/* Hidden File Input & Trigger Button */}
+            <div className="space-y-2 pt-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".json,application/json"
+                onChange={handleFileChange}
+                className="hidden"
+                id="restoreFileInput"
+              />
+
+              {!parsedBackup ? (
+                <label
+                  htmlFor="restoreFileInput"
+                  className="w-full bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-700 font-bold py-2.5 px-4 rounded-xl text-xs sm:text-sm flex items-center justify-center space-x-2 shadow-2xs transition-all cursor-pointer text-center"
+                >
+                  <Upload className="w-4 h-4 stroke-[2.5]" />
+                  <span>백업 파일(.json) 선택하여 복구하기</span>
+                </label>
+              ) : null}
+
+              {restoreError && (
+                <div className="bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 p-2.5 rounded-xl text-xs font-bold text-rose-600 dark:text-rose-400 flex items-center space-x-2">
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                  <span>{restoreError}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Parsed Backup Preview & Restore Execution Card */}
+        {parsedBackup && (
+          <div className="bg-blue-50/70 dark:bg-blue-950/40 p-5 rounded-2xl border border-blue-200 dark:border-blue-800 space-y-4 animate-in fade-in">
+            <div className="flex items-center justify-between border-b border-blue-200/80 dark:border-blue-800 pb-3">
+              <div className="flex items-center space-x-2">
+                <CheckCircle2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
+                  선택된 백업 파일 정보 검증 완료
+                </span>
+              </div>
+              <span className="text-xs font-mono text-slate-500 dark:text-slate-400">
+                {restoreFile?.name}
+              </span>
+            </div>
+
+            {/* Backup Content Details */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs bg-white dark:bg-slate-900 p-3.5 rounded-xl border border-blue-100 dark:border-blue-900/60">
+              <div>
+                <span className="text-slate-500 dark:text-slate-400 block text-[11px]">출력표 일지</span>
+                <span className="font-extrabold text-blue-600 dark:text-blue-400 text-sm">
+                  {parsedBackup.summary?.logsCount || parsedBackup.dispatchLogs?.length || 0}건
+                </span>
+              </div>
+              <div>
+                <span className="text-slate-500 dark:text-slate-400 block text-[11px]">인부 명단</span>
+                <span className="font-extrabold text-emerald-600 dark:text-emerald-400 text-sm">
+                  {parsedBackup.summary?.workersCount || parsedBackup.workers?.length || 0}명
+                </span>
+              </div>
+              <div>
+                <span className="text-slate-500 dark:text-slate-400 block text-[11px]">현장/업체</span>
+                <span className="font-extrabold text-amber-600 dark:text-amber-400 text-sm">
+                  {parsedBackup.summary?.clientsCount || parsedBackup.clients?.length || 0}곳
+                </span>
+              </div>
+              <div>
+                <span className="text-slate-500 dark:text-slate-400 block text-[11px]">사무소 프로필</span>
+                <span className="font-extrabold text-purple-600 dark:text-purple-400 text-sm">
+                  {parsedBackup.summary?.officeProfilesCount || parsedBackup.officeProfiles?.length || 0}개
+                </span>
+              </div>
+            </div>
+
+            {/* Restore Mode Options */}
+            <div className="space-y-2 pt-1">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                복구 방식 선택
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <label
+                  className={`p-3 rounded-xl border flex items-start space-x-3 cursor-pointer transition-all ${
+                    restoreMode === 'overwrite'
+                      ? 'bg-white dark:bg-slate-900 border-blue-600 dark:border-blue-400 shadow-2xs'
+                      : 'bg-slate-100/60 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="restoreMode"
+                    value="overwrite"
+                    checked={restoreMode === 'overwrite'}
+                    onChange={() => setRestoreMode('overwrite')}
+                    className="mt-0.5 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                  />
+                  <div>
+                    <div className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                      전체 덮어쓰기 (완전 복원)
+                    </div>
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      기존 데이터를 백업 시점의 상태로 완전히 교체 복구합니다.
+                    </div>
+                  </div>
+                </label>
+
+                <label
+                  className={`p-3 rounded-xl border flex items-start space-x-3 cursor-pointer transition-all ${
+                    restoreMode === 'merge'
+                      ? 'bg-white dark:bg-slate-900 border-blue-600 dark:border-blue-400 shadow-2xs'
+                      : 'bg-slate-100/60 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="restoreMode"
+                    value="merge"
+                    checked={restoreMode === 'merge'}
+                    onChange={() => setRestoreMode('merge')}
+                    className="mt-0.5 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                  />
+                  <div>
+                    <div className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                      기존 데이터에 병합 (추가 복원)
+                    </div>
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      현재 등록된 데이터를 유지하면서 백업 항목들을 추가 및 갱신합니다.
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center justify-end space-x-3 pt-2">
+              <button
+                type="button"
+                onClick={handleCancelRestore}
+                disabled={isRestoring}
+                className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+              >
+                취소
+              </button>
+
+              <button
+                type="button"
+                onClick={handleExecuteRestore}
+                disabled={isRestoring}
+                className="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:bg-blue-400 text-white font-bold px-5 py-2 rounded-xl text-xs sm:text-sm flex items-center space-x-1.5 shadow-sm transition-all cursor-pointer"
+              >
+                {isRestoring ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>데이터베이스 복구 중...</span>
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="w-4 h-4" />
+                    <span>데이터베이스 복원 실행</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Restore Result Notification Banner */}
+        {restoreResultNotice && (
+          <div className="bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800 p-4 rounded-2xl text-emerald-800 dark:text-emerald-200 space-y-1 animate-in fade-in">
+            <div className="font-extrabold text-sm flex items-center space-x-1.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <span>✓ 데이터베이스가 성공적으로 복구 및 동기화되었습니다!</span>
+            </div>
+            <div className="text-xs text-emerald-700 dark:text-emerald-300 pl-5">
+              복원 결과: 출력표 {restoreResultNotice.logs}건 / 인부 명단 {restoreResultNotice.workers}명 / 현장·업체 {restoreResultNotice.clients}곳 / 사무소 프로필 {restoreResultNotice.profiles}개
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );
