@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { DispatchLog, OfficeSettings, DispatchWorkerItem, WorkerMaster } from '../types';
 import { SignatureModal } from './SignatureModal';
 import { PenTool, Edit2, Check, RefreshCw } from 'lucide-react';
+import { maskResidentId } from '../utils/date';
 
 interface DelegationSheetProps {
   log: DispatchLog;
@@ -10,6 +11,7 @@ interface DelegationSheetProps {
   workersRoster?: WorkerMaster[];
   onUpdateLog?: (updatedLog: DispatchLog) => void;
   isPrintOnly?: boolean;
+  maskResidentNumber?: boolean;
 }
 
 export const DelegationSheet: React.FC<DelegationSheetProps> = ({
@@ -19,6 +21,7 @@ export const DelegationSheet: React.FC<DelegationSheetProps> = ({
   workersRoster = [],
   onUpdateLog,
   isPrintOnly = false,
+  maskResidentNumber = false,
 }) => {
   // Recipient (수임인) fields state (editable on the fly if needed)
   const [recipientName, setRecipientName] = useState<string>(
@@ -348,7 +351,9 @@ export const DelegationSheet: React.FC<DelegationSheetProps> = ({
                   <td className="border border-black text-center px-1.5 py-1">
                     {hasItem ? (
                       isPrintOnly ? (
-                        <span className="font-mono text-xs">{item.residentId || ''}</span>
+                        <span className="font-mono text-xs">
+                          {maskResidentNumber ? maskResidentId(item.residentId) : (item.residentId || '')}
+                        </span>
                       ) : (
                         <input
                           type="text"

@@ -1,8 +1,9 @@
 import React, { useRef, useState } from 'react';
 import { DispatchLog, OfficeSettings, InvoiceItem, WorkerMaster, DispatchWorkerItem } from '../types';
-import { Printer, Download, Copy, X, Image, Loader2, Calculator, Users, CheckCircle2, Clock, Check, FileSignature } from 'lucide-react';
+import { Printer, Download, Copy, X, Image, Loader2, Calculator, Users, CheckCircle2, Clock, Check, FileSignature, Shield, Eye, EyeOff } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import { DelegationSheet } from './DelegationSheet';
+import { maskResidentId } from '../utils/date';
 
 interface PrintableSheetProps {
   log: DispatchLog;
@@ -43,6 +44,9 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
     initialViewMode || log.formType || 'worker_roster'
   );
 
+  // Toggle for Resident Registration Number masking (* processing vs full exposure)
+  const [maskResidentNumber, setMaskResidentNumber] = useState<boolean>(true);
+
   const handlePrint = () => {
     window.print();
   };
@@ -80,15 +84,19 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
     }
   };
 
-  // Helper to get worker's resident registration number
+  // Helper to get worker's resident registration number (masked with * or full exposure)
   const getWorkerResidentId = (worker: DispatchWorkerItem) => {
+    let raw = '';
     if (worker.residentId && worker.residentId.trim()) {
-      return worker.residentId.trim();
+      raw = worker.residentId.trim();
+    } else {
+      const matched = workersRoster.find(
+        (m) => (worker.workerId && m.id === worker.workerId) || (worker.name && m.name.trim() === worker.name.trim())
+      );
+      raw = matched?.residentId?.trim() || '';
     }
-    const matched = workersRoster.find(
-      (m) => (worker.workerId && m.id === worker.workerId) || (worker.name && m.name.trim() === worker.name.trim())
-    );
-    return matched?.residentId?.trim() || '';
+    if (!raw) return '';
+    return maskResidentNumber ? maskResidentId(raw) : raw;
   };
 
   // Format Date strings (e.g., "2026-08-11" -> "2026년 08월 11일")
@@ -254,6 +262,40 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
               </select>
             </div>
           )}
+
+          {/* Resident Number Display Option (Masking vs Full) */}
+          <div className="flex items-center space-x-1 bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs">
+            <span className="font-bold text-slate-700 px-1.5 flex items-center space-x-1">
+              <Shield className="w-3.5 h-3.5 text-blue-600" />
+              <span className="hidden sm:inline">주민번호:</span>
+            </span>
+            <button
+              type="button"
+              onClick={() => setMaskResidentNumber(true)}
+              className={`px-2.5 py-1 rounded-lg font-bold flex items-center space-x-1 transition-all cursor-pointer ${
+                maskResidentNumber
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
+              }`}
+              title="주민번호 뒷자리 6자리를 *로 마스킹하여 개인정보를 보호합니다."
+            >
+              <EyeOff className="w-3 h-3" />
+              <span>별표 마스킹 (1******)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setMaskResidentNumber(false)}
+              className={`px-2.5 py-1 rounded-lg font-bold flex items-center space-x-1 transition-all cursor-pointer ${
+                !maskResidentNumber
+                  ? 'bg-slate-800 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
+              }`}
+              title="주민번호 13자리를 모두 그대로 노출합니다."
+            >
+              <Eye className="w-3 h-3" />
+              <span>전체 노출 (1234567)</span>
+            </button>
+          </div>
         </div>
 
         {/* Action Buttons */}
@@ -709,6 +751,7 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
             activeOffice={activeOffice}
             workersRoster={workersRoster}
             onUpdateLog={onUpdateLog}
+            maskResidentNumber={maskResidentNumber}
           />
         )}
 
