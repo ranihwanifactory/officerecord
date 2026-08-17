@@ -73,7 +73,7 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
 
   // Worker Form Fields
   const [wName, setWName] = useState('');
-  const [wCategory, setWCategory] = useState<WorkerCategory>('일반');
+  const [wCategory, setWCategory] = useState<WorkerCategory>('보통');
   const [wRate, setWRate] = useState(160000);
   const [wResidentId, setWResidentId] = useState('');
   const [wPhone, setWPhone] = useState('');
@@ -88,14 +88,14 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
     if (worker) {
       setEditingWorker(worker);
       setWName(worker.name);
-      setWCategory(worker.category);
+      setWCategory(worker.category || '보통');
       setWRate(worker.defaultDailyRate);
       setWResidentId(worker.residentId || '');
       setWPhone(worker.phone || '');
     } else {
       setEditingWorker(null);
       setWName('');
-      setWCategory('일반');
+      setWCategory('보통');
       setWRate(160000);
       setWResidentId('');
       setWPhone('');
@@ -571,12 +571,19 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">구분</label>
                 <select
-                  value={wCategory}
+                  value={wCategory || '보통'}
                   onChange={(e) => setWCategory(e.target.value as WorkerCategory)}
                   className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-sm font-bold text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="일반">일반</option>
+                  <option value="보통">보통</option>
+                  <option value="조공">조공</option>
                   <option value="기공">기공</option>
+                  <option value="특별기공">특별기공</option>
+                  <option value="신호수">신호수</option>
+                  <option value="잡급">잡급</option>
+                  <option value="반장">반장</option>
+                  <option value="기타">기타</option>
+                  {wCategory === '일반' && <option value="일반">일반 (보통)</option>}
                 </select>
               </div>
 

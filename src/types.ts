@@ -1,4 +1,4 @@
-export type WorkerCategory = '일반' | '기공';
+export type WorkerCategory = '보통' | '조공' | '기공' | '특별기공' | '신호수' | '잡급' | '반장' | '일반' | string;
 
 export interface WorkerMaster {
   id: string;

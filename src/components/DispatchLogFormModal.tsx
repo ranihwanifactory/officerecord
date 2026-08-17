@@ -49,8 +49,8 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
   // Form Mode 1: Workers list state
   const [workers, setWorkers] = useState<DispatchWorkerItem[]>(
     initialLog?.workers || [
-      { id: 'item-1', name: '', category: '일반', dailyRate: 160000, gongsu: 1.0, remarks: '', overtimeFee: 0, mealFee: 0, fuelFee: 0, otherFee: 0, extraFeeRemarks: '' },
-      { id: 'item-2', name: '', category: '일반', dailyRate: 160000, gongsu: 1.0, remarks: '', overtimeFee: 0, mealFee: 0, fuelFee: 0, otherFee: 0, extraFeeRemarks: '' },
+      { id: 'item-1', name: '', category: '보통', dailyRate: 160000, gongsu: 1.0, remarks: '', overtimeFee: 0, mealFee: 0, fuelFee: 0, otherFee: 0, extraFeeRemarks: '' },
+      { id: 'item-2', name: '', category: '보통', dailyRate: 160000, gongsu: 1.0, remarks: '', overtimeFee: 0, mealFee: 0, fuelFee: 0, otherFee: 0, extraFeeRemarks: '' },
     ]
   );
 
@@ -60,7 +60,7 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
       {
         id: 'inv-1',
         date: initialLog?.date || selectedDate || todayStr,
-        workCategory: '보통인부',
+        workCategory: '보통',
         serviceCount: 2.0,
         unitPrice: 160000,
         laborCost: 320000,
@@ -74,15 +74,15 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
       {
         id: 'inv-2',
         date: initialLog?.date || selectedDate || todayStr,
-        workCategory: '특별기공',
+        workCategory: '보통',
         serviceCount: 1.0,
-        unitPrice: 220000,
-        laborCost: 220000,
+        unitPrice: 160000,
+        laborCost: 160000,
         overtimeFee: 0,
         mealFee: 0,
         fuelFee: 0,
         otherFee: 0,
-        totalItemAmount: 220000,
+        totalItemAmount: 160000,
         remarks: '',
       },
     ]
@@ -115,7 +115,7 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
       {
         id: `item-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
         name: '',
-        category: '일반',
+        category: '보통',
         dailyRate: 160000,
         gongsu: 1.0,
         remarks: '',
@@ -135,7 +135,7 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
       id: `item-load-${idx}-${Date.now()}`,
       workerId: w.id,
       name: w.name,
-      category: w.category || '일반',
+      category: w.category || '보통',
       dailyRate: w.defaultDailyRate || 160000,
       residentId: w.residentId || '',
       gongsu: 1.0,
@@ -158,7 +158,7 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
         const found = workersRoster.find((w) => w.name === value);
         if (found) {
           item.workerId = found.id;
-          item.category = found.category || '일반';
+          item.category = found.category || '보통';
           item.dailyRate = found.defaultDailyRate || 160000;
           if (found.residentId) {
             item.residentId = found.residentId;
@@ -212,7 +212,7 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
       {
         id: `inv-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
         date: date,
-        workCategory: '보통인부',
+        workCategory: '보통',
         serviceCount: 1.0,
         unitPrice: 160000,
         laborCost: 160000,
@@ -266,11 +266,12 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
       const fuel = w.fuelFee || 0;
       const oth = w.otherFee || 0;
       const total = labor + ot + meal + fuel + oth;
+      const categoryName = w.category === '일반' ? '보통' : (w.category || '보통');
 
       return {
         id: `inv-sync-${idx}-${Date.now()}`,
         date: date,
-        workCategory: `${w.name} (${w.category || '용역'})`,
+        workCategory: `${w.name} (${categoryName})`,
         serviceCount: w.gongsu || 1.0,
         unitPrice: w.dailyRate || 160000,
         laborCost: labor,
@@ -777,12 +778,19 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
                           {/* Category */}
                           <td className="p-2">
                             <select
-                              value={item.category}
+                              value={item.category || '보통'}
                               onChange={(e) => handleUpdateWorkerRow(idx, 'category', e.target.value as WorkerCategory)}
                               className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500"
                             >
-                              <option value="일반">일반</option>
+                              <option value="보통">보통</option>
+                              <option value="조공">조공</option>
                               <option value="기공">기공</option>
+                              <option value="특별기공">특별기공</option>
+                              <option value="신호수">신호수</option>
+                              <option value="잡급">잡급</option>
+                              <option value="반장">반장</option>
+                              <option value="기타">기타</option>
+                              {item.category === '일반' && <option value="일반">일반 (보통)</option>}
                             </select>
                           </td>
 
@@ -1032,16 +1040,20 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
                             list={`category-list-${idx}`}
                             value={item.workCategory}
                             onChange={(e) => handleUpdateInvoiceRow(idx, 'workCategory', e.target.value)}
-                            placeholder="보통인부 / 기공 / 잡급"
+                            placeholder="보통 / 조공 / 기공 / 특별기공"
                             className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-emerald-500"
                           />
                           <datalist id={`category-list-${idx}`}>
-                            <option value="보통인부" />
+                            <option value="보통" />
+                            <option value="조공" />
+                            <option value="기공" />
                             <option value="특별기공" />
-                            <option value="잡급 / 단순노무" />
-                            <option value="신호수 / 안전요원" />
-                            <option value="철거 / 할차작업" />
-                            <option value="미장 / 목수 / 타일" />
+                            <option value="신호수" />
+                            <option value="잡급" />
+                            <option value="반장" />
+                            <option value="철거작업" />
+                            <option value="미장/목수/타일" />
+                            <option value="기타" />
                           </datalist>
                         </td>
 

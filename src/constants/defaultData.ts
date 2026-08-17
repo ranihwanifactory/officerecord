@@ -20,12 +20,12 @@ export const DEFAULT_OFFICE_PROFILES: OfficeSettings[] = [
 export const DEFAULT_OFFICE_SETTINGS: OfficeSettings = DEFAULT_OFFICE_PROFILES[0];
 
 export const INITIAL_WORKERS: WorkerMaster[] = [
-  { id: 'w1', name: '이성복', category: '일반', defaultDailyRate: 160000, phone: '010-1234-5678' },
-  { id: 'w2', name: '구완회', category: '일반', defaultDailyRate: 160000, phone: '010-2345-6789' },
-  { id: 'w3', name: '임성빈', category: '일반', defaultDailyRate: 160000, phone: '010-3456-7890' },
-  { id: 'w4', name: '강명수', category: '일반', defaultDailyRate: 160000, phone: '010-4567-8901' },
+  { id: 'w1', name: '이성복', category: '보통', defaultDailyRate: 160000, phone: '010-1234-5678' },
+  { id: 'w2', name: '구완회', category: '보통', defaultDailyRate: 160000, phone: '010-2345-6789' },
+  { id: 'w3', name: '임성빈', category: '보통', defaultDailyRate: 160000, phone: '010-3456-7890' },
+  { id: 'w4', name: '강명수', category: '보통', defaultDailyRate: 160000, phone: '010-4567-8901' },
   { id: 'w5', name: '박철민', category: '기공', defaultDailyRate: 220000, phone: '010-5678-9012' },
-  { id: 'w6', name: '최동현', category: '일반', defaultDailyRate: 160000, phone: '010-6789-0123' },
+  { id: 'w6', name: '최동현', category: '보통', defaultDailyRate: 160000, phone: '010-6789-0123' },
 ];
 
 export const INITIAL_CLIENTS: ClientSiteMaster[] = [
@@ -42,13 +42,13 @@ export const INITIAL_DISPATCH_LOGS: DispatchLog[] = [
     generalGongsuCount: 4,
     skillGongsuCount: 0,
     workers: [
-      { id: 'item-1', workerId: 'w1', name: '이성복', category: '일반', dailyRate: 160000, gongsu: 1.0, remarks: '' },
-      { id: 'item-2', workerId: 'w2', name: '구완회', category: '일반', dailyRate: 160000, gongsu: 1.0, remarks: '' },
-      { id: 'item-3', workerId: 'w3', name: '임성빈', category: '일반', dailyRate: 160000, gongsu: 1.0, remarks: '' },
-      { id: 'item-4', workerId: 'w4', name: '강명수', category: '일반', dailyRate: 160000, gongsu: 1.0, remarks: '' },
+      { id: 'item-1', workerId: 'w1', name: '이성복', category: '보통', dailyRate: 160000, gongsu: 1.0, remarks: '' },
+      { id: 'item-2', workerId: 'w2', name: '구완회', category: '보통', dailyRate: 160000, gongsu: 1.0, remarks: '' },
+      { id: 'item-3', workerId: 'w3', name: '임성빈', category: '보통', dailyRate: 160000, gongsu: 1.0, remarks: '' },
+      { id: 'item-4', workerId: 'w4', name: '강명수', category: '보통', dailyRate: 160000, gongsu: 1.0, remarks: '' },
     ],
     totalAmount: 640000,
-    memo: '8월 11일 신성에스엔티 일반 4명 출력',
+    memo: '8월 11일 신성에스엔티 보통 4명 출력',
     createdAt: '2026-08-11T08:00:00.000Z',
     updatedAt: '2026-08-11T08:00:00.000Z',
     createdByEmail: 'acehwan69@gmail.com',

@@ -111,8 +111,8 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
       : fullDateKorean;
 
   // Worker counts & totals
-  const skillCount = log.workers.filter(w => w.category && w.category.includes('기공')).reduce((acc, w) => acc + (w.gongsu || 1), 0);
-  const generalCount = log.workers.filter(w => !w.category || !w.category.includes('기공')).reduce((acc, w) => acc + (w.gongsu || 1), 0);
+  const skillCount = log.workers.filter(w => w.category && (w.category.includes('기공') || w.category.includes('특별기공'))).reduce((acc, w) => acc + (w.gongsu || 1), 0);
+  const generalCount = log.workers.filter(w => !w.category || (!w.category.includes('기공') && !w.category.includes('특별기공'))).reduce((acc, w) => acc + (w.gongsu || 1), 0);
 
   const workerLaborCostTotal = log.workers.reduce((acc, w) => acc + (w.dailyRate || 0) * (w.gongsu || 1), 0);
   const workerExtraFeeTotal = log.workers.reduce(
@@ -127,7 +127,7 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
     : log.workers.map((w, idx) => ({
         id: `inv-auto-${idx}`,
         date: log.date,
-        workCategory: `${w.name} (${w.category || '보통인부'})`,
+        workCategory: `${w.name} (${w.category === '일반' ? '보통' : (w.category || '보통')})`,
         serviceCount: w.gongsu || 1.0,
         unitPrice: w.dailyRate || 160000,
         laborCost: (w.dailyRate || 0) * (w.gongsu || 1),
@@ -159,7 +159,7 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
     displayWorkers.push({
       id: `empty-${displayWorkers.length}`,
       name: '',
-      category: '일반',
+      category: '보통',
       dailyRate: 0,
       gongsu: 0,
       remarks: '',
@@ -388,7 +388,7 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
                   <tr>
                     <td className="bg-slate-100 font-bold text-center py-2 px-2 border-r border-black">작업인원</td>
                     <td className="text-center font-medium py-2 px-3 border-r border-black">
-                      일반 : <span className="font-bold text-black">{generalCount}공수</span> &nbsp;&nbsp;&nbsp;&nbsp; 기공 : <span className="font-bold text-black">{skillCount}공수</span>
+                      보통 : <span className="font-bold text-black">{generalCount}공수</span> &nbsp;&nbsp;&nbsp;&nbsp; 기공 : <span className="font-bold text-black">{skillCount}공수</span>
                     </td>
                   </tr>
                 </tbody>
