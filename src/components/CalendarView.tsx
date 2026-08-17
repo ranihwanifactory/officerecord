@@ -71,11 +71,13 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   const monthlyLogs = logs.filter((l) => l.date.startsWith(currentMonthPrefix));
   
   // Calculate monthly summary
-  const monthlyTotalWorkers = monthlyLogs.reduce(
-    (sum, l) => sum + l.workers.reduce((wSum, w) => wSum + (w.gongsu || 1), 0),
-    0
-  );
-  const monthlyTotalAmount = monthlyLogs.reduce((sum, l) => sum + l.totalAmount, 0);
+  const monthlyTotalWorkers = monthlyLogs.reduce((sum, l) => {
+    if (l.formType === 'invoice_summary' && l.invoiceItems && l.invoiceItems.length > 0) {
+      return sum + l.invoiceItems.reduce((iSum, i) => iSum + (Number(i.serviceCount) || 0), 0);
+    }
+    return sum + l.workers.reduce((wSum, w) => wSum + (Number(w.gongsu) || 1), 0);
+  }, 0);
+  const monthlyTotalAmount = monthlyLogs.reduce((sum, l) => sum + (l.grandTotalAmount || l.totalAmount || 0), 0);
 
   // Selected Date logs & pagination
   const selectedDateLogs = logs.filter((l) => l.date === selectedDateStr);
@@ -179,11 +181,13 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               const isSunday = dayOfWeek === 0;
               const isSaturday = dayOfWeek === 6;
 
-              const totalDailyWorkers = dayLogs.reduce(
-                (sum, l) => sum + l.workers.reduce((wS, w) => wS + (w.gongsu || 1), 0),
-                0
-              );
-              const totalDailyAmount = dayLogs.reduce((sum, l) => sum + l.totalAmount, 0);
+              const totalDailyWorkers = dayLogs.reduce((sum, l) => {
+                if (l.formType === 'invoice_summary' && l.invoiceItems && l.invoiceItems.length > 0) {
+                  return sum + l.invoiceItems.reduce((iS, i) => iS + (Number(i.serviceCount) || 0), 0);
+                }
+                return sum + l.workers.reduce((wS, w) => wS + (Number(w.gongsu) || 1), 0);
+              }, 0);
+              const totalDailyAmount = dayLogs.reduce((sum, l) => sum + (l.grandTotalAmount || l.totalAmount || 0), 0);
 
               return (
                 <div

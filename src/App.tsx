@@ -73,6 +73,34 @@ export default function App() {
     'worker_roster' | 'invoice_summary' | 'delegation_letter' | undefined
   >();
 
+  const [user, setUser] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+
+  // App Data State
+  const [dispatchLogs, setDispatchLogs] = useState<DispatchLog[]>([]);
+  const [workersRoster, setWorkersRoster] = useState<WorkerMaster[]>([]);
+  const [clientsRoster, setClientsRoster] = useState<ClientSiteMaster[]>([]);
+  const [officeSettings, setOfficeSettings] = useState<OfficeSettings>({
+    officeName: '젊은인력사무소',
+    phone1: '054-933-1566',
+    phone2: '010-7545-0038',
+    address: '경북 성주군 성주읍 성주순환로2길 69',
+    bankAccount: '농협 302-65550038-11 손영란',
+    adminEmails: ['acehwan69@gmail.com', 'hwanace@gmail.com'],
+  });
+  const [officeProfiles, setOfficeProfiles] = useState<OfficeSettings[]>([]);
+  const [activeOfficeId, setActiveOfficeIdState] = useState<string>('default');
+
+  // Keep logToPrint synchronized in real-time whenever dispatchLogs updates
+  useEffect(() => {
+    if (logToPrint) {
+      const current = dispatchLogs.find((l) => l.id === logToPrint.id);
+      if (current && current !== logToPrint) {
+        setLogToPrint(current);
+      }
+    }
+  }, [dispatchLogs]);
+
   // Sync activeTab & modal open state with URL hash and browser history (PopState)
   useEffect(() => {
     const handlePopState = () => {
@@ -121,23 +149,6 @@ export default function App() {
       window.history.pushState({ tab }, '', `#${tab}`);
     }
   };
-  const [user, setUser] = useState<User | null>(null);
-  const [authLoading, setAuthLoading] = useState(true);
-
-  // App Data State
-  const [dispatchLogs, setDispatchLogs] = useState<DispatchLog[]>([]);
-  const [workersRoster, setWorkersRoster] = useState<WorkerMaster[]>([]);
-  const [clientsRoster, setClientsRoster] = useState<ClientSiteMaster[]>([]);
-  const [officeSettings, setOfficeSettings] = useState<OfficeSettings>({
-    officeName: '젊은인력사무소',
-    phone1: '054-933-1566',
-    phone2: '010-7545-0038',
-    address: '경북 성주군 성주읍 성주순환로2길 69',
-    bankAccount: '농협 302-65550038-11 손영란',
-    adminEmails: ['acehwan69@gmail.com', 'hwanace@gmail.com'],
-  });
-  const [officeProfiles, setOfficeProfiles] = useState<OfficeSettings[]>([]);
-  const [activeOfficeId, setActiveOfficeIdState] = useState<string>('default');
 
   // Check Admin Permission
   const allAdminEmails = officeProfiles.length > 0
