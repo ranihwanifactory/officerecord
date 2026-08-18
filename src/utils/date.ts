@@ -74,3 +74,51 @@ export function maskResidentId(id?: string): string {
 
   return clean;
 }
+
+/**
+ * Calculates the next day's date string.
+ * Supports 'YYYY-MM-DD', 'YYYY-M-D', 'MM월 DD일', 'M월 D일', etc.
+ */
+export function getNextDateString(currentDateStr?: string, fallbackDateStr: string = ''): string {
+  const base = (currentDateStr || fallbackDateStr || getTodayDateString()).trim();
+  if (!base) return getTodayDateString();
+
+  // Pattern 1: YYYY-MM-DD or YYYY/MM/DD or YYYY.MM.DD
+  const ymdMatch = base.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$/);
+  if (ymdMatch) {
+    const y = parseInt(ymdMatch[1], 10);
+    const m = parseInt(ymdMatch[2], 10) - 1;
+    const d = parseInt(ymdMatch[3], 10);
+    const dateObj = new Date(y, m, d);
+    dateObj.setDate(dateObj.getDate() + 1);
+    const ny = dateObj.getFullYear();
+    const nm = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const nd = String(dateObj.getDate()).padStart(2, '0');
+    return `${ny}-${nm}-${nd}`;
+  }
+
+  // Pattern 2: MM월 DD일 or M월 D일
+  const mdMatch = base.match(/^(\d{1,2})월\s*(\d{1,2})일$/);
+  if (mdMatch) {
+    const currentYear = new Date().getFullYear();
+    const m = parseInt(mdMatch[1], 10) - 1;
+    const d = parseInt(mdMatch[2], 10);
+    const dateObj = new Date(currentYear, m, d);
+    dateObj.setDate(dateObj.getDate() + 1);
+    const nm = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const nd = String(dateObj.getDate()).padStart(2, '0');
+    return `${nm}월 ${nd}일`;
+  }
+
+  // Pattern 3: General local date parsing
+  const parsed = parseLocalDate(base);
+  if (!isNaN(parsed.getTime())) {
+    parsed.setDate(parsed.getDate() + 1);
+    const ny = parsed.getFullYear();
+    const nm = String(parsed.getMonth() + 1).padStart(2, '0');
+    const nd = String(parsed.getDate()).padStart(2, '0');
+    return `${ny}-${nm}-${nd}`;
+  }
+
+  return base;
+}

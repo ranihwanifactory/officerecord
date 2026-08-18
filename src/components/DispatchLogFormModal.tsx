@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { DispatchLog, DispatchWorkerItem, InvoiceItem, WorkerMaster, ClientSiteMaster, WorkerCategory, OfficeSettings } from '../types';
 import { Plus, Trash2, Save, Copy, X, Users, FileText, Calculator, AlertCircle, DollarSign, Clock, Utensils, Fuel, Check, CheckCircle2, Building } from 'lucide-react';
-import { getTodayDateString } from '../utils/date';
+import { getTodayDateString, getNextDateString } from '../utils/date';
 
 interface DispatchLogFormModalProps {
   initialLog?: DispatchLog | null;
@@ -208,11 +208,19 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
 
   // --- FORM MODE 2 HANDLERS (Invoice Summary) ---
   const handleAddInvoiceRow = () => {
+    let nextDate = date || getTodayDateString();
+    if (invoiceItems.length > 0) {
+      const lastItem = invoiceItems[invoiceItems.length - 1];
+      nextDate = getNextDateString(lastItem.date, nextDate);
+    } else if (startDate) {
+      nextDate = startDate;
+    }
+
     setInvoiceItems((prev) => [
       ...prev,
       {
         id: `inv-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
-        date: date,
+        date: nextDate,
         workCategory: '보통',
         serviceCount: 1.0,
         unitPrice: 160000,
@@ -1010,7 +1018,7 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
                   <thead className="bg-slate-50 text-slate-400 font-bold text-[10px] uppercase tracking-wider border-b border-slate-100">
                     <tr>
                       <th className="p-2.5 w-10 text-center">NO</th>
-                      <th className="p-2.5 w-28">일자</th>
+                      <th className="p-2.5 w-36 min-w-[130px]">일자</th>
                       <th className="p-2.5 w-40">용역 항목 (직종)</th>
                       <th className="p-2.5 w-24">용역수 (인원)</th>
                       <th className="p-2.5 w-32">단가 (원)</th>
@@ -1030,13 +1038,13 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
                         </td>
 
                         {/* Date */}
-                        <td className="p-2">
+                        <td className="p-2 min-w-[130px]">
                           <input
                             type="text"
                             value={item.date}
                             onChange={(e) => handleUpdateInvoiceRow(idx, 'date', e.target.value)}
-                            placeholder="08월 11일"
-                            className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-mono font-bold text-slate-800 outline-none"
+                            placeholder="2026-08-11"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-mono font-bold text-slate-800 outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white transition-all"
                           />
                         </td>
 

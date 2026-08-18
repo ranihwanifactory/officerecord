@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { DispatchLog, OfficeSettings, InvoiceItem, WorkerMaster, DispatchWorkerItem } from '../types';
-import { Printer, Download, Copy, X, Image, Loader2, Calculator, Users, CheckCircle2, Clock, Check, FileSignature, Shield, Eye, EyeOff } from 'lucide-react';
+import { Printer, Download, Copy, X, Image, Loader2, Calculator, Users, CheckCircle2, Clock, Check, FileSignature, Shield, Eye, EyeOff, Edit3 } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import { DelegationSheet } from './DelegationSheet';
 import { maskResidentId } from '../utils/date';
@@ -13,6 +13,7 @@ interface PrintableSheetProps {
   initialViewMode?: 'worker_roster' | 'invoice_summary' | 'delegation_letter';
   onUpdateLog?: (updatedLog: DispatchLog) => void;
   onClose?: () => void;
+  onEditClick?: (log: DispatchLog) => void;
   onDuplicateClick?: (log: DispatchLog) => void;
   onTogglePaidLog?: (log: DispatchLog) => void;
 }
@@ -25,6 +26,7 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
   initialViewMode,
   onUpdateLog,
   onClose,
+  onEditClick,
   onDuplicateClick,
   onTogglePaidLog,
 }) => {
@@ -321,6 +323,18 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
                   <span>미결제 (결제완료 처리)</span>
                 </>
               )}
+            </button>
+          )}
+
+          {onEditClick && (
+            <button
+              type="button"
+              onClick={() => onEditClick(log)}
+              className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3 py-2 rounded-xl flex items-center space-x-1 shadow-xs transition-colors cursor-pointer"
+              title="이 출력표의 내용을 바로 수정합니다"
+            >
+              <Edit3 className="w-3.5 h-3.5" />
+              <span>내용 수정</span>
             </button>
           )}
 

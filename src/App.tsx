@@ -490,6 +490,10 @@ export default function App() {
               initialViewMode={printInitialViewMode}
               onUpdateLog={handleSaveLog}
               onClose={handleClosePrintModal}
+              onEditClick={(log) => {
+                handleClosePrintModal();
+                handleOpenEditLogModal(log);
+              }}
               onDuplicateClick={(log) => {
                 handleClosePrintModal();
                 handleDuplicateLog(log);
