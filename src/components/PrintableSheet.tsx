@@ -121,10 +121,21 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
       : fullDateKorean;
 
   // Worker counts & totals
-  const skillCount = log.workers.filter(w => w.category && (w.category.includes('기공') || w.category.includes('특별기공'))).reduce((acc, w) => acc + (w.gongsu || 1), 0);
-  const generalCount = log.workers.filter(w => !w.category || (!w.category.includes('기공') && !w.category.includes('특별기공'))).reduce((acc, w) => acc + (w.gongsu || 1), 0);
+  const workerTotalGongsu = log.workers.reduce(
+    (acc, w) => acc + (w.gongsu || (w.workDaysList && w.workDaysList.length > 0 ? w.workDaysList.length : 1)),
+    0
+  );
+  const skillCount = log.workers
+    .filter(w => w.category && (w.category.includes('기공') || w.category.includes('특별기공')))
+    .reduce((acc, w) => acc + (w.gongsu || (w.workDaysList && w.workDaysList.length > 0 ? w.workDaysList.length : 1)), 0);
+  const generalCount = log.workers
+    .filter(w => !w.category || (!w.category.includes('기공') && !w.category.includes('특별기공')))
+    .reduce((acc, w) => acc + (w.gongsu || (w.workDaysList && w.workDaysList.length > 0 ? w.workDaysList.length : 1)), 0);
 
-  const workerLaborCostTotal = log.workers.reduce((acc, w) => acc + (w.dailyRate || 0) * (w.gongsu || 1), 0);
+  const workerLaborCostTotal = log.workers.reduce(
+    (acc, w) => acc + (w.dailyRate || 0) * (w.gongsu || (w.workDaysList && w.workDaysList.length > 0 ? w.workDaysList.length : 1)),
+    0
+  );
   const workerExtraFeeTotal = log.workers.reduce(
     (acc, w) => acc + (w.overtimeFee || 0) + (w.mealFee || 0) + (w.fuelFee || 0) + (w.otherFee || 0),
     0
@@ -444,7 +455,7 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
                   <tr>
                     <td className="bg-slate-100 font-bold text-center py-2 px-2 border-r border-black">작업인원</td>
                     <td className="text-center font-medium py-2 px-3 border-r border-black">
-                      보통 : <span className="font-bold text-black">{generalCount}공수</span> &nbsp;&nbsp;&nbsp;&nbsp; 기공 : <span className="font-bold text-black">{skillCount}공수</span>
+                      총 <span className="font-bold text-black">{log.workers.length}명</span> (총 <span className="font-extrabold text-blue-900 font-mono">{workerTotalGongsu}공수</span>) &nbsp;&nbsp;|&nbsp;&nbsp; 보통 : <span className="font-bold text-black">{generalCount}공수</span> &nbsp;&nbsp; 기공 : <span className="font-bold text-black">{skillCount}공수</span>
                     </td>
                   </tr>
                 </tbody>
@@ -541,7 +552,7 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
                               {/* Total days summary & remarks */}
                               <div className="text-[10px] text-slate-800 flex items-center justify-center space-x-1.5 pt-0.5">
                                 <span className="font-bold text-slate-900">
-                                  [총 {((worker.workDaysList && worker.workDaysList.length > 0) ? worker.workDaysList.length : 1)}일 출근]
+                                  [총 {((worker.workDaysList && worker.workDaysList.length > 0) ? worker.workDaysList.length : (worker.gongsu || 1))}일 출근 ({worker.gongsu || (worker.workDaysList && worker.workDaysList.length > 0 ? worker.workDaysList.length : 1)}공수)]
                                 </span>
                                 {worker.remarks ? (
                                   <span className="text-slate-600 font-medium">({worker.remarks})</span>
@@ -557,10 +568,11 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
                   })}
 
                   {/* Sum / Total Calculation Row */}
-                  <tr className="border-t-2 border-black font-bold text-sm h-10">
+                  <tr className="border-t-2 border-black font-bold text-sm h-11">
                     <td className="text-center border-r border-black bg-slate-100">합 계</td>
-                    <td className="border-r border-black text-center text-xs text-slate-600">
-                      {log.workers.length}명
+                    <td className="border-r border-black text-center text-xs text-slate-800 py-1">
+                      <div className="font-bold">{log.workers.length}명</div>
+                      <div className="text-[11px] font-black text-blue-900 font-mono">[총 {workerTotalGongsu}공수]</div>
                     </td>
                     <td className="text-center border-r border-black font-mono font-bold">
                       ₩{workerLaborCostTotal.toLocaleString()}
@@ -569,8 +581,15 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
                       {workerExtraFeeTotal > 0 ? `+₩${workerExtraFeeTotal.toLocaleString()}` : '-'}
                     </td>
                     <td className="text-right px-4 text-xs font-black align-middle text-black">
-                      총 청구금액: ₩{workerGrandTotal.toLocaleString()}원 &nbsp;
-                      <span className="text-[11px] font-normal text-slate-700">({activeOffice.bankAccount})</span>
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-800 font-extrabold text-[11px]">
+                          (총 작업인원: {log.workers.length}명 / 총 {workerTotalGongsu}공수)
+                        </span>
+                        <span>
+                          총 청구금액: ₩{workerGrandTotal.toLocaleString()}원 &nbsp;
+                          <span className="text-[11px] font-normal text-slate-700">({activeOffice.bankAccount})</span>
+                        </span>
+                      </div>
                     </td>
                   </tr>
                 </tbody>
@@ -635,7 +654,7 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
                   <tr>
                     <td className="bg-slate-100 font-bold text-center py-2 px-2 border-r border-black">총 청구 용역수</td>
                     <td className="text-center font-bold text-black py-2 px-3 border-r border-black">
-                      총 <span className="text-base font-black">{invoiceTotalServiceCount}</span> 명 / 공수
+                      총 <span className="text-base font-black text-blue-900 font-mono">{invoiceTotalServiceCount}</span> 공수
                     </td>
                   </tr>
                 </tbody>
@@ -654,7 +673,7 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
                   <tr className="bg-slate-100 border-b border-black text-center font-bold text-xs">
                     <th className="w-16 py-2 border-r border-black">일 자</th>
                     <th className="w-28 py-2 border-r border-black">용역 항목</th>
-                    <th className="w-20 py-2 border-r border-black">용역수</th>
+                    <th className="w-20 py-2 border-r border-black">용역수(공수)</th>
                     <th className="w-24 py-2 border-r border-black">단 가</th>
                     <th className="w-28 py-2 border-r border-black">인건비 소계</th>
                     <th className="w-32 py-2 border-r border-black">기타비용(잔업/식대)</th>
@@ -686,8 +705,8 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
                         </td>
 
                         {/* Service Count */}
-                        <td className="text-center border-r border-black font-bold">
-                          {isHasData ? `${item.serviceCount}명` : ''}
+                        <td className="text-center border-r border-black font-bold font-mono">
+                          {isHasData ? `${item.serviceCount}공수` : ''}
                         </td>
 
                         {/* Unit Price */}
@@ -735,8 +754,8 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
                   <tr className="border-t-2 border-black font-bold text-sm h-11 bg-slate-50">
                     <td className="text-center border-r border-black bg-slate-100">합 계</td>
                     <td className="border-r border-black text-center text-xs">총계</td>
-                    <td className="text-center border-r border-black font-bold">
-                      {invoiceTotalServiceCount}명
+                    <td className="text-center border-r border-black font-bold font-mono text-blue-900">
+                      총 {invoiceTotalServiceCount}공수
                     </td>
                     <td className="border-r border-black"></td>
                     <td className="text-right pr-2 border-r border-black font-mono">

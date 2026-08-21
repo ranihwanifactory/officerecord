@@ -299,8 +299,12 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
 
   // --- CALCULATION TOTALS ---
   const validWorkers = workers.filter((w) => w.name.trim() !== '');
+  const workerTotalGongsu = validWorkers.reduce(
+    (acc, w) => acc + (Number(w.gongsu) || (w.workDaysList && w.workDaysList.length > 0 ? w.workDaysList.length : 1)),
+    0
+  );
   const workerLaborCostTotal = validWorkers.reduce(
-    (acc, w) => acc + (Number(w.dailyRate) || 0) * (Number(w.gongsu) || 0),
+    (acc, w) => acc + (Number(w.dailyRate) || 0) * (Number(w.gongsu) || (w.workDaysList && w.workDaysList.length > 0 ? w.workDaysList.length : 1)),
     0
   );
   const workerExtraFeeTotal = validWorkers.reduce(
@@ -316,10 +320,10 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
 
   const skillGongsuCount = validWorkers
     .filter((w) => w.category && w.category.includes('기공'))
-    .reduce((acc, w) => acc + (Number(w.gongsu) || 0), 0);
+    .reduce((acc, w) => acc + (Number(w.gongsu) || (w.workDaysList && w.workDaysList.length > 0 ? w.workDaysList.length : 1)), 0);
   const generalGongsuCount = validWorkers
     .filter((w) => !w.category || !w.category.includes('기공'))
-    .reduce((acc, w) => acc + (Number(w.gongsu) || 0), 0);
+    .reduce((acc, w) => acc + (Number(w.gongsu) || (w.workDaysList && w.workDaysList.length > 0 ? w.workDaysList.length : 1)), 0);
 
   // Invoice Totals
   const validInvoiceItems = invoiceItems.filter((i) => i.workCategory.trim() !== '');
@@ -715,8 +719,8 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
                   <h3 className="font-bold text-sm text-slate-800">
                     인부 명단 및 출근/기타비용 내역
                   </h3>
-                  <span className="text-xs bg-blue-50 text-blue-600 font-bold px-2 py-0.5 rounded-md border border-blue-100">
-                    {validWorkers.length}명 등록 중
+                  <span className="text-xs bg-blue-50 text-blue-700 font-bold px-2 py-0.5 rounded-md border border-blue-200">
+                    {validWorkers.length}명 등록 중 (총 {workerTotalGongsu}공수)
                   </span>
                 </div>
 
@@ -1182,8 +1186,11 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
               <div className="text-xs sm:text-sm font-semibold text-slate-200">
                 인건비 소계: <span className="font-bold text-white font-mono">₩{activeLaborCost.toLocaleString()}원</span> &nbsp;|&nbsp;
                 기타비용 합계: <span className="font-bold text-amber-400 font-mono">₩{activeExtraFee.toLocaleString()}원</span>
+                {formType === 'worker_roster' && (
+                  <span className="ml-2 text-blue-300 font-bold">(총 인원: {validWorkers.length}명 / 총 {workerTotalGongsu}공수)</span>
+                )}
                 {formType === 'invoice_summary' && (
-                  <span className="ml-2 text-emerald-400 font-bold">(총 용역수: {invoiceTotalServiceCount}명/공수)</span>
+                  <span className="ml-2 text-emerald-400 font-bold">(총 용역수: {invoiceTotalServiceCount}공수)</span>
                 )}
               </div>
             </div>
