@@ -55,6 +55,26 @@
         "bankAccount": { "type": "string" }
       },
       "required": ["officeName"]
+    },
+    "OfficeProfile": {
+      "title": "OfficeProfile",
+      "description": "Office profiles for dispatch printing and delegation",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "profileName": { "type": "string" },
+        "officeName": { "type": "string" },
+        "phone1": { "type": "string" },
+        "phone2": { "type": "string" },
+        "address": { "type": "string" },
+        "bankAccount": { "type": "string" },
+        "representativeName": { "type": "string" },
+        "representativeResidentId": { "type": "string" },
+        "representativeAccount": { "type": "string" },
+        "adminEmails": { "type": "array", "items": { "type": "string" } },
+        "isDefault": { "type": "boolean" }
+      },
+      "required": ["id", "officeName"]
     }
   },
   "firestore": {
@@ -69,6 +89,10 @@
     "/clients/{clientId}": {
       "schema": { "$ref": "#/entities/ClientSiteMaster" },
       "description": "Collection of client site items"
+    },
+    "/office_profiles/{profileId}": {
+      "schema": { "$ref": "#/entities/OfficeProfile" },
+      "description": "Collection of office profiles"
     },
     "/settings/{settingId}": {
       "schema": { "$ref": "#/entities/OfficeSettings" },

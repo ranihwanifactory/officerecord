@@ -1,5 +1,5 @@
 import { 
-  collection, doc, setDoc, deleteDoc, onSnapshot, getDocs, query, orderBy 
+  collection, doc, setDoc, deleteDoc, onSnapshot, getDocs, getDoc, query, orderBy 
 } from 'firebase/firestore';
 import { db, getLocalData, setLocalData, initLocalData } from '../firebase';
 import { DispatchLog, WorkerMaster, ClientSiteMaster, OfficeSettings } from '../types';
@@ -308,6 +308,14 @@ export function getActiveOfficeProfileId(): string {
 export function setActiveOfficeId(id: string): void {
   localStorage.setItem(KEYS.ACTIVE_OFFICE_ID, id);
   notifyActiveOfficeListeners(id);
+
+  try {
+    setDoc(doc(db, 'settings', 'active_office'), { activeId: id }, { merge: true }).catch((e) => {
+      console.warn('Firestore save active office error:', e);
+    });
+  } catch (err) {
+    console.warn('Firestore save active office error:', err);
+  }
 }
 
 export function setActiveOfficeProfileId(id: string): void {
@@ -317,8 +325,29 @@ export function setActiveOfficeProfileId(id: string): void {
 export function subscribeActiveOfficeId(onUpdate: (activeId: string) => void): () => void {
   onUpdate(getActiveOfficeId());
   activeOfficeListeners.push(onUpdate);
+
+  let unsubscribeFirestore: () => void = () => {};
+  try {
+    unsubscribeFirestore = onSnapshot(doc(db, 'settings', 'active_office'), (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        if (data && data.activeId && data.activeId !== getActiveOfficeId()) {
+          localStorage.setItem(KEYS.ACTIVE_OFFICE_ID, data.activeId);
+          activeOfficeListeners.forEach((cb) => {
+            try { cb(data.activeId); } catch (e) {}
+          });
+        }
+      }
+    }, (err) => {
+      console.warn('Firestore active_office snapshot error:', err);
+    });
+  } catch (err) {
+    console.warn('Firestore active_office subscription error:', err);
+  }
+
   return () => {
     activeOfficeListeners = activeOfficeListeners.filter((cb) => cb !== onUpdate);
+    unsubscribeFirestore();
   };
 }
 
@@ -338,6 +367,9 @@ export function subscribeOfficeProfiles(
           phone2: oldSettings.phone2 || '',
           address: oldSettings.address || '',
           bankAccount: oldSettings.bankAccount || '',
+          representativeName: oldSettings.representativeName || '김진환',
+          representativeResidentId: oldSettings.representativeResidentId || '801121-1795828',
+          representativeAccount: oldSettings.representativeAccount || '기업은행 69301137601015 김진환',
           adminEmails: oldSettings.adminEmails || ['acehwan69@gmail.com'],
           isDefault: true,
         },
@@ -362,15 +394,50 @@ export function subscribeOfficeProfiles(
           firestoreProfiles.push({ id: docSnap.id, ...docSnap.data() } as OfficeSettings);
         });
         setLocalData(KEYS.OFFICE_PROFILES, firestoreProfiles);
+        const defaultProfile = firestoreProfiles.find((p) => p.isDefault) || firestoreProfiles[0];
+        if (defaultProfile) {
+          setLocalData(KEYS.OFFICE, defaultProfile);
+        }
         const currentActiveId = getActiveOfficeProfileId();
         notifyOfficeProfilesListeners(firestoreProfiles, currentActiveId);
       } else {
+        // Check if there's legacy office settings in 'settings/office_info'
+        try {
+          const settingDoc = await getDoc(doc(db, 'settings', 'office_info'));
+          if (settingDoc.exists() && settingDoc.data()) {
+            const data = settingDoc.data() as OfficeSettings;
+            const restoredProfile: OfficeSettings = {
+              id: data.id || 'default',
+              profileName: data.profileName || `${data.officeName || '젊은인력사무소'} (본점)`,
+              officeName: data.officeName || '젊은인력사무소',
+              phone1: data.phone1 || '',
+              phone2: data.phone2 || '',
+              address: data.address || '',
+              bankAccount: data.bankAccount || '',
+              representativeName: data.representativeName || '김진환',
+              representativeResidentId: data.representativeResidentId || '801121-1795828',
+              representativeAccount: data.representativeAccount || '기업은행 69301137601015 김진환',
+              adminEmails: data.adminEmails || ['acehwan69@gmail.com'],
+              isDefault: true,
+            };
+            const profilesList = [restoredProfile];
+            setLocalData(KEYS.OFFICE_PROFILES, profilesList);
+            setLocalData(KEYS.OFFICE, restoredProfile);
+            await setDoc(doc(db, 'office_profiles', restoredProfile.id), sanitizeForFirestore(restoredProfile));
+            notifyOfficeProfilesListeners(profilesList, restoredProfile.id);
+            return;
+          }
+        } catch (e) {
+          console.warn('Fallback office settings check error:', e);
+        }
+
         // If Firestore is empty, upload initial default profiles to Firestore
         const currentToUpload = getLocalData<OfficeSettings[]>(KEYS.OFFICE_PROFILES, DEFAULT_OFFICE_PROFILES);
         for (const p of currentToUpload) {
           const pId = p.id || 'default';
           try {
             await setDoc(doc(db, 'office_profiles', pId), sanitizeForFirestore(p));
+            await setDoc(doc(db, 'settings', 'office_info'), sanitizeForFirestore(p));
           } catch (e) {
             console.warn('Initial office profile sync error:', e);
           }
@@ -431,6 +498,7 @@ export async function saveOfficeProfile(profile: OfficeSettings): Promise<void> 
     await setDoc(doc(db, 'office_profiles', profileId), sanitizeForFirestore(profileToSave));
     if (defaultProfile) {
       await setDoc(doc(db, 'settings', 'office_info'), sanitizeForFirestore(defaultProfile));
+      await setDoc(doc(db, 'settings', 'office_settings'), sanitizeForFirestore(defaultProfile));
     }
   } catch (err) {
     console.warn('Firestore saveOfficeProfile error:', err);
