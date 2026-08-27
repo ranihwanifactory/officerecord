@@ -8,7 +8,8 @@ import {
 import { 
   downloadDatabaseBackup, 
   validateBackupFile, 
-  restoreDatabaseFromBackup 
+  restoreDatabaseFromBackup,
+  syncOfficeProfilesWithFirestore
 } from '../services/dataService';
 
 interface OfficeSettingsModalProps {
@@ -58,6 +59,28 @@ export const OfficeSettingsModal: React.FC<OfficeSettingsModalProps> = ({
   const [isDefault, setIsDefault] = useState(false);
 
   const [isSavedNotice, setIsSavedNotice] = useState(false);
+  const [isSyncingCloud, setIsSyncingCloud] = useState(false);
+  const [syncNotice, setSyncNotice] = useState<string | null>(null);
+
+  // Auto-sync with Firestore on mount to guarantee latest cloud profiles across devices
+  useEffect(() => {
+    syncOfficeProfilesWithFirestore().catch((err) => {
+      console.warn('Modal auto-sync error:', err);
+    });
+  }, []);
+
+  const handleSyncCloud = async () => {
+    try {
+      setIsSyncingCloud(true);
+      const synced = await syncOfficeProfilesWithFirestore();
+      setSyncNotice(`✓ 클라우드 DB와 ${synced.length}개 사무소 프로필이 동기화되었습니다.`);
+      setTimeout(() => setSyncNotice(null), 3500);
+    } catch (err: any) {
+      alert(`동기화 중 오류가 발생했습니다: ${err?.message || err}`);
+    } finally {
+      setIsSyncingCloud(false);
+    }
+  };
 
   // Backup & Restore State
   const [backupDownloadNotice, setBackupDownloadNotice] = useState(false);
@@ -237,27 +260,52 @@ export const OfficeSettingsModal: React.FC<OfficeSettingsModalProps> = ({
       
       {/* Title & Description Header */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm transition-colors space-y-5">
-        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4 gap-3">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/80 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">
               <Settings className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">사무소 프로필 다중 관리 & 설정</h2>
+              <div className="flex items-center space-x-2">
+                <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">사무소 프로필 다중 관리 & 설정</h2>
+                <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse" />
+                  클라우드 DB 실시간 동기화 중
+                </span>
+              </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                여러 사무실/지점 정보를 등록해두고 선택하여 출력표 및 정산서에 원하는 사무소 직인/정보를 반영할 수 있습니다.
+                모든 PC, 모바일 및 기기 간에 등록된 사무소 프로필이 실시간으로 자동 동기화됩니다.
               </p>
             </div>
           </div>
 
-          <button
-            onClick={handleAddNew}
-            className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center space-x-1.5 shadow-xs transition-colors cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>새 사무소 프로필 추가</span>
-          </button>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={handleSyncCloud}
+              disabled={isSyncingCloud}
+              className="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs flex items-center space-x-1.5 transition-colors cursor-pointer disabled:opacity-50"
+              title="클라우드 DB와 즉시 수동 동기화"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 text-blue-600 dark:text-blue-400 ${isSyncingCloud ? 'animate-spin' : ''}`} />
+              <span>{isSyncingCloud ? '동기화 중...' : '클라우드 DB 동기화'}</span>
+            </button>
+
+            <button
+              onClick={handleAddNew}
+              className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center space-x-1.5 shadow-xs transition-colors cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>새 프로필 추가</span>
+            </button>
+          </div>
         </div>
+
+        {syncNotice && (
+          <div className="px-4 py-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 flex items-center space-x-2 text-xs font-bold text-emerald-700 dark:text-emerald-300 animate-fadeIn">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <span>{syncNotice}</span>
+          </div>
+        )}
 
         {/* Profiles List Cards Grid */}
         <div className="space-y-2">
