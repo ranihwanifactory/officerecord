@@ -1,11 +1,11 @@
 import React from 'react';
-import { Calendar, FileText, Users, Building, Settings, LogIn, LogOut, ShieldCheck, Printer, Plus, Sun, Moon } from 'lucide-react';
+import { Calendar, FileText, Users, Building, Settings, LogIn, LogOut, ShieldCheck, Printer, Plus, Sun, Moon, FileSpreadsheet } from 'lucide-react';
 import { User } from 'firebase/auth';
 import { OfficeSettings } from '../types';
 
 interface NavbarProps {
-  activeTab: 'calendar' | 'list' | 'settlement' | 'roster' | 'settings';
-  setActiveTab: (tab: 'calendar' | 'list' | 'settlement' | 'roster' | 'settings') => void;
+  activeTab: 'calendar' | 'list' | 'settlement' | 'tax_invoice' | 'roster' | 'settings';
+  setActiveTab: (tab: 'calendar' | 'list' | 'settlement' | 'tax_invoice' | 'roster' | 'settings') => void;
   user: User | null;
   onLogin: () => void;
   onLogout: () => void;
@@ -192,6 +192,18 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
 
             <button
+              onClick={() => setActiveTab('tax_invoice')}
+              className={`flex items-center space-x-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap cursor-pointer ${
+                activeTab === 'tax_invoice'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <FileSpreadsheet className="w-4 h-4 text-emerald-500" />
+              <span>전자세금계산서</span>
+            </button>
+
+            <button
               onClick={() => setActiveTab('roster')}
               className={`flex items-center space-x-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap cursor-pointer ${
                 activeTab === 'roster'
@@ -220,7 +232,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
       {/* Mobile Fixed Bottom Navigation Bar (Thumb Friendly) */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 print:hidden transition-colors shadow-lg">
-        <div className="grid grid-cols-5 h-16 max-w-lg mx-auto px-1">
+        <div className="grid grid-cols-6 h-16 max-w-lg mx-auto px-1">
           <button
             type="button"
             onClick={() => setActiveTab('calendar')}
@@ -231,9 +243,9 @@ export const Navbar: React.FC<NavbarProps> = ({
             }`}
           >
             <div className={`p-1 rounded-xl ${activeTab === 'calendar' ? 'bg-blue-50 dark:bg-blue-950/80' : ''}`}>
-              <Calendar className="w-5 h-5" />
+              <Calendar className="w-4 h-4" />
             </div>
-            <span className="text-[10px] tracking-tight">달력</span>
+            <span className="text-[9px] tracking-tight">달력</span>
           </button>
 
           <button
@@ -246,9 +258,9 @@ export const Navbar: React.FC<NavbarProps> = ({
             }`}
           >
             <div className={`p-1 rounded-xl ${activeTab === 'list' ? 'bg-blue-50 dark:bg-blue-950/80' : ''}`}>
-              <FileText className="w-5 h-5" />
+              <FileText className="w-4 h-4" />
             </div>
-            <span className="text-[10px] tracking-tight">일지목록</span>
+            <span className="text-[9px] tracking-tight">일지</span>
           </button>
 
           <button
@@ -261,9 +273,24 @@ export const Navbar: React.FC<NavbarProps> = ({
             }`}
           >
             <div className={`p-1 rounded-xl ${activeTab === 'settlement' ? 'bg-blue-50 dark:bg-blue-950/80' : ''}`}>
-              <Printer className="w-5 h-5" />
+              <Printer className="w-4 h-4" />
             </div>
-            <span className="text-[10px] tracking-tight">정산</span>
+            <span className="text-[9px] tracking-tight">정산</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('tax_invoice')}
+            className={`flex flex-col items-center justify-center space-y-1 transition-all cursor-pointer select-none ${
+              activeTab === 'tax_invoice'
+                ? 'text-blue-600 dark:text-blue-400 font-bold scale-105'
+                : 'text-slate-500 dark:text-slate-400 font-medium hover:text-slate-800'
+            }`}
+          >
+            <div className={`p-1 rounded-xl ${activeTab === 'tax_invoice' ? 'bg-blue-50 dark:bg-blue-950/80' : ''}`}>
+              <FileSpreadsheet className="w-4 h-4 text-emerald-500" />
+            </div>
+            <span className="text-[9px] tracking-tight">세금계산서</span>
           </button>
 
           <button
@@ -276,9 +303,9 @@ export const Navbar: React.FC<NavbarProps> = ({
             }`}
           >
             <div className={`p-1 rounded-xl ${activeTab === 'roster' ? 'bg-blue-50 dark:bg-blue-950/80' : ''}`}>
-              <Users className="w-5 h-5" />
+              <Users className="w-4 h-4" />
             </div>
-            <span className="text-[10px] tracking-tight">인부/현장</span>
+            <span className="text-[9px] tracking-tight">인부/현장</span>
           </button>
 
           <button
@@ -291,9 +318,9 @@ export const Navbar: React.FC<NavbarProps> = ({
             }`}
           >
             <div className={`p-1 rounded-xl ${activeTab === 'settings' ? 'bg-blue-50 dark:bg-blue-950/80' : ''}`}>
-              <Settings className="w-5 h-5" />
+              <Settings className="w-4 h-4" />
             </div>
-            <span className="text-[10px] tracking-tight">설정</span>
+            <span className="text-[9px] tracking-tight">설정</span>
           </button>
         </div>
       </nav>

@@ -64,6 +64,10 @@
         "id": { "type": "string" },
         "profileName": { "type": "string" },
         "officeName": { "type": "string" },
+        "registrationNumber": { "type": "string" },
+        "bizType": { "type": "string" },
+        "bizCategory": { "type": "string" },
+        "email": { "type": "string" },
         "phone1": { "type": "string" },
         "phone2": { "type": "string" },
         "address": { "type": "string" },
@@ -75,6 +79,28 @@
         "isDefault": { "type": "boolean" }
       },
       "required": ["id", "officeName"]
+    },
+    "TaxInvoice": {
+      "title": "TaxInvoice",
+      "description": "Electronic tax invoice records and management",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "invoiceNumber": { "type": "string" },
+        "issueDate": { "type": "string" },
+        "ntsIssueId": { "type": "string" },
+        "supplierName": { "type": "string" },
+        "supplierRegistrationNumber": { "type": "string" },
+        "clientName": { "type": "string" },
+        "clientRegistrationNumber": { "type": "string" },
+        "taxType": { "type": "string" },
+        "supplyAmount": { "type": "number" },
+        "taxAmount": { "type": "number" },
+        "totalAmount": { "type": "number" },
+        "status": { "type": "string" },
+        "paymentStatus": { "type": "string" }
+      },
+      "required": ["id", "issueDate", "clientName", "totalAmount"]
     }
   },
   "firestore": {
@@ -89,6 +115,10 @@
     "/clients/{clientId}": {
       "schema": { "$ref": "#/entities/ClientSiteMaster" },
       "description": "Collection of client site items"
+    },
+    "/tax_invoices/{invoiceId}": {
+      "schema": { "$ref": "#/entities/TaxInvoice" },
+      "description": "Collection of tax invoices"
     },
     "/office_profiles/{profileId}": {
       "schema": { "$ref": "#/entities/OfficeProfile" },

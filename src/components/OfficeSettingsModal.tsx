@@ -52,6 +52,10 @@ export const OfficeSettingsModal: React.FC<OfficeSettingsModalProps> = ({
   const [phone2, setPhone2] = useState('');
   const [address, setAddress] = useState('');
   const [bankAccount, setBankAccount] = useState('');
+  const [registrationNumber, setRegistrationNumber] = useState('504-81-12345');
+  const [bizType, setBizType] = useState('서비스');
+  const [bizCategory, setBizCategory] = useState('인력공급, 고용알선');
+  const [email, setEmail] = useState('youngman_hr@naver.com');
   const [representativeName, setRepresentativeName] = useState('김진환');
   const [representativeResidentId, setRepresentativeResidentId] = useState('801121-1795828');
   const [representativeAccount, setRepresentativeAccount] = useState('기업은행 69301137601015 김진환');
@@ -108,6 +112,10 @@ export const OfficeSettingsModal: React.FC<OfficeSettingsModalProps> = ({
       setPhone2(target.phone2 || '');
       setAddress(target.address || '');
       setBankAccount(target.bankAccount || '');
+      setRegistrationNumber(target.registrationNumber || '504-81-12345');
+      setBizType(target.bizType || '서비스');
+      setBizCategory(target.bizCategory || '인력공급, 고용알선');
+      setEmail(target.email || 'youngman_hr@naver.com');
       setRepresentativeName(target.representativeName || '김진환');
       setRepresentativeResidentId(target.representativeResidentId || '801121-1795828');
       setRepresentativeAccount(target.representativeAccount || '기업은행 69301137601015 김진환');
@@ -121,6 +129,10 @@ export const OfficeSettingsModal: React.FC<OfficeSettingsModalProps> = ({
       setPhone2('');
       setAddress('');
       setBankAccount('');
+      setRegistrationNumber('504-81-12345');
+      setBizType('서비스');
+      setBizCategory('인력공급, 고용알선');
+      setEmail('youngman_hr@naver.com');
       setRepresentativeName('김진환');
       setRepresentativeResidentId('801121-1795828');
       setRepresentativeAccount('기업은행 69301137601015 김진환');
@@ -156,6 +168,10 @@ export const OfficeSettingsModal: React.FC<OfficeSettingsModalProps> = ({
       phone2: phone2.trim(),
       address: address.trim(),
       bankAccount: bankAccount.trim(),
+      registrationNumber: registrationNumber.trim(),
+      bizType: bizType.trim(),
+      bizCategory: bizCategory.trim(),
+      email: email.trim(),
       representativeName: representativeName.trim(),
       representativeResidentId: representativeResidentId.trim(),
       representativeAccount: representativeAccount.trim(),
@@ -528,6 +544,66 @@ export const OfficeSettingsModal: React.FC<OfficeSettingsModalProps> = ({
               placeholder="농협 302-65550038-11 손영란"
               className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-sm font-bold text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-400 dark:placeholder-slate-500"
             />
+          </div>
+
+          {/* Business Registration for Tax Invoices */}
+          <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-xl border border-slate-200 dark:border-slate-700/80 space-y-3">
+            <h4 className="text-xs font-black text-slate-800 dark:text-slate-200 flex items-center space-x-1.5">
+              <span>🏢 사업자 정보 (전자세금계산서 공급자 표기용)</span>
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
+                  사업자등록번호
+                </label>
+                <input
+                  type="text"
+                  value={registrationNumber}
+                  onChange={(e) => setRegistrationNumber(e.target.value)}
+                  placeholder="504-81-12345"
+                  className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs font-mono font-bold text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
+                  세금계산서 이메일
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="youngman_hr@naver.com"
+                  className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs font-mono text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
+                  업태
+                </label>
+                <input
+                  type="text"
+                  value={bizType}
+                  onChange={(e) => setBizType(e.target.value)}
+                  placeholder="서비스"
+                  className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs font-medium text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 mb-1">
+                  종목
+                </label>
+                <input
+                  type="text"
+                  value={bizCategory}
+                  onChange={(e) => setBizCategory(e.target.value)}
+                  placeholder="인력공급, 고용알선"
+                  className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 text-xs font-medium text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
           </div>
 
           {/* Representative / Delegation Info Section */}

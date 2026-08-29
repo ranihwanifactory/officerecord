@@ -8,6 +8,7 @@ import { Navbar } from './components/Navbar';
 import { CalendarView } from './components/CalendarView';
 import { DispatchLogList } from './components/DispatchLogList';
 import { SettlementSummary } from './components/SettlementSummary';
+import { TaxInvoiceManager } from './components/TaxInvoiceManager';
 import { RosterManager } from './components/RosterManager';
 import { OfficeSettingsModal } from './components/OfficeSettingsModal';
 import { DispatchLogFormModal } from './components/DispatchLogFormModal';
@@ -15,7 +16,7 @@ import { PrintableSheet } from './components/PrintableSheet';
 import { AdminLoginScreen } from './components/AdminLoginScreen';
 import { Loader2, Plus } from 'lucide-react';
 
-import { DispatchLog, WorkerMaster, ClientSiteMaster, OfficeSettings } from './types';
+import { DispatchLog, WorkerMaster, ClientSiteMaster, OfficeSettings, TaxInvoice } from './types';
 import {
   subscribeDispatchLogs,
   saveDispatchLog,
@@ -33,6 +34,9 @@ import {
   deleteOfficeProfile,
   subscribeActiveOfficeId,
   setActiveOfficeId,
+  subscribeTaxInvoices,
+  saveTaxInvoice,
+  deleteTaxInvoice,
 } from './services/dataService';
 import {
   auth,
@@ -46,7 +50,7 @@ import { getTodayDateString } from './utils/date';
 
 export default function App() {
   // Navigation State
-  const [activeTab, setActiveTab] = useState<'calendar' | 'list' | 'settlement' | 'roster' | 'settings'>('calendar');
+  const [activeTab, setActiveTab] = useState<'calendar' | 'list' | 'settlement' | 'tax_invoice' | 'roster' | 'settings'>('calendar');
 
   // Dark Mode State
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
@@ -81,6 +85,7 @@ export default function App() {
   const [dispatchLogs, setDispatchLogs] = useState<DispatchLog[]>([]);
   const [workersRoster, setWorkersRoster] = useState<WorkerMaster[]>([]);
   const [clientsRoster, setClientsRoster] = useState<ClientSiteMaster[]>([]);
+  const [taxInvoices, setTaxInvoices] = useState<TaxInvoice[]>([]);
   const [officeSettings, setOfficeSettings] = useState<OfficeSettings>({
     officeName: '젊은인력사무소',
     phone1: '054-933-1566',
@@ -118,7 +123,7 @@ export default function App() {
       }
 
       // 2. Sync tab state from hash
-      if (['calendar', 'list', 'settlement', 'roster', 'settings'].includes(hash)) {
+      if (['calendar', 'list', 'settlement', 'tax_invoice', 'roster', 'settings'].includes(hash)) {
         setActiveTab(hash as any);
       } else if (!hash) {
         setActiveTab('calendar');
@@ -128,7 +133,7 @@ export default function App() {
     // Initial check on page mount
     if (window.location.hash) {
       const hash = window.location.hash.replace('#', '').split('?')[0];
-      if (['calendar', 'list', 'settlement', 'roster', 'settings'].includes(hash)) {
+      if (['calendar', 'list', 'settlement', 'tax_invoice', 'roster', 'settings'].includes(hash)) {
         setActiveTab(hash as any);
       }
     } else {
@@ -144,7 +149,7 @@ export default function App() {
     };
   }, []);
 
-  const handleTabChange = (tab: 'calendar' | 'list' | 'settlement' | 'roster' | 'settings') => {
+  const handleTabChange = (tab: 'calendar' | 'list' | 'settlement' | 'tax_invoice' | 'roster' | 'settings') => {
     setActiveTab(tab);
     if (window.location.hash !== `#${tab}`) {
       window.history.pushState({ tab }, '', `#${tab}`);
@@ -186,6 +191,7 @@ export default function App() {
     const unsubLogs = subscribeDispatchLogs((logs) => setDispatchLogs(logs));
     const unsubWorkers = subscribeWorkers((workers) => setWorkersRoster(workers));
     const unsubClients = subscribeClients((clients) => setClientsRoster(clients));
+    const unsubInvoices = subscribeTaxInvoices((invs) => setTaxInvoices(invs));
     const unsubSettings = subscribeOfficeSettings((settings) => setOfficeSettings(settings));
     const unsubProfiles = subscribeOfficeProfiles((profiles) => setOfficeProfiles(profiles));
     const unsubActiveId = subscribeActiveOfficeId((id) => setActiveOfficeIdState(id));
@@ -194,6 +200,7 @@ export default function App() {
       unsubLogs();
       unsubWorkers();
       unsubClients();
+      unsubInvoices();
       unsubSettings();
       unsubProfiles();
       unsubActiveId();
@@ -300,6 +307,16 @@ export default function App() {
   const handleDeleteClient = async (id: string) => {
     if (!checkAdminPermission()) return;
     await deleteClient(id);
+  };
+
+  const handleSaveTaxInvoice = async (invoice: TaxInvoice) => {
+    if (!checkAdminPermission()) return;
+    await saveTaxInvoice(invoice);
+  };
+
+  const handleDeleteTaxInvoice = async (id: string) => {
+    if (!checkAdminPermission()) return;
+    await deleteTaxInvoice(id);
   };
 
   const handleSaveOfficeProfile = async (profile: OfficeSettings) => {
@@ -420,6 +437,18 @@ export default function App() {
           <SettlementSummary
             logs={dispatchLogs}
             officeSettings={officeSettings}
+          />
+        )}
+
+        {activeTab === 'tax_invoice' && (
+          <TaxInvoiceManager
+            invoices={taxInvoices}
+            clients={clientsRoster}
+            officeSettings={officeSettings}
+            officeProfiles={officeProfiles}
+            dispatchLogs={dispatchLogs}
+            onSaveInvoice={handleSaveTaxInvoice}
+            onDeleteInvoice={handleDeleteTaxInvoice}
           />
         )}
 

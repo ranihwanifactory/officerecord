@@ -2,13 +2,14 @@ import {
   collection, doc, setDoc, deleteDoc, onSnapshot, getDocs, getDoc, query, orderBy 
 } from 'firebase/firestore';
 import { db, getLocalData, setLocalData, initLocalData } from '../firebase';
-import { DispatchLog, WorkerMaster, ClientSiteMaster, OfficeSettings } from '../types';
-import { DEFAULT_OFFICE_SETTINGS, DEFAULT_OFFICE_PROFILES, INITIAL_DISPATCH_LOGS, INITIAL_WORKERS, INITIAL_CLIENTS } from '../constants/defaultData';
+import { DispatchLog, WorkerMaster, ClientSiteMaster, OfficeSettings, TaxInvoice } from '../types';
+import { DEFAULT_OFFICE_SETTINGS, DEFAULT_OFFICE_PROFILES, INITIAL_DISPATCH_LOGS, INITIAL_WORKERS, INITIAL_CLIENTS, INITIAL_TAX_INVOICES } from '../constants/defaultData';
 
 const KEYS = {
   LOGS: 'jeolmeun_dispatch_logs_v1',
   WORKERS: 'jeolmeun_workers_v1',
   CLIENTS: 'jeolmeun_clients_v1',
+  TAX_INVOICES: 'jeolmeun_tax_invoices_v1',
   OFFICE: 'jeolmeun_office_settings_v1',
   OFFICE_PROFILES: 'jeolmeun_office_profiles_v2',
   ACTIVE_OFFICE_ID: 'jeolmeun_active_office_id_v2',
@@ -25,6 +26,7 @@ initLocalData();
 let logsListeners: ((logs: DispatchLog[]) => void)[] = [];
 let workersListeners: ((workers: WorkerMaster[]) => void)[] = [];
 let clientsListeners: ((clients: ClientSiteMaster[]) => void)[] = [];
+let taxInvoicesListeners: ((invoices: TaxInvoice[]) => void)[] = [];
 let officeProfilesListeners: ((profiles: OfficeSettings[], activeId: string) => void)[] = [];
 let officeSettingsListeners: ((settings: OfficeSettings) => void)[] = [];
 let activeOfficeListeners: ((id: string) => void)[] = [];
@@ -54,6 +56,13 @@ function notifyClientsListeners(clients: ClientSiteMaster[]) {
     try { cb(clients); } catch (e) { console.error('clients listener error:', e); }
   });
   dispatchDataChangeEvent('clients');
+}
+
+function notifyTaxInvoicesListeners(invoices: TaxInvoice[]) {
+  taxInvoicesListeners.forEach((cb) => {
+    try { cb(invoices); } catch (e) { console.error('taxInvoices listener error:', e); }
+  });
+  dispatchDataChangeEvent('tax_invoices');
 }
 
 function notifyOfficeProfilesListeners(profiles: OfficeSettings[], activeId: string) {
@@ -88,6 +97,9 @@ if (typeof window !== 'undefined') {
     } else if (e.key === KEYS.CLIENTS) {
       const clients = getLocalData<ClientSiteMaster[]>(KEYS.CLIENTS, INITIAL_CLIENTS);
       notifyClientsListeners(clients);
+    } else if (e.key === KEYS.TAX_INVOICES) {
+      const invoices = getLocalData<TaxInvoice[]>(KEYS.TAX_INVOICES, INITIAL_TAX_INVOICES);
+      notifyTaxInvoicesListeners(invoices);
     } else if (e.key === KEYS.OFFICE_PROFILES || e.key === KEYS.OFFICE) {
       const profiles = getLocalData<OfficeSettings[]>(KEYS.OFFICE_PROFILES, DEFAULT_OFFICE_PROFILES);
       notifyOfficeProfilesListeners(profiles, getActiveOfficeProfileId());
@@ -293,6 +305,88 @@ export async function deleteClient(id: string): Promise<void> {
     await deleteDoc(doc(db, 'clients', id));
   } catch (err) {
     console.warn('Firestore delete client error:', err);
+  }
+}
+
+// Tax Invoices (전자세금계산서)
+export function subscribeTaxInvoices(onUpdate: (invoices: TaxInvoice[]) => void): () => void {
+  const localInvoices = getLocalData<TaxInvoice[]>(KEYS.TAX_INVOICES, INITIAL_TAX_INVOICES);
+  onUpdate(localInvoices);
+  taxInvoicesListeners.push(onUpdate);
+
+  let unsubscribeFirestore: () => void = () => {};
+
+  try {
+    const q = query(collection(db, 'tax_invoices'), orderBy('issueDate', 'desc'));
+    unsubscribeFirestore = onSnapshot(q, (snapshot) => {
+      if (!snapshot.empty) {
+        const list: TaxInvoice[] = [];
+        snapshot.forEach((docSnap) => {
+          list.push({ id: docSnap.id, ...docSnap.data() } as TaxInvoice);
+        });
+        setLocalData(KEYS.TAX_INVOICES, list);
+        notifyTaxInvoicesListeners(list);
+      }
+    }, (err) => {
+      console.warn('Firestore tax_invoices snapshot error:', err);
+    });
+  } catch (err) {
+    console.warn('Firestore tax_invoices subscription error:', err);
+  }
+
+  return () => {
+    taxInvoicesListeners = taxInvoicesListeners.filter((cb) => cb !== onUpdate);
+    unsubscribeFirestore();
+  };
+}
+
+export async function saveTaxInvoice(invoice: TaxInvoice): Promise<void> {
+  const invoiceId = invoice.id || `inv_${Date.now()}`;
+  const invoiceToSave: TaxInvoice = {
+    ...invoice,
+    id: invoiceId,
+    updatedAt: new Date().toISOString(),
+  };
+
+  const current = getLocalData<TaxInvoice[]>(KEYS.TAX_INVOICES, INITIAL_TAX_INVOICES);
+  const idx = current.findIndex((i) => i.id === invoiceId);
+  const updated = idx >= 0
+    ? current.map((i) => i.id === invoiceId ? invoiceToSave : i)
+    : [invoiceToSave, ...current];
+
+  // Sort by issueDate descending
+  updated.sort((a, b) => (b.issueDate || '').localeCompare(a.issueDate || ''));
+
+  setLocalData(KEYS.TAX_INVOICES, updated);
+  notifyTaxInvoicesListeners(updated);
+
+  try {
+    await setDoc(doc(db, 'tax_invoices', invoiceId), sanitizeForFirestore(invoiceToSave));
+    
+    // Also save to settings manifest for guaranteed cross-device backup
+    await setDoc(doc(db, 'settings', 'tax_invoices'), {
+      invoices: sanitizeForFirestore(updated),
+      updatedAt: Date.now(),
+    }, { merge: true });
+  } catch (err) {
+    console.warn('Firestore saveTaxInvoice error:', err);
+  }
+}
+
+export async function deleteTaxInvoice(id: string): Promise<void> {
+  const current = getLocalData<TaxInvoice[]>(KEYS.TAX_INVOICES, []);
+  const updated = current.filter((i) => i.id !== id);
+  setLocalData(KEYS.TAX_INVOICES, updated);
+  notifyTaxInvoicesListeners(updated);
+
+  try {
+    await deleteDoc(doc(db, 'tax_invoices', id));
+    await setDoc(doc(db, 'settings', 'tax_invoices'), {
+      invoices: sanitizeForFirestore(updated),
+      updatedAt: Date.now(),
+    }, { merge: true });
+  } catch (err) {
+    console.warn('Firestore deleteTaxInvoice error:', err);
   }
 }
 
@@ -687,6 +781,7 @@ export interface DatabaseBackupResult {
   workersCount: number;
   clientsCount: number;
   officeProfilesCount: number;
+  taxInvoicesCount?: number;
 }
 
 import { DatabaseBackupData } from '../types';
@@ -699,6 +794,7 @@ export function exportDatabaseBackup(exportedByEmail?: string): DatabaseBackupDa
   const workers = getLocalData<WorkerMaster[]>(KEYS.WORKERS, INITIAL_WORKERS);
   const clients = getLocalData<ClientSiteMaster[]>(KEYS.CLIENTS, INITIAL_CLIENTS);
   const officeProfiles = getLocalData<OfficeSettings[]>(KEYS.OFFICE_PROFILES, DEFAULT_OFFICE_PROFILES);
+  const taxInvoices = getLocalData<TaxInvoice[]>(KEYS.TAX_INVOICES, INITIAL_TAX_INVOICES);
   const activeOfficeId = getActiveOfficeId();
 
   return {
@@ -709,12 +805,14 @@ export function exportDatabaseBackup(exportedByEmail?: string): DatabaseBackupDa
     workers: workers,
     clients: clients,
     officeProfiles: officeProfiles,
+    taxInvoices: taxInvoices,
     activeOfficeId: activeOfficeId,
     summary: {
       logsCount: logs.length,
       workersCount: workers.length,
       clientsCount: clients.length,
       officeProfilesCount: officeProfiles.length,
+      taxInvoicesCount: taxInvoices.length,
     },
   };
 }
@@ -755,8 +853,9 @@ export function validateBackupFile(fileContent: string): { isValid: boolean; dat
     const hasWorkers = Array.isArray(parsed.workers);
     const hasClients = Array.isArray(parsed.clients);
     const hasProfiles = Array.isArray(parsed.officeProfiles);
+    const hasTaxInvoices = Array.isArray(parsed.taxInvoices);
 
-    if (!hasLogs && !hasWorkers && !hasClients && !hasProfiles) {
+    if (!hasLogs && !hasWorkers && !hasClients && !hasProfiles && !hasTaxInvoices) {
       return { isValid: false, error: '유효한 인력관리 백업 데이터 필드가 포함되어 있지 않습니다.' };
     }
 
@@ -768,12 +867,14 @@ export function validateBackupFile(fileContent: string): { isValid: boolean; dat
       workers: parsed.workers || [],
       clients: parsed.clients || [],
       officeProfiles: parsed.officeProfiles || [],
+      taxInvoices: parsed.taxInvoices || [],
       activeOfficeId: parsed.activeOfficeId || 'default',
       summary: {
         logsCount: (parsed.dispatchLogs || []).length,
         workersCount: (parsed.workers || []).length,
         clientsCount: (parsed.clients || []).length,
         officeProfilesCount: (parsed.officeProfiles || []).length,
+        taxInvoicesCount: (parsed.taxInvoices || []).length,
       },
     };
 
@@ -855,7 +956,29 @@ export async function restoreDatabaseFromBackup(
     }
   }
 
-  // 4. Office Profiles Restore
+  // 4. Tax Invoices Restore
+  let finalInvoices: TaxInvoice[] = [];
+  if (mode === 'overwrite') {
+    finalInvoices = backup.taxInvoices || [];
+  } else {
+    const existing = getLocalData<TaxInvoice[]>(KEYS.TAX_INVOICES, []);
+    const map = new Map<string, TaxInvoice>();
+    existing.forEach((i) => map.set(i.id, i));
+    (backup.taxInvoices || []).forEach((i) => map.set(i.id, i));
+    finalInvoices = Array.from(map.values());
+  }
+  finalInvoices.sort((a, b) => (b.issueDate || '').localeCompare(a.issueDate || ''));
+  setLocalData(KEYS.TAX_INVOICES, finalInvoices);
+
+  for (const inv of finalInvoices) {
+    try {
+      await setDoc(doc(db, 'tax_invoices', inv.id), sanitizeForFirestore(inv));
+    } catch (e) {
+      console.warn('Firestore restore tax invoice error:', e);
+    }
+  }
+
+  // 5. Office Profiles Restore
   let finalProfiles: OfficeSettings[] = [];
   if (mode === 'overwrite') {
     finalProfiles = backup.officeProfiles && backup.officeProfiles.length > 0
@@ -896,6 +1019,7 @@ export async function restoreDatabaseFromBackup(
   notifyLogsListeners(finalLogs);
   notifyWorkersListeners(finalWorkers);
   notifyClientsListeners(finalClients);
+  notifyTaxInvoicesListeners(finalInvoices);
   notifyOfficeProfilesListeners(finalProfiles, backup.activeOfficeId || getActiveOfficeProfileId());
 
   return {
@@ -903,5 +1027,6 @@ export async function restoreDatabaseFromBackup(
     workersCount: finalWorkers.length,
     clientsCount: finalClients.length,
     officeProfilesCount: finalProfiles.length,
+    taxInvoicesCount: finalInvoices.length,
   };
 }

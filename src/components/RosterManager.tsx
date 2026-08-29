@@ -82,6 +82,11 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
   const [cName, setCName] = useState('');
   const [cPhone, setCPhone] = useState('');
   const [cAddress, setCAddress] = useState('');
+  const [cRegistrationNumber, setCRegistrationNumber] = useState('');
+  const [cRepresentative, setCRepresentative] = useState('');
+  const [cEmail, setCEmail] = useState('');
+  const [cBizType, setCBizType] = useState('');
+  const [cBizCategory, setCBizCategory] = useState('');
 
   // Open Worker Modal
   const handleOpenWorkerModal = (worker?: WorkerMaster) => {
@@ -130,11 +135,21 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
       setCName(client.clientName);
       setCPhone(client.contactPhone);
       setCAddress(client.address || '');
+      setCRegistrationNumber(client.registrationNumber || '');
+      setCRepresentative(client.representative || '');
+      setCEmail(client.email || '');
+      setCBizType(client.bizType || '');
+      setCBizCategory(client.bizCategory || '');
     } else {
       setEditingClient(null);
       setCName('');
       setCPhone('');
       setCAddress('');
+      setCRegistrationNumber('');
+      setCRepresentative('');
+      setCEmail('');
+      setCBizType('');
+      setCBizCategory('');
     }
     setIsClientModalOpen(true);
   };
@@ -151,6 +166,11 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
       clientName: cName.trim(),
       contactPhone: cPhone.trim(),
       address: cAddress.trim(),
+      registrationNumber: cRegistrationNumber.trim(),
+      representative: cRepresentative.trim(),
+      email: cEmail.trim(),
+      bizType: cBizType.trim(),
+      bizCategory: cBizCategory.trim(),
     };
     onSaveClient(item);
     setIsClientModalOpen(false);
@@ -408,7 +428,8 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
               <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-400 dark:text-slate-400 font-bold text-[10px] uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
                 <tr>
                   <th className="p-3">업체 / 현장명</th>
-                  <th className="p-3">구인자 연락처</th>
+                  <th className="p-3">사업자등록번호 / 대표자</th>
+                  <th className="p-3">구인자 연락처 / 이메일</th>
                   <th className="p-3">현장 주소</th>
                   <th className="p-3 text-center w-28">관리</th>
                 </tr>
@@ -416,28 +437,50 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {paginatedClients.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="p-8 text-center text-slate-400 dark:text-slate-500 text-xs">
+                    <td colSpan={5} className="p-8 text-center text-slate-400 dark:text-slate-500 text-xs">
                       등록된 업체/현장이 없거나 검색 결과가 없습니다.
                     </td>
                   </tr>
                 ) : (
                   paginatedClients.map((c) => (
                     <tr key={c.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50">
-                      <td className="p-3 font-bold text-slate-800 dark:text-slate-100">
-                        {c.clientName}
+                      <td className="p-3">
+                        <div className="font-bold text-slate-800 dark:text-slate-100">{c.clientName}</div>
+                        {(c.bizType || c.bizCategory) && (
+                          <div className="text-[11px] text-slate-400">
+                            {[c.bizType, c.bizCategory].filter(Boolean).join(' · ')}
+                          </div>
+                        )}
+                      </td>
+                      <td className="p-3 text-xs">
+                        {c.registrationNumber ? (
+                          <div>
+                            <span className="font-mono font-semibold text-slate-700 dark:text-slate-300">{c.registrationNumber}</span>
+                            {c.representative && <span className="ml-1.5 text-slate-500">({c.representative})</span>}
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 font-mono text-xs">-</span>
+                        )}
                       </td>
                       <td className="p-3">
                         {c.contactPhone ? (
-                          <div className="flex items-center space-x-2">
-                            <span className="font-mono text-slate-700 dark:text-slate-300 font-medium text-xs">{c.contactPhone}</span>
-                            <a
-                              href={`tel:${c.contactPhone.replace(/[^0-9+]/g, '')}`}
-                              className="inline-flex items-center space-x-1 px-2 py-0.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/80 hover:bg-emerald-100 dark:hover:bg-emerald-900 border border-emerald-300 dark:border-emerald-800 rounded-lg transition-colors cursor-pointer"
-                              title={`${c.clientName} 담당자에게 전화 연결`}
-                            >
-                              <Phone className="w-3 h-3 text-emerald-600 dark:text-emerald-400 fill-emerald-100 dark:fill-emerald-900" />
-                              <span>전화</span>
-                            </a>
+                          <div className="space-y-0.5">
+                            <div className="flex items-center space-x-2">
+                              <span className="font-mono text-slate-700 dark:text-slate-300 font-medium text-xs">{c.contactPhone}</span>
+                              <a
+                                href={`tel:${c.contactPhone.replace(/[^0-9+]/g, '')}`}
+                                className="inline-flex items-center space-x-1 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/80 hover:bg-emerald-100 dark:hover:bg-emerald-900 border border-emerald-300 dark:border-emerald-800 rounded-lg transition-colors cursor-pointer"
+                                title={`${c.clientName} 담당자에게 전화 연결`}
+                              >
+                                <Phone className="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400 fill-emerald-100 dark:fill-emerald-900" />
+                                <span>전화</span>
+                              </a>
+                            </div>
+                            {c.email && (
+                              <div className="text-[11px] text-blue-600 dark:text-blue-400 font-mono truncate max-w-[180px]">
+                                {c.email}
+                              </div>
+                            )}
                           </div>
                         ) : (
                           <span className="text-slate-400 dark:text-slate-500 font-mono text-xs">-</span>
@@ -673,19 +716,77 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">구인자 연락처</label>
-                <input
-                  type="text"
-                  value={cPhone}
-                  onChange={(e) => setCPhone(e.target.value)}
-                  placeholder="예: 010-2998-1757"
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-sm font-medium text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">사업자등록번호 (세금계산서용)</label>
+                  <input
+                    type="text"
+                    value={cRegistrationNumber}
+                    onChange={(e) => setCRegistrationNumber(e.target.value)}
+                    placeholder="예: 504-81-12345"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-sm font-mono text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">대표자명</label>
+                  <input
+                    type="text"
+                    value={cRepresentative}
+                    onChange={(e) => setCRepresentative(e.target.value)}
+                    placeholder="예: 홍길동"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-sm font-medium text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">구인자 연락처</label>
+                  <input
+                    type="text"
+                    value={cPhone}
+                    onChange={(e) => setCPhone(e.target.value)}
+                    placeholder="예: 010-2998-1757"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-sm font-medium text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">세금계산서 수신 이메일</label>
+                  <input
+                    type="email"
+                    value={cEmail}
+                    onChange={(e) => setCEmail(e.target.value)}
+                    placeholder="예: invoice@company.com"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-sm font-mono text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">업태</label>
+                  <input
+                    type="text"
+                    value={cBizType}
+                    onChange={(e) => setCBizType(e.target.value)}
+                    placeholder="예: 건설업"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-sm font-medium text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">종목</label>
+                  <input
+                    type="text"
+                    value={cBizCategory}
+                    onChange={(e) => setCBizCategory(e.target.value)}
+                    placeholder="예: 철근콘크리트, 미장"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-sm font-medium text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">현장 주소</label>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">현장 / 사업장 주소</label>
                 <input
                   type="text"
                   value={cAddress}

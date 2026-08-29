@@ -11,6 +11,9 @@ service cloud.firestore {
     match /clients/{clientId} {
       allow read, write: if true;
     }
+    match /tax_invoices/{invoiceId} {
+      allow read, write: if true;
+    }
     match /office_profiles/{profileId} {
       allow read, write: if true;
     }
