@@ -24,12 +24,12 @@ export const DEFAULT_OFFICE_PROFILES: OfficeSettings[] = [
 export const DEFAULT_OFFICE_SETTINGS: OfficeSettings = DEFAULT_OFFICE_PROFILES[0];
 
 export const INITIAL_WORKERS: WorkerMaster[] = [
-  { id: 'w1', name: '이성복', category: '보통', defaultDailyRate: 160000, phone: '010-1234-5678' },
-  { id: 'w2', name: '구완회', category: '보통', defaultDailyRate: 160000, phone: '010-2345-6789' },
-  { id: 'w3', name: '임성빈', category: '보통', defaultDailyRate: 160000, phone: '010-3456-7890' },
-  { id: 'w4', name: '강명수', category: '보통', defaultDailyRate: 160000, phone: '010-4567-8901' },
-  { id: 'w5', name: '박철민', category: '기공', defaultDailyRate: 220000, phone: '010-5678-9012' },
-  { id: 'w6', name: '최동현', category: '보통', defaultDailyRate: 160000, phone: '010-6789-0123' },
+  { id: 'w1', name: '이성복', category: '보통', specialty: '곰방/양중, 자재정리', defaultDailyRate: 160000, phone: '010-1234-5678', memo: '체력 좋고 성실함, 안전교육 이수' },
+  { id: 'w2', name: '구완회', category: '보통', specialty: '조적, 할석(하스리)', defaultDailyRate: 160000, phone: '010-2345-6789', memo: '차량소지(스타렉스)' },
+  { id: 'w3', name: '임성빈', category: '보통', specialty: '철거, 자재운반', defaultDailyRate: 160000, phone: '010-3456-7890' },
+  { id: 'w4', name: '강명수', category: '보통', specialty: '미장, 견출', defaultDailyRate: 160000, phone: '010-4567-8901', memo: '숙련도 높음' },
+  { id: 'w5', name: '박철민', category: '기공', specialty: '용접, 형틀목수', defaultDailyRate: 220000, phone: '010-5678-9012', memo: '용접기능사 자격증 보유' },
+  { id: 'w6', name: '최동현', category: '보통', specialty: '청소/정리, 신호수', defaultDailyRate: 160000, phone: '010-6789-0123' },
 ];
 
 export const INITIAL_CLIENTS: ClientSiteMaster[] = [

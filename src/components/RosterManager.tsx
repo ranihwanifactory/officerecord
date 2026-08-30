@@ -71,7 +71,10 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
     (w) =>
       w.name.toLowerCase().includes(workerSearch.toLowerCase()) ||
       w.category.toLowerCase().includes(workerSearch.toLowerCase()) ||
-      (w.phone && w.phone.includes(workerSearch))
+      (w.specialty && w.specialty.toLowerCase().includes(workerSearch.toLowerCase())) ||
+      (w.memo && w.memo.toLowerCase().includes(workerSearch.toLowerCase())) ||
+      (w.phone && w.phone.includes(workerSearch)) ||
+      (w.residentId && w.residentId.includes(workerSearch))
   );
 
   const sortedWorkers = [...filteredWorkers].sort((a, b) => {
@@ -141,8 +144,10 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
   const [wName, setWName] = useState('');
   const [wCategory, setWCategory] = useState<WorkerCategory>('보통');
   const [wRate, setWRate] = useState(160000);
+  const [wSpecialty, setWSpecialty] = useState('');
   const [wResidentId, setWResidentId] = useState('');
   const [wPhone, setWPhone] = useState('');
+  const [wMemo, setWMemo] = useState('');
 
   // Client Form Fields
   const [cName, setCName] = useState('');
@@ -161,15 +166,19 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
       setWName(worker.name);
       setWCategory(worker.category || '보통');
       setWRate(worker.defaultDailyRate);
+      setWSpecialty(worker.specialty || '');
       setWResidentId(worker.residentId || '');
       setWPhone(worker.phone || '');
+      setWMemo(worker.memo || '');
     } else {
       setEditingWorker(null);
       setWName('');
       setWCategory('보통');
       setWRate(160000);
+      setWSpecialty('');
       setWResidentId('');
       setWPhone('');
+      setWMemo('');
     }
     setIsWorkerModalOpen(true);
   };
@@ -186,8 +195,10 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
       name: wName.trim(),
       category: wCategory,
       defaultDailyRate: Number(wRate) || 160000,
+      specialty: wSpecialty.trim(),
       residentId: wResidentId.trim(),
       phone: wPhone.trim(),
+      memo: wMemo.trim(),
       createdAt: editingWorker?.createdAt || new Date().toISOString(),
     };
     onSaveWorker(item);
@@ -421,6 +432,7 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
                       )}
                     </button>
                   </th>
+                  <th className="p-3">전공기술 (주특기)</th>
                   <th className="p-3 text-right">
                     <button
                       type="button"
@@ -441,26 +453,38 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
                   </th>
                   <th className="p-3">주민등록번호</th>
                   <th className="p-3">연락처</th>
-                  <th className="p-3 text-center w-28">관리</th>
+                  <th className="p-3">특이사항 / 메모</th>
+                  <th className="p-3 text-center w-24">관리</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {paginatedWorkers.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="p-8 text-center text-slate-400 dark:text-slate-500 text-xs">
+                    <td colSpan={8} className="p-8 text-center text-slate-400 dark:text-slate-500 text-xs">
                       등록된 인부가 없거나 검색 결과가 없습니다.
                     </td>
                   </tr>
                 ) : (
                   paginatedWorkers.map((w) => (
                     <tr key={w.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50">
-                      <td className="p-3 font-bold text-slate-800 dark:text-slate-100">
-                        {w.name}
+                      <td className="p-3">
+                        <div className="font-bold text-slate-800 dark:text-slate-100 text-sm">
+                          {w.name}
+                        </div>
                       </td>
                       <td className="p-3 text-center">
                         <span className="text-xs font-bold bg-blue-50 dark:bg-blue-950/80 text-blue-600 dark:text-blue-300 px-2.5 py-0.5 rounded-full border border-blue-100 dark:border-blue-800">
                           {w.category}
                         </span>
+                      </td>
+                      <td className="p-3">
+                        {w.specialty ? (
+                          <span className="inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded-md bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60">
+                            🛠️ {w.specialty}
+                          </span>
+                        ) : (
+                          <span className="text-slate-300 dark:text-slate-600 text-xs">-</span>
+                        )}
                       </td>
                       <td className="p-3 text-right font-black text-blue-600 dark:text-blue-400 font-mono">
                         ₩{w.defaultDailyRate.toLocaleString()}원
@@ -483,6 +507,15 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
                           </div>
                         ) : (
                           <span className="text-slate-400 dark:text-slate-500 font-mono text-xs">-</span>
+                        )}
+                      </td>
+                      <td className="p-3 max-w-[200px]">
+                        {w.memo ? (
+                          <div className="text-xs text-slate-600 dark:text-slate-300 truncate" title={w.memo}>
+                            📝 {w.memo}
+                          </div>
+                        ) : (
+                          <span className="text-slate-300 dark:text-slate-600 text-xs">-</span>
                         )}
                       </td>
                       <td className="p-3 text-center">
@@ -523,14 +556,21 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
             ) : (
               paginatedWorkers.map((w) => (
                 <div key={w.id} className="py-3 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <span className="font-bold text-slate-900 dark:text-slate-100 text-base">{w.name}</span>
-                      <span className="text-xs font-bold bg-blue-50 dark:bg-blue-950/80 text-blue-600 dark:text-blue-300 px-2 py-0.5 rounded-full border border-blue-100 dark:border-blue-800">
-                        {w.category}
-                      </span>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="space-y-1">
+                      <div className="flex items-center space-x-2">
+                        <span className="font-bold text-slate-900 dark:text-slate-100 text-base">{w.name}</span>
+                        <span className="text-xs font-bold bg-blue-50 dark:bg-blue-950/80 text-blue-600 dark:text-blue-300 px-2 py-0.5 rounded-full border border-blue-100 dark:border-blue-800">
+                          {w.category}
+                        </span>
+                      </div>
+                      {w.specialty && (
+                        <div className="inline-flex items-center text-xs font-semibold px-2 py-0.5 rounded bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60">
+                          🛠️ {w.specialty}
+                        </div>
+                      )}
                     </div>
-                    <div className="font-black text-blue-600 dark:text-blue-400 font-mono text-sm">
+                    <div className="font-black text-blue-600 dark:text-blue-400 font-mono text-sm shrink-0">
                       ₩{w.defaultDailyRate.toLocaleString()}원
                     </div>
                   </div>
@@ -551,6 +591,13 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
                       )}
                     </div>
                   </div>
+
+                  {w.memo && (
+                    <div className="text-xs text-slate-600 dark:text-slate-300 bg-amber-50/60 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900/40 p-2 rounded-xl">
+                      <span className="font-bold text-amber-800 dark:text-amber-400 mr-1">📝 특이사항:</span>
+                      {w.memo}
+                    </div>
+                  )}
 
                   <div className="flex items-center justify-end space-x-2 pt-1">
                     {w.phone && (
@@ -904,62 +951,110 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">구분</label>
-                <select
-                  value={wCategory || '보통'}
-                  onChange={(e) => setWCategory(e.target.value as WorkerCategory)}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-sm font-bold text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="보통">보통</option>
-                  <option value="조공">조공</option>
-                  <option value="기공">기공</option>
-                  <option value="특별기공">특별기공</option>
-                  <option value="신호수">신호수</option>
-                  <option value="잡급">잡급</option>
-                  <option value="반장">반장</option>
-                  <option value="철거작업">철거작업</option>
-                  <option value="미장/목수/타일">미장/목수/타일</option>
-                  <option value="기타">기타</option>
-                  {wCategory === '일반' && <option value="일반">일반 (보통)</option>}
-                  {wCategory && !['보통', '조공', '기공', '특별기공', '신호수', '잡급', '반장', '철거작업', '미장/목수/타일', '기타', '일반'].includes(wCategory) && (
-                    <option value={wCategory}>{wCategory}</option>
-                  )}
-                </select>
-              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">구분</label>
+                  <select
+                    value={wCategory || '보통'}
+                    onChange={(e) => setWCategory(e.target.value as WorkerCategory)}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-sm font-bold text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="보통">보통</option>
+                    <option value="조공">조공</option>
+                    <option value="기공">기공</option>
+                    <option value="특별기공">특별기공</option>
+                    <option value="신호수">신호수</option>
+                    <option value="잡급">잡급</option>
+                    <option value="반장">반장</option>
+                    <option value="철거작업">철거작업</option>
+                    <option value="미장/목수/타일">미장/목수/타일</option>
+                    <option value="기타">기타</option>
+                    {wCategory === '일반' && <option value="일반">일반 (보통)</option>}
+                    {wCategory && !['보통', '조공', '기공', '특별기공', '신호수', '잡급', '반장', '철거작업', '미장/목수/타일', '기타', '일반'].includes(wCategory) && (
+                      <option value={wCategory}>{wCategory}</option>
+                    )}
+                  </select>
+                </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">기본 일단가 (원)</label>
-                <input
-                  type="number"
-                  step={5000}
-                  value={wRate}
-                  onChange={(e) => setWRate(Number(e.target.value))}
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-sm font-bold text-blue-600 dark:text-blue-400 font-mono outline-none focus:ring-2 focus:ring-blue-500"
-                />
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">기본 일단가 (원)</label>
+                  <input
+                    type="number"
+                    step={5000}
+                    value={wRate}
+                    onChange={(e) => setWRate(Number(e.target.value))}
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-sm font-bold text-blue-600 dark:text-blue-400 font-mono outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  주민등록번호 (위임장 표기용)
+                  전공기술 (주특기)
                 </label>
                 <input
                   type="text"
-                  value={wResidentId}
-                  onChange={(e) => setWResidentId(e.target.value)}
-                  placeholder="예: 750101-1234567"
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-sm font-mono text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500"
+                  value={wSpecialty}
+                  onChange={(e) => setWSpecialty(e.target.value)}
+                  placeholder="예: 미장, 타일, 곰방/양중, 할석, 철거, 조적, 용접 등"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-sm font-semibold text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500"
                 />
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {['미장', '조적', '타일', '곰방/양중', '할석(하스리)', '철거', '비계', '용접', '형틀목수', '전기', '도장', '방수', '신호수', '청소/정리'].map((chip) => (
+                    <button
+                      key={chip}
+                      type="button"
+                      onClick={() => {
+                        if (!wSpecialty) {
+                          setWSpecialty(chip);
+                        } else if (!wSpecialty.includes(chip)) {
+                          setWSpecialty(`${wSpecialty}, ${chip}`);
+                        }
+                      }}
+                      className="px-2 py-0.5 text-[11px] font-medium bg-slate-100 dark:bg-slate-800 hover:bg-amber-100 hover:text-amber-800 dark:hover:bg-amber-950/60 dark:hover:text-amber-300 text-slate-600 dark:text-slate-300 rounded-md border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer"
+                    >
+                      +{chip}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    주민등록번호 (위임장 표기용)
+                  </label>
+                  <input
+                    type="text"
+                    value={wResidentId}
+                    onChange={(e) => setWResidentId(e.target.value)}
+                    placeholder="예: 750101-1234567"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-sm font-mono text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">연락처</label>
+                  <input
+                    type="text"
+                    value={wPhone}
+                    onChange={(e) => setWPhone(e.target.value)}
+                    placeholder="예: 010-1234-5678"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-sm font-medium text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">연락처</label>
-                <input
-                  type="text"
-                  value={wPhone}
-                  onChange={(e) => setWPhone(e.target.value)}
-                  placeholder="예: 010-1234-5678"
-                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-sm font-medium text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500"
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  특이사항 (메모)
+                </label>
+                <textarea
+                  rows={2}
+                  value={wMemo}
+                  onChange={(e) => setWMemo(e.target.value)}
+                  placeholder="예: 차량 소지(스타렉스), 기초안전보건교육 이수, 성실하고 숙련도 높음, 외국인(체류자격 확인) 등"
+                  className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-xs text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                 />
               </div>
 

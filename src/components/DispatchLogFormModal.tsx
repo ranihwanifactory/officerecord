@@ -786,7 +786,7 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
                                 .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ko-KR'))
                                 .map((w) => (
                                   <option key={w.id} value={w.name}>
-                                    {w.name} ({w.category} - ₩{w.defaultDailyRate.toLocaleString()})
+                                    {w.name} ({[w.category, w.specialty].filter(Boolean).join(' / ')} - ₩{w.defaultDailyRate.toLocaleString()})
                                   </option>
                                 ))}
                             </datalist>

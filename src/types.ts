@@ -5,9 +5,10 @@ export interface WorkerMaster {
   name: string;
   category: WorkerCategory;
   defaultDailyRate: number; // e.g. 160000
+  specialty?: string; // 전공기술/주특기 (예: 조적, 미장, 타일, 할석, 곰방, 철거, 비계, 용접, 형틀목수, 전기 등)
   residentId?: string; // 주민등록번호 (예: 801121-1795828)
   phone?: string;
-  memo?: string;
+  memo?: string; // 특이사항 / 메모 (예: 차량소지, 안전교육필, 외국인비자 E-9, 근면성실 등)
   createdAt?: string;
 }
 
