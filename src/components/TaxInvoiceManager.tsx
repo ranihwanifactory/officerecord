@@ -1277,11 +1277,13 @@ export const TaxInvoiceManager: React.FC<TaxInvoiceManagerProps> = ({
                         className="text-[11px] bg-white dark:bg-slate-900 border border-blue-300 dark:border-blue-800 rounded px-1.5 py-0.5 font-bold text-blue-800 dark:text-blue-300 max-w-[140px] truncate cursor-pointer"
                       >
                         <option value="">거래처 불러오기...</option>
-                        {clients.map((c) => (
-                          <option key={c.id} value={c.id}>
-                            {c.clientName}
-                          </option>
-                        ))}
+                        {[...clients]
+                          .sort((a, b) => (a.clientName || '').localeCompare(b.clientName || '', 'ko-KR'))
+                          .map((c) => (
+                            <option key={c.id} value={c.id}>
+                              {c.clientName}
+                            </option>
+                          ))}
                       </select>
                     )}
                   </div>
@@ -1798,12 +1800,14 @@ export const TaxInvoiceManager: React.FC<TaxInvoiceManagerProps> = ({
                   onChange={(e) => setImportClientId(e.target.value)}
                   className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 font-bold text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
                 >
-                  <option value="">거래처를 선택해 주세요...</option>
-                  {clients.map((c) => (
-                    <option key={c.id} value={c.clientName}>
-                      {c.clientName} {c.registrationNumber ? `(${c.registrationNumber})` : ''}
-                    </option>
-                  ))}
+                  <option value="">거래처를 선택해 주세요 (가나다순)...</option>
+                  {[...clients]
+                    .sort((a, b) => (a.clientName || '').localeCompare(b.clientName || '', 'ko-KR'))
+                    .map((c) => (
+                      <option key={c.id} value={c.clientName}>
+                        {c.clientName} {c.registrationNumber ? `(${c.registrationNumber})` : ''}
+                      </option>
+                    ))}
                 </select>
               </div>
 

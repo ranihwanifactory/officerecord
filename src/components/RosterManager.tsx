@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { WorkerMaster, ClientSiteMaster, WorkerCategory } from '../types';
-import { Users, Building, Plus, Edit, Trash2, Phone, Save, X, Search } from 'lucide-react';
+import { Users, Building, Plus, Edit, Trash2, Phone, Save, X, Search, ArrowUpDown, ArrowUp, ArrowDown, ArrowDownAZ, ArrowUpAZ } from 'lucide-react';
 import { Pagination } from './Pagination';
 
 interface RosterManagerProps {
@@ -11,6 +11,10 @@ interface RosterManagerProps {
   onSaveClient: (client: ClientSiteMaster) => void;
   onDeleteClient: (id: string) => void;
 }
+
+type WorkerSortKey = 'name' | 'rate' | 'category' | 'created';
+type ClientSortKey = 'name' | 'address' | 'created';
+type SortOrder = 'asc' | 'desc';
 
 export const RosterManager: React.FC<RosterManagerProps> = ({
   workers,
@@ -25,17 +29,43 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
   // Search & Pagination States
   const [workerSearch, setWorkerSearch] = useState('');
   const [workerPage, setWorkerPage] = useState(1);
+  const [workerSortBy, setWorkerSortBy] = useState<WorkerSortKey>('name');
+  const [workerSortOrder, setWorkerSortOrder] = useState<SortOrder>('asc');
+
   const [clientSearch, setClientSearch] = useState('');
   const [clientPage, setClientPage] = useState(1);
+  const [clientSortBy, setClientSortBy] = useState<ClientSortKey>('name');
+  const [clientSortOrder, setClientSortOrder] = useState<SortOrder>('asc');
+
   const ITEMS_PER_PAGE = 10;
 
   useEffect(() => {
     setWorkerPage(1);
-  }, [workerSearch]);
+  }, [workerSearch, workerSortBy, workerSortOrder]);
 
   useEffect(() => {
     setClientPage(1);
-  }, [clientSearch]);
+  }, [clientSearch, clientSortBy, clientSortOrder]);
+
+  // Worker toggle sort
+  const handleToggleWorkerSort = (key: WorkerSortKey) => {
+    if (workerSortBy === key) {
+      setWorkerSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setWorkerSortBy(key);
+      setWorkerSortOrder('asc');
+    }
+  };
+
+  // Client toggle sort
+  const handleToggleClientSort = (key: ClientSortKey) => {
+    if (clientSortBy === key) {
+      setClientSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setClientSortBy(key);
+      setClientSortOrder('asc');
+    }
+  };
 
   const filteredWorkers = workers.filter(
     (w) =>
@@ -44,8 +74,28 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
       (w.phone && w.phone.includes(workerSearch))
   );
 
-  const workerTotalPages = Math.ceil(filteredWorkers.length / ITEMS_PER_PAGE) || 1;
-  const paginatedWorkers = filteredWorkers.slice(
+  const sortedWorkers = [...filteredWorkers].sort((a, b) => {
+    if (workerSortBy === 'name') {
+      const res = (a.name || '').localeCompare(b.name || '', 'ko-KR');
+      return workerSortOrder === 'asc' ? res : -res;
+    }
+    if (workerSortBy === 'rate') {
+      const res = (a.defaultDailyRate || 0) - (b.defaultDailyRate || 0);
+      return workerSortOrder === 'asc' ? res : -res;
+    }
+    if (workerSortBy === 'category') {
+      const res = (a.category || '').localeCompare(b.category || '', 'ko-KR');
+      return workerSortOrder === 'asc' ? res : -res;
+    }
+    if (workerSortBy === 'created') {
+      const res = (a.createdAt || a.id || '').localeCompare(b.createdAt || b.id || '');
+      return workerSortOrder === 'asc' ? res : -res;
+    }
+    return 0;
+  });
+
+  const workerTotalPages = Math.ceil(sortedWorkers.length / ITEMS_PER_PAGE) || 1;
+  const paginatedWorkers = sortedWorkers.slice(
     (workerPage - 1) * ITEMS_PER_PAGE,
     workerPage * ITEMS_PER_PAGE
   );
@@ -57,8 +107,24 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
       (c.address && c.address.toLowerCase().includes(clientSearch.toLowerCase()))
   );
 
-  const clientTotalPages = Math.ceil(filteredClients.length / ITEMS_PER_PAGE) || 1;
-  const paginatedClients = filteredClients.slice(
+  const sortedClients = [...filteredClients].sort((a, b) => {
+    if (clientSortBy === 'name') {
+      const res = (a.clientName || '').localeCompare(b.clientName || '', 'ko-KR');
+      return clientSortOrder === 'asc' ? res : -res;
+    }
+    if (clientSortBy === 'address') {
+      const res = (a.address || '').localeCompare(b.address || '', 'ko-KR');
+      return clientSortOrder === 'asc' ? res : -res;
+    }
+    if (clientSortBy === 'created') {
+      const res = (a.id || '').localeCompare(b.id || '');
+      return clientSortOrder === 'asc' ? res : -res;
+    }
+    return 0;
+  });
+
+  const clientTotalPages = Math.ceil(sortedClients.length / ITEMS_PER_PAGE) || 1;
+  const paginatedClients = sortedClients.slice(
     (clientPage - 1) * ITEMS_PER_PAGE,
     clientPage * ITEMS_PER_PAGE
   );
@@ -231,16 +297,90 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
       {/* Workers Roster SubTab */}
       {activeSubTab === 'workers' && (
         <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4 transition-colors">
-          {/* Search bar */}
-          <div className="relative max-w-sm">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-            <input
-              type="text"
-              placeholder="인부 이름, 직종, 연락처 검색..."
-              value={workerSearch}
-              onChange={(e) => setWorkerSearch(e.target.value)}
-              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-400 dark:placeholder-slate-500"
-            />
+          {/* Search & Sort Controls Toolbar */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+            {/* Search bar */}
+            <div className="relative w-full md:max-w-sm">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+              <input
+                type="text"
+                placeholder="인부 이름, 직종, 연락처 검색..."
+                value={workerSearch}
+                onChange={(e) => setWorkerSearch(e.target.value)}
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-400 dark:placeholder-slate-500"
+              />
+            </div>
+
+            {/* Quick Sort Controls */}
+            <div className="flex items-center space-x-1.5 overflow-x-auto pb-1 md:pb-0 scrollbar-none text-xs">
+              <span className="text-slate-400 dark:text-slate-500 font-semibold text-[11px] shrink-0 mr-1">정렬:</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setWorkerSortBy('name');
+                  setWorkerSortOrder('asc');
+                }}
+                className={`px-2.5 py-1.5 rounded-lg font-bold transition-all flex items-center space-x-1 shrink-0 cursor-pointer ${
+                  workerSortBy === 'name' && workerSortOrder === 'asc'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                <ArrowDownAZ className="w-3.5 h-3.5" />
+                <span>가나다순 (ㄱ~ㅎ)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setWorkerSortBy('name');
+                  setWorkerSortOrder('desc');
+                }}
+                className={`px-2.5 py-1.5 rounded-lg font-bold transition-all flex items-center space-x-1 shrink-0 cursor-pointer ${
+                  workerSortBy === 'name' && workerSortOrder === 'desc'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                <ArrowUpAZ className="w-3.5 h-3.5" />
+                <span>가나다 역순 (ㅎ~ㄱ)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (workerSortBy === 'rate') {
+                    setWorkerSortOrder((prev) => (prev === 'desc' ? 'asc' : 'desc'));
+                  } else {
+                    setWorkerSortBy('rate');
+                    setWorkerSortOrder('desc');
+                  }
+                }}
+                className={`px-2.5 py-1.5 rounded-lg font-bold transition-all flex items-center space-x-1 shrink-0 cursor-pointer ${
+                  workerSortBy === 'rate'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                <ArrowUpDown className="w-3.5 h-3.5" />
+                <span>일단가 {workerSortBy === 'rate' ? (workerSortOrder === 'desc' ? '높은순' : '낮은순') : '순'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setWorkerSortBy('created');
+                  setWorkerSortOrder('desc');
+                }}
+                className={`px-2.5 py-1.5 rounded-lg font-bold transition-all shrink-0 cursor-pointer ${
+                  workerSortBy === 'created'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                <span>최근등록순</span>
+              </button>
+            </div>
           </div>
 
           {/* Desktop Table View */}
@@ -248,9 +388,57 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
             <table className="w-full text-left text-sm">
               <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-400 dark:text-slate-400 font-bold text-[10px] uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
                 <tr>
-                  <th className="p-3">인부 이름</th>
-                  <th className="p-3 text-center">구분</th>
-                  <th className="p-3 text-right">기본 일단가</th>
+                  <th className="p-3">
+                    <button
+                      type="button"
+                      onClick={() => handleToggleWorkerSort('name')}
+                      className="flex items-center space-x-1 text-slate-700 dark:text-slate-300 font-bold hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer"
+                      title="클릭하여 가나다순/역순 정렬"
+                    >
+                      <span>인부 이름</span>
+                      {workerSortBy === 'name' ? (
+                        workerSortOrder === 'asc' ? (
+                          <ArrowDownAZ className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                        ) : (
+                          <ArrowUpAZ className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                        )
+                      ) : (
+                        <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 opacity-60" />
+                      )}
+                    </button>
+                  </th>
+                  <th className="p-3 text-center">
+                    <button
+                      type="button"
+                      onClick={() => handleToggleWorkerSort('category')}
+                      className="inline-flex items-center space-x-1 text-slate-700 dark:text-slate-300 font-bold hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer"
+                    >
+                      <span>구분</span>
+                      {workerSortBy === 'category' ? (
+                        <ArrowUpDown className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                      ) : (
+                        <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 opacity-60" />
+                      )}
+                    </button>
+                  </th>
+                  <th className="p-3 text-right">
+                    <button
+                      type="button"
+                      onClick={() => handleToggleWorkerSort('rate')}
+                      className="inline-flex items-center space-x-1 text-slate-700 dark:text-slate-300 font-bold hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer"
+                    >
+                      <span>기본 일단가</span>
+                      {workerSortBy === 'rate' ? (
+                        workerSortOrder === 'desc' ? (
+                          <ArrowDown className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                        ) : (
+                          <ArrowUp className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                        )
+                      ) : (
+                        <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 opacity-60" />
+                      )}
+                    </button>
+                  </th>
                   <th className="p-3">주민등록번호</th>
                   <th className="p-3">연락처</th>
                   <th className="p-3 text-center w-28">관리</th>
@@ -410,16 +598,90 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
       {/* Clients SubTab */}
       {activeSubTab === 'clients' && (
         <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-slate-200 dark:border-slate-800 shadow-sm space-y-4 transition-colors">
-          {/* Search bar */}
-          <div className="relative max-w-sm">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-            <input
-              type="text"
-              placeholder="업체/현장명, 연락처, 주소 검색..."
-              value={clientSearch}
-              onChange={(e) => setClientSearch(e.target.value)}
-              className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-400 dark:placeholder-slate-500"
-            />
+          {/* Search & Sort Controls Toolbar */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+            {/* Search bar */}
+            <div className="relative w-full md:max-w-sm">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+              <input
+                type="text"
+                placeholder="업체/현장명, 연락처, 주소 검색..."
+                value={clientSearch}
+                onChange={(e) => setClientSearch(e.target.value)}
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-400 dark:placeholder-slate-500"
+              />
+            </div>
+
+            {/* Quick Sort Controls */}
+            <div className="flex items-center space-x-1.5 overflow-x-auto pb-1 md:pb-0 scrollbar-none text-xs">
+              <span className="text-slate-400 dark:text-slate-500 font-semibold text-[11px] shrink-0 mr-1">정렬:</span>
+              <button
+                type="button"
+                onClick={() => {
+                  setClientSortBy('name');
+                  setClientSortOrder('asc');
+                }}
+                className={`px-2.5 py-1.5 rounded-lg font-bold transition-all flex items-center space-x-1 shrink-0 cursor-pointer ${
+                  clientSortBy === 'name' && clientSortOrder === 'asc'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                <ArrowDownAZ className="w-3.5 h-3.5" />
+                <span>가나다순 (ㄱ~ㅎ)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setClientSortBy('name');
+                  setClientSortOrder('desc');
+                }}
+                className={`px-2.5 py-1.5 rounded-lg font-bold transition-all flex items-center space-x-1 shrink-0 cursor-pointer ${
+                  clientSortBy === 'name' && clientSortOrder === 'desc'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                <ArrowUpAZ className="w-3.5 h-3.5" />
+                <span>가나다 역순 (ㅎ~ㄱ)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (clientSortBy === 'address') {
+                    setClientSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+                  } else {
+                    setClientSortBy('address');
+                    setClientSortOrder('asc');
+                  }
+                }}
+                className={`px-2.5 py-1.5 rounded-lg font-bold transition-all flex items-center space-x-1 shrink-0 cursor-pointer ${
+                  clientSortBy === 'address'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                <ArrowUpDown className="w-3.5 h-3.5" />
+                <span>현장주소순</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setClientSortBy('created');
+                  setClientSortOrder('desc');
+                }}
+                className={`px-2.5 py-1.5 rounded-lg font-bold transition-all shrink-0 cursor-pointer ${
+                  clientSortBy === 'created'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                <span>최근등록순</span>
+              </button>
+            </div>
           </div>
 
           {/* Desktop Table View */}
@@ -427,10 +689,41 @@ export const RosterManager: React.FC<RosterManagerProps> = ({
             <table className="w-full text-left text-sm">
               <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-400 dark:text-slate-400 font-bold text-[10px] uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
                 <tr>
-                  <th className="p-3">업체 / 현장명</th>
+                  <th className="p-3">
+                    <button
+                      type="button"
+                      onClick={() => handleToggleClientSort('name')}
+                      className="flex items-center space-x-1 text-slate-700 dark:text-slate-300 font-bold hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer"
+                      title="클릭하여 상호명 가나다순/역순 정렬"
+                    >
+                      <span>업체 / 현장명</span>
+                      {clientSortBy === 'name' ? (
+                        clientSortOrder === 'asc' ? (
+                          <ArrowDownAZ className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                        ) : (
+                          <ArrowUpAZ className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                        )
+                      ) : (
+                        <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 opacity-60" />
+                      )}
+                    </button>
+                  </th>
                   <th className="p-3">사업자등록번호 / 대표자</th>
                   <th className="p-3">구인자 연락처 / 이메일</th>
-                  <th className="p-3">현장 주소</th>
+                  <th className="p-3">
+                    <button
+                      type="button"
+                      onClick={() => handleToggleClientSort('address')}
+                      className="inline-flex items-center space-x-1 text-slate-700 dark:text-slate-300 font-bold hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer"
+                    >
+                      <span>현장 주소</span>
+                      {clientSortBy === 'address' ? (
+                        <ArrowUpDown className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                      ) : (
+                        <ArrowUpDown className="w-3.5 h-3.5 text-slate-400 opacity-60" />
+                      )}
+                    </button>
+                  </th>
                   <th className="p-3 text-center w-28">관리</th>
                 </tr>
               </thead>

@@ -631,12 +631,14 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
                       defaultValue=""
                       className="text-[11px] text-blue-600 dark:text-blue-400 bg-transparent border-none outline-none font-semibold cursor-pointer"
                     >
-                      <option value="" disabled className="dark:bg-slate-800 dark:text-slate-200">자주 쓰는 현장 선택</option>
-                      {clientsRoster.map((c) => (
-                        <option key={c.id} value={c.clientName} className="dark:bg-slate-800 dark:text-slate-200">
-                          {c.clientName}
-                        </option>
-                      ))}
+                      <option value="" disabled className="dark:bg-slate-800 dark:text-slate-200">자주 쓰는 현장 선택 (가나다순)</option>
+                      {[...clientsRoster]
+                        .sort((a, b) => (a.clientName || '').localeCompare(b.clientName || '', 'ko-KR'))
+                        .map((c) => (
+                          <option key={c.id} value={c.clientName} className="dark:bg-slate-800 dark:text-slate-200">
+                            {c.clientName}
+                          </option>
+                        ))}
                     </select>
                   )}
                 </div>
@@ -780,11 +782,13 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
                               className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500"
                             />
                             <datalist id={`workers-list-${idx}`}>
-                              {workersRoster.map((w) => (
-                                <option key={w.id} value={w.name}>
-                                  {w.name} ({w.category} - ₩{w.defaultDailyRate.toLocaleString()})
-                                </option>
-                              ))}
+                              {[...workersRoster]
+                                .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ko-KR'))
+                                .map((w) => (
+                                  <option key={w.id} value={w.name}>
+                                    {w.name} ({w.category} - ₩{w.defaultDailyRate.toLocaleString()})
+                                  </option>
+                                ))}
                             </datalist>
                           </td>
 
