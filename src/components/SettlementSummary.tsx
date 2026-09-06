@@ -24,9 +24,15 @@ export const SettlementSummary: React.FC<SettlementSummaryProps> = ({ logs, offi
     setWorkerSummaryPage(1);
   }, [selectedYear, selectedMonth]);
 
-  // Filter logs for selected year and month
+  // Filter logs for selected year and month (including cross-month weekly dispatches)
   const monthPrefix = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`;
-  const filteredLogs = logs.filter((l) => l.date.startsWith(monthPrefix));
+  const filteredLogs = logs.filter((l) => {
+    if (l.date && l.date.startsWith(monthPrefix)) return true;
+    if (l.workers && l.workers.some((w) => w.workDates && w.workDates.some((d) => d.startsWith(monthPrefix)))) return true;
+    if (l.startDate && l.startDate.startsWith(monthPrefix)) return true;
+    if (l.endDate && l.endDate.startsWith(monthPrefix)) return true;
+    return false;
+  });
 
   // Overall totals
   const totalLogsCount = filteredLogs.length;
@@ -121,14 +127,26 @@ export const SettlementSummary: React.FC<SettlementSummaryProps> = ({ logs, offi
         const item = monthlyMatrixMap[name];
         if (w.dailyRate) item.dailyRate = w.dailyRate;
 
-        if (w.workDaysList && w.workDaysList.length > 0) {
-          w.workDaysList.forEach((dNum) => {
-            const prevGongsu = item.daysMap[dNum]?.gongsu || 0;
-            item.daysMap[dNum] = { gongsu: prevGongsu + 1.0, siteName: log.clientName };
+        if (w.workDates && w.workDates.length > 0) {
+          w.workDates.forEach((dStr) => {
+            if (dStr.startsWith(monthPrefix)) {
+              const dNum = Number(dStr.substring(8, 10));
+              const prevGongsu = item.daysMap[dNum]?.gongsu || 0;
+              item.daysMap[dNum] = { gongsu: prevGongsu + 1.0, siteName: log.clientName };
+            }
           });
+        } else if (w.workDaysList && w.workDaysList.length > 0) {
+          if (log.date.startsWith(monthPrefix)) {
+            w.workDaysList.forEach((dNum) => {
+              const prevGongsu = item.daysMap[dNum]?.gongsu || 0;
+              item.daysMap[dNum] = { gongsu: prevGongsu + 1.0, siteName: log.clientName };
+            });
+          }
         } else {
-          const prevGongsu = item.daysMap[logDay]?.gongsu || 0;
-          item.daysMap[logDay] = { gongsu: prevGongsu + (Number(w.gongsu) || 1.0), siteName: log.clientName };
+          if (log.date.startsWith(monthPrefix)) {
+            const prevGongsu = item.daysMap[logDay]?.gongsu || 0;
+            item.daysMap[logDay] = { gongsu: prevGongsu + (Number(w.gongsu) || 1.0), siteName: log.clientName };
+          }
         }
       });
     } else if (log.invoiceItems && log.invoiceItems.length > 0) {

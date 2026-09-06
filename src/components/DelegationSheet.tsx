@@ -74,9 +74,16 @@ export const DelegationSheet: React.FC<DelegationSheetProps> = ({
 
   // Calculate totals
   const totalWorkersCount = workers.length;
-  const totalGongsu = workers.reduce((acc, w) => acc + (w.gongsu || 1), 0);
+  const getWorkerGongsu = (w: DispatchWorkerItem): number => {
+    if (typeof w.gongsu === 'number' && w.gongsu > 0) return w.gongsu;
+    if (w.workDates && w.workDates.length > 0) return w.workDates.length;
+    if (w.workDaysList && w.workDaysList.length > 0) return w.workDaysList.length;
+    return 1;
+  };
+
+  const totalGongsu = workers.reduce((acc, w) => acc + getWorkerGongsu(w), 0);
   const totalAmount = workers.reduce((acc, w) => {
-    const base = (w.dailyRate || 0) * (w.gongsu || 1);
+    const base = (w.dailyRate || 0) * getWorkerGongsu(w);
     const extra = (w.overtimeFee || 0) + (w.mealFee || 0) + (w.fuelFee || 0) + (w.otherFee || 0);
     return acc + base + extra;
   }, 0);
@@ -315,19 +322,22 @@ export const DelegationSheet: React.FC<DelegationSheetProps> = ({
               const isFirstRow = idx === 0;
               const hasItem = item !== null;
               
+              const itemGongsu = hasItem ? getWorkerGongsu(item) : 0;
               const itemTotal = hasItem
-                ? (item.dailyRate || 0) * (item.gongsu || 1) +
+                ? (item.dailyRate || 0) * itemGongsu +
                   (item.overtimeFee || 0) +
                   (item.mealFee || 0) +
                   (item.fuelFee || 0) +
                   (item.otherFee || 0)
                 : 0;
 
-              // Format work days text (e.g. "8/11" or "3일 [11, 12, 13일]" or "1공수")
+              // Format work days text (supports cross-month full dates)
               const workDaysDisplay = hasItem
-                ? (item.workDaysList && item.workDaysList.length > 0)
-                  ? `${item.workDaysList.length}일 (${item.workDaysList.join(', ')}일)`
-                  : `${item.gongsu || 1}공수`
+                ? (item.workDates && item.workDates.length > 0)
+                  ? `${item.workDates.length}일 (${item.workDates.map((d) => `${parseInt(d.substring(5, 7), 10)}/${parseInt(d.substring(8, 10), 10)}`).join(', ')})`
+                  : (item.workDaysList && item.workDaysList.length > 0)
+                    ? `${item.workDaysList.length}일 (${item.workDaysList.join(', ')}일)`
+                    : `${itemGongsu}공수`
                 : '';
 
               return (

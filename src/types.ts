@@ -122,6 +122,7 @@ export interface DispatchWorkerItem {
   signatureDataUrl?: string; // 서명날인 이미지 (Base64 Data URL)
   remarks?: string; // 비고
   workDaysList?: number[]; // [1, 2, 3, 5, 12, 15, ...] selected day numbers (1..31)
+  workDates?: string[]; // ['2026-08-30', '2026-08-31', '2026-09-01', ...] YYYY-MM-DD full date strings for weekly / cross-month dispatch
   overtimeFee?: number; // 잔업비 (원)
   mealFee?: number; // 식대 (원)
   fuelFee?: number; // 주유비 (원)

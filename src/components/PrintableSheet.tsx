@@ -120,20 +120,40 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
       ? `${formatDateKorean(log.startDate)} ~ ${formatDateKorean(log.endDate)}`
       : fullDateKorean;
 
+  // Helper to extract full date strings ('YYYY-MM-DD') for a worker
+  const getWorkerDates = (worker: DispatchWorkerItem): string[] => {
+    if (worker.workDates && worker.workDates.length > 0) {
+      return worker.workDates;
+    }
+    if (worker.workDaysList && worker.workDaysList.length > 0) {
+      const ym = log.date ? log.date.substring(0, 7) : new Date().toISOString().substring(0, 7);
+      return worker.workDaysList.map(d => `${ym}-${String(d).padStart(2, '0')}`);
+    }
+    return log.date ? [log.date] : [];
+  };
+
+  const getWorkerGongsu = (worker: DispatchWorkerItem): number => {
+    if (typeof worker.gongsu === 'number' && worker.gongsu > 0) {
+      return worker.gongsu;
+    }
+    const dates = getWorkerDates(worker);
+    return dates.length > 0 ? dates.length : 1;
+  };
+
   // Worker counts & totals
   const workerTotalGongsu = log.workers.reduce(
-    (acc, w) => acc + (w.gongsu || (w.workDaysList && w.workDaysList.length > 0 ? w.workDaysList.length : 1)),
+    (acc, w) => acc + getWorkerGongsu(w),
     0
   );
   const skillCount = log.workers
     .filter(w => w.category && (w.category.includes('기공') || w.category.includes('특별기공')))
-    .reduce((acc, w) => acc + (w.gongsu || (w.workDaysList && w.workDaysList.length > 0 ? w.workDaysList.length : 1)), 0);
+    .reduce((acc, w) => acc + getWorkerGongsu(w), 0);
   const generalCount = log.workers
     .filter(w => !w.category || (!w.category.includes('기공') && !w.category.includes('특별기공')))
-    .reduce((acc, w) => acc + (w.gongsu || (w.workDaysList && w.workDaysList.length > 0 ? w.workDaysList.length : 1)), 0);
+    .reduce((acc, w) => acc + getWorkerGongsu(w), 0);
 
   const workerLaborCostTotal = log.workers.reduce(
-    (acc, w) => acc + (w.dailyRate || 0) * (w.gongsu || (w.workDaysList && w.workDaysList.length > 0 ? w.workDaysList.length : 1)),
+    (acc, w) => acc + (w.dailyRate || 0) * getWorkerGongsu(w),
     0
   );
   const workerExtraFeeTotal = log.workers.reduce(
@@ -525,41 +545,92 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
                           )}
                         </td>
                         <td className="text-center px-1.5 py-1 text-xs text-slate-700">
-                          {isHasData ? (
-                            <div className="flex flex-col items-center justify-center space-y-0.5">
-                              {/* 1 to 31 Calendar Grid Cells */}
-                              <div className="flex flex-wrap items-center justify-center gap-[1.5px]">
-                                {Array.from({ length: 31 }, (_, i) => i + 1).map((dayNum) => {
-                                  const activeDays = (worker.workDaysList && worker.workDaysList.length > 0)
-                                    ? worker.workDaysList
-                                    : [Number(log.date.substring(8, 10)) || 1];
-                                  const isWorked = activeDays.includes(dayNum);
-                                  return (
-                                    <span
-                                      key={dayNum}
-                                      className={`w-[16px] h-[16px] text-[9px] leading-none font-mono flex items-center justify-center border ${
-                                        isWorked
-                                          ? 'bg-slate-950 text-white border-black font-black shadow-xs'
-                                          : 'bg-slate-50 text-slate-300 border-slate-200 font-normal'
-                                      }`}
-                                      title={`${dayNum}일 ${isWorked ? '출근' : ''}`}
-                                    >
-                                      {dayNum}
+                          {isHasData ? (() => {
+                            const wDates = getWorkerDates(worker);
+                            const gongsu = getWorkerGongsu(worker);
+
+                            // Group dates by year-month (e.g., "2026-08": [29, 30, 31], "2026-09": [1, 2, 3])
+                            const monthGroups: { [ym: string]: number[] } = {};
+                            wDates.forEach((dStr) => {
+                              const ym = dStr.substring(0, 7);
+                              const dNum = Number(dStr.substring(8, 10));
+                              if (!monthGroups[ym]) monthGroups[ym] = [];
+                              if (!monthGroups[ym].includes(dNum)) monthGroups[ym].push(dNum);
+                            });
+
+                            const monthKeys = Object.keys(monthGroups);
+                            const isCrossMonth = monthKeys.length > 1;
+
+                            return (
+                              <div className="flex flex-col items-center justify-center space-y-0.5">
+                                {!isCrossMonth ? (
+                                  /* Single month: Standard 1~31 calendar grid */
+                                  <div className="flex flex-wrap items-center justify-center gap-[1.5px]">
+                                    {Array.from({ length: 31 }, (_, i) => i + 1).map((dayNum) => {
+                                      const activeDayNumbers = monthKeys.length > 0
+                                        ? monthGroups[monthKeys[0]]
+                                        : [Number(log.date.substring(8, 10)) || 1];
+                                      const isWorked = activeDayNumbers.includes(dayNum);
+                                      return (
+                                        <span
+                                          key={dayNum}
+                                          className={`w-[16px] h-[16px] text-[9px] leading-none font-mono flex items-center justify-center border ${
+                                            isWorked
+                                              ? 'bg-slate-950 text-white border-black font-black shadow-2xs'
+                                              : 'bg-slate-50 text-slate-300 border-slate-200 font-normal'
+                                          }`}
+                                          title={`${dayNum}일 ${isWorked ? '출근' : ''}`}
+                                        >
+                                          {dayNum}
+                                        </span>
+                                      );
+                                    })}
+                                  </div>
+                                ) : (
+                                  /* Cross-month / Weekly: Multi-month badges & day list */
+                                  <div className="flex flex-wrap items-center justify-center gap-1">
+                                    {monthKeys.map((ym) => {
+                                      const mNum = parseInt(ym.substring(5, 7), 10);
+                                      const days = monthGroups[ym].sort((a, b) => a - b);
+                                      return (
+                                        <div
+                                          key={ym}
+                                          className="inline-flex items-center space-x-1 bg-slate-100 border border-slate-300 px-1.5 py-0.5 rounded text-[10px]"
+                                        >
+                                          <span className="font-bold text-blue-800">{mNum}월:</span>
+                                          <div className="flex items-center space-x-0.5 font-mono font-bold">
+                                            {days.map((d) => (
+                                              <span
+                                                key={d}
+                                                className="bg-slate-900 text-white px-1 py-0.2 rounded text-[9px]"
+                                              >
+                                                {d}일
+                                              </span>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+
+                                {/* Total days summary & remarks */}
+                                <div className="text-[10px] text-slate-800 flex items-center justify-center space-x-1.5 pt-0.5 flex-wrap">
+                                  <span className="font-bold text-slate-900">
+                                    [총 {wDates.length}일 출근 ({gongsu}공수)]
+                                  </span>
+                                  {isCrossMonth && (
+                                    <span className="text-[9px] bg-emerald-50 text-emerald-800 border border-emerald-300 px-1 py-0.2 rounded font-bold">
+                                      월말~익월 주간연계
                                     </span>
-                                  );
-                                })}
+                                  )}
+                                  {worker.remarks ? (
+                                    <span className="text-slate-600 font-medium">({worker.remarks})</span>
+                                  ) : null}
+                                </div>
                               </div>
-                              {/* Total days summary & remarks */}
-                              <div className="text-[10px] text-slate-800 flex items-center justify-center space-x-1.5 pt-0.5">
-                                <span className="font-bold text-slate-900">
-                                  [총 {((worker.workDaysList && worker.workDaysList.length > 0) ? worker.workDaysList.length : (worker.gongsu || 1))}일 출근 ({worker.gongsu || (worker.workDaysList && worker.workDaysList.length > 0 ? worker.workDaysList.length : 1)}공수)]
-                                </span>
-                                {worker.remarks ? (
-                                  <span className="text-slate-600 font-medium">({worker.remarks})</span>
-                                ) : null}
-                              </div>
-                            </div>
-                          ) : (
+                            );
+                          })() : (
                             ''
                           )}
                         </td>
