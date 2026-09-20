@@ -497,6 +497,7 @@ export default function App() {
         <DispatchLogFormModal
           initialLog={editingLog}
           selectedDate={selectedDateForForm}
+          existingLogs={dispatchLogs}
           workersRoster={workersRoster}
           clientsRoster={clientsRoster}
           officeProfiles={officeProfiles}

@@ -1,11 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { DispatchLog, DispatchWorkerItem, InvoiceItem, WorkerMaster, ClientSiteMaster, WorkerCategory, OfficeSettings } from '../types';
-import { Plus, Trash2, Save, Copy, X, Users, FileText, Calculator, AlertCircle, DollarSign, Clock, Utensils, Fuel, Check, CheckCircle2, Building, Calendar, CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Trash2, Save, Copy, X, Users, FileText, Calculator, AlertCircle, DollarSign, Clock, Utensils, Fuel, Check, CheckCircle2, Building, Calendar, CalendarDays, ChevronLeft, ChevronRight, Ban, AlertTriangle } from 'lucide-react';
 import { getTodayDateString, getNextDateString, getDaysInMonth, getNextMonth, getPrevMonth, formatDateKorean, formatShortDate, getDateRangeList, getMondayToSundayWeek, formatWorkDatesSummary, parseLocalDate } from '../utils/date';
+
+export interface BusyDateAssignment {
+  date: string; // 'YYYY-MM-DD'
+  clientName: string;
+  siteAddress?: string;
+  logId: string;
+  logDate: string;
+  gongsu?: number;
+  workerName: string;
+}
 
 interface DispatchLogFormModalProps {
   initialLog?: DispatchLog | null;
   selectedDate?: string;
+  existingLogs?: DispatchLog[];
   workersRoster: WorkerMaster[];
   clientsRoster: ClientSiteMaster[];
   officeProfiles?: OfficeSettings[];
@@ -18,6 +29,7 @@ interface DispatchLogFormModalProps {
 export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
   initialLog,
   selectedDate,
+  existingLogs = [],
   workersRoster,
   clientsRoster,
   officeProfiles = [],
@@ -184,6 +196,78 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
   // Month view display mode: 'both' | 'current' | 'next'
   const [monthViewMode, setMonthViewMode] = useState<'both' | 'current' | 'next'>('both');
 
+  // Pre-calculate busy dates for all workers from existing logs (to prevent double dispatch)
+  const busyAssignmentsMap = useMemo(() => {
+    const map: Record<string, Record<string, BusyDateAssignment>> = {};
+    if (!existingLogs || existingLogs.length === 0) return map;
+
+    existingLogs.forEach((l) => {
+      // Exclude current log being edited to avoid false-positive collision with itself
+      if (initialLog?.id && l.id === initialLog.id) return;
+
+      const logClientName = l.clientName || '타 현장';
+      const logSiteAddress = l.siteAddress || '';
+
+      if (l.workers && l.workers.length > 0) {
+        l.workers.forEach((w) => {
+          const wName = w.name?.trim();
+          if (!wName) return;
+
+          const normKey = wName.toLowerCase();
+          if (!map[normKey]) {
+            map[normKey] = {};
+          }
+
+          const addDate = (dStr: string) => {
+            if (!dStr) return;
+            map[normKey][dStr] = {
+              date: dStr,
+              clientName: logClientName,
+              siteAddress: logSiteAddress,
+              logId: l.id,
+              logDate: l.date,
+              gongsu: w.gongsu,
+              workerName: wName,
+            };
+          };
+
+          if (w.workDates && w.workDates.length > 0) {
+            w.workDates.forEach((d) => addDate(d));
+          } else if (w.workDaysList && w.workDaysList.length > 0) {
+            const ym = l.date ? l.date.substring(0, 7) : '';
+            if (ym) {
+              w.workDaysList.forEach((dNum) => {
+                addDate(`${ym}-${String(dNum).padStart(2, '0')}`);
+              });
+            }
+          } else if (l.date) {
+            addDate(l.date);
+          }
+        });
+      }
+    });
+
+    return map;
+  }, [existingLogs, initialLog?.id]);
+
+  // Helper to check if a specific worker has a busy assignment on a given date
+  const getBusyAssignment = (worker: DispatchWorkerItem, dateStr: string): BusyDateAssignment | null => {
+    const name = worker.name?.trim();
+    if (!name) return null;
+    const normKey = name.toLowerCase();
+    return busyAssignmentsMap[normKey]?.[dateStr] || null;
+  };
+
+  // Helper to get all busy assignments for a worker
+  const getWorkerBusyList = (worker: DispatchWorkerItem): BusyDateAssignment[] => {
+    const name = worker.name?.trim();
+    if (!name) return [];
+    const normKey = name.toLowerCase();
+    const workerAssignments = busyAssignmentsMap[normKey];
+    if (!workerAssignments) return [];
+    return (Object.values(workerAssignments) as BusyDateAssignment[]).sort((a, b) => a.date.localeCompare(b.date));
+  };
+
   // Quick preset for weekly work period
   const handleQuickSetWeekPeriod = (preset: 'today' | 'this_week' | 'month_end_next' | 'one_week') => {
     const base = date || todayStr;
@@ -231,25 +315,39 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
   };
 
   const handleToggleWorkerDateStr = (workerIdx: number, dateStr: string) => {
+    const worker = workers[workerIdx];
+    const currentDates = getWorkerDates(worker);
+    const isCurrentlySelected = currentDates.includes(dateStr);
+
+    // If trying to select a date that is already busy, block it and notify user
+    if (!isCurrentlySelected) {
+      const busy = getBusyAssignment(worker, dateStr);
+      if (busy) {
+        alert(
+          `[출근일 중복 배정 불가 안내]\n\n'${worker.name}' 인부는 ${formatShortDate(dateStr)}에 이미 다른 현장 [${busy.clientName}]에 출근 배정되어 있습니다.\n\n출근일이 중복되지 않도록 해당 날짜는 선택할 수 없습니다.`
+        );
+        return;
+      }
+    }
+
     setWorkers((prev) => {
       const updated = [...prev];
-      const worker = { ...updated[workerIdx] };
-      const currentDates = getWorkerDates(worker);
+      const targetWorker = { ...updated[workerIdx] };
 
       let newDates: string[];
-      if (currentDates.includes(dateStr)) {
+      if (isCurrentlySelected) {
         newDates = currentDates.filter((d) => d !== dateStr);
       } else {
         newDates = [...currentDates, dateStr].sort();
       }
 
-      worker.workDates = newDates;
+      targetWorker.workDates = newDates;
       // Also sync workDaysList for backwards compatibility with legacy components
-      worker.workDaysList = newDates.map((d) => parseInt(d.split('-')[2], 10));
+      targetWorker.workDaysList = newDates.map((d) => parseInt(d.split('-')[2], 10));
       if (newDates.length > 0) {
-        worker.gongsu = newDates.length;
+        targetWorker.gongsu = newDates.length;
       }
-      updated[workerIdx] = worker;
+      updated[workerIdx] = targetWorker;
       return updated;
     });
   };
@@ -262,13 +360,38 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
   const handleSelectWorkerDateRange = (workerIdx: number) => {
     const range = getDateRangeList(startDate, endDate);
     if (range.length === 0) return;
+    const worker = workers[workerIdx];
+
+    const busyReports: string[] = [];
+    const availableDates = range.filter((d) => {
+      const busy = getBusyAssignment(worker, d);
+      if (busy) {
+        busyReports.push(`${formatShortDate(d)} (${busy.clientName})`);
+        return false;
+      }
+      return true;
+    });
+
+    if (availableDates.length === 0 && range.length > 0) {
+      alert(
+        `[출근일 중복 배정 불가]\n\n'${worker.name || '인부'}'의 선택된 기간 전체(${range.length}일)가 이미 다른 현장에 출근 배정되어 있어 적용할 수 없습니다.\n\n배정된 내역:\n${busyReports.join('\n')}`
+      );
+      return;
+    }
+
+    if (busyReports.length > 0) {
+      alert(
+        `[출근일 중복 방지 자동 제외 안내]\n\n'${worker.name}' 인부의 타 현장 출근 배정일(${busyReports.length}일)을 제외하고, 남은 ${availableDates.length}일이 출근일로 설정되었습니다.\n\n제외된 날짜:\n${busyReports.join(', ')}`
+      );
+    }
+
     setWorkers((prev) => {
       const updated = [...prev];
-      const worker = { ...updated[workerIdx] };
-      worker.workDates = range;
-      worker.workDaysList = range.map((d) => parseInt(d.split('-')[2], 10));
-      worker.gongsu = range.length;
-      updated[workerIdx] = worker;
+      const targetWorker = { ...updated[workerIdx] };
+      targetWorker.workDates = availableDates;
+      targetWorker.workDaysList = availableDates.map((d) => parseInt(d.split('-')[2], 10));
+      targetWorker.gongsu = availableDates.length > 0 ? availableDates.length : 1;
+      updated[workerIdx] = targetWorker;
       return updated;
     });
   };
@@ -279,14 +402,41 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
       alert('작업 기간(시작일 ~ 종료일)을 먼저 확인해 주세요.');
       return;
     }
+
+    const skippedReports: string[] = [];
+
     setWorkers((prev) =>
-      prev.map((worker) => ({
-        ...worker,
-        workDates: range,
-        workDaysList: range.map((d) => parseInt(d.split('-')[2], 10)),
-        gongsu: range.length,
-      }))
+      prev.map((worker) => {
+        if (!worker.name.trim()) return worker;
+
+        const busyDates: string[] = [];
+        const availableDates = range.filter((d) => {
+          const busy = getBusyAssignment(worker, d);
+          if (busy) {
+            busyDates.push(`${formatShortDate(d)}(${busy.clientName})`);
+            return false;
+          }
+          return true;
+        });
+
+        if (busyDates.length > 0) {
+          skippedReports.push(`• ${worker.name}: ${busyDates.join(', ')} 제외 (${availableDates.length}일 배정)`);
+        }
+
+        return {
+          ...worker,
+          workDates: availableDates,
+          workDaysList: availableDates.map((d) => parseInt(d.split('-')[2], 10)),
+          gongsu: availableDates.length > 0 ? availableDates.length : 1,
+        };
+      })
     );
+
+    if (skippedReports.length > 0) {
+      alert(
+        `[전원 기간출근 일괄 적용 완료]\n타 현장에 이미 출근 배정된 날짜는 중복 방지를 위해 자동으로 제외되었습니다:\n\n${skippedReports.join('\n')}`
+      );
+    }
   };
 
   const handleClearWorkerDays = (workerIdx: number) => {
@@ -1046,7 +1196,9 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
                         <tr className="bg-slate-50/80 border-b border-slate-200">
                           <td colSpan={8} className="px-3 py-2.5">
                             {(() => {
-                              const workerDates = getWorkerDates(item);
+                                const workerDates = getWorkerDates(item);
+                              const workerBusyList = getWorkerBusyList(item);
+                              const todayBusy = getBusyAssignment(item, date);
                               const hasNextMonthDates = workerDates.some((d) =>
                                 d.startsWith(`${nextMonthObj.year}-${String(nextMonthObj.month).padStart(2, '0')}`)
                               );
@@ -1080,6 +1232,25 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
                                           월말~익월 주간 연계됨
                                         </span>
                                       )}
+
+                                      {/* Alert for worker who has existing dispatch on other sites */}
+                                      {workerBusyList.length > 0 && (
+                                        <div className="flex items-center space-x-1 text-[11px] bg-rose-50 text-rose-700 px-2 py-0.5 rounded-lg border border-rose-200">
+                                          <Ban className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                                          <span className="font-bold shrink-0">타 현장 출근 배정({workerBusyList.length}건):</span>
+                                          <div className="flex flex-wrap gap-1">
+                                            {workerBusyList.map((b) => (
+                                              <span
+                                                key={b.date}
+                                                className="bg-white text-rose-700 border border-rose-300 px-1.5 py-0.2 rounded font-mono font-bold text-[10px]"
+                                                title={`[${b.date}] ${b.clientName} 현장에 출근 배정됨 (중복 선택 불가)`}
+                                              >
+                                                {formatShortDate(b.date)} ({b.clientName})
+                                              </span>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      )}
                                     </div>
 
                                     <div className="flex items-center space-x-2 flex-wrap">
@@ -1100,7 +1271,7 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
                                           type="button"
                                           onClick={() => handleSelectWorkerDateRange(idx)}
                                           className="text-[10px] bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2 py-0.5 rounded transition-colors cursor-pointer shadow-2xs"
-                                          title={`설정된 작업기간(${formatShortDate(startDate)}~${formatShortDate(endDate)}) 전체 출근 적용`}
+                                          title={`설정된 작업기간(${formatShortDate(startDate)}~${formatShortDate(endDate)}) 출근 적용 (중복 배정일은 자동 제외)`}
                                         >
                                           기간전체({formatShortDate(startDate)}~{formatShortDate(endDate)}) 선택
                                         </button>
@@ -1108,10 +1279,20 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
 
                                       <button
                                         type="button"
+                                        disabled={!!todayBusy}
                                         onClick={() => {
                                           handleToggleWorkerDateStr(idx, date);
                                         }}
-                                        className="text-[10px] bg-blue-600 hover:bg-blue-700 text-white font-bold px-2 py-0.5 rounded transition-colors cursor-pointer shadow-2xs"
+                                        className={`text-[10px] font-bold px-2 py-0.5 rounded transition-colors shadow-2xs ${
+                                          todayBusy
+                                            ? 'bg-rose-100 text-rose-400 border border-rose-200 cursor-not-allowed line-through'
+                                            : 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer'
+                                        }`}
+                                        title={
+                                          todayBusy
+                                            ? `당일(${formatShortDate(date)})은 이미 [${todayBusy.clientName}] 현장에 출근 배정되어 선택할 수 없습니다.`
+                                            : `당일(${formatShortDate(date)}) 선택`
+                                        }
                                       >
                                         당일({formatShortDate(date)}) 선택
                                       </button>
@@ -1129,7 +1310,7 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
 
                                   {/* Dual Month / Cross-Month Day Selector Container */}
                                   <div className="p-2 rounded-xl bg-white border border-slate-200 space-y-2 shadow-2xs">
-                                    {/* Month Navigation Tab Bar */}
+                                    {/* Month Navigation Tab Bar & Legend */}
                                     <div className="flex flex-wrap items-center justify-between gap-1 pb-1.5 border-b border-slate-100 text-xs font-bold">
                                       <div className="flex items-center space-x-1.5">
                                         <button
@@ -1167,9 +1348,23 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
                                         </button>
                                       </div>
 
-                                      <span className="text-[11px] text-slate-400 font-medium">
-                                        💡 주단위 작성 시 월말과 다음달 초 날짜를 교차하여 함께 선택할 수 있습니다.
-                                      </span>
+                                      {/* Visual Legend for Date Status */}
+                                      <div className="flex items-center space-x-2 text-[10px] text-slate-500">
+                                        <div className="flex items-center space-x-1">
+                                          <span className="w-3 h-3 rounded bg-blue-600 inline-block"></span>
+                                          <span>선택됨</span>
+                                        </div>
+                                        <div className="flex items-center space-x-1">
+                                          <span className="w-3 h-3 rounded bg-slate-100 border border-slate-300 inline-block"></span>
+                                          <span>선택가능</span>
+                                        </div>
+                                        <div className="flex items-center space-x-1">
+                                          <span className="w-3 h-3 rounded bg-rose-50 border border-rose-300 text-rose-500 font-bold flex items-center justify-center text-[9px] line-through">
+                                            ✕
+                                          </span>
+                                          <span className="text-rose-600 font-bold">타현장 배정 (선택불가)</span>
+                                        </div>
+                                      </div>
                                     </div>
 
                                     {/* Current Month Days Grid */}
@@ -1186,19 +1381,32 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
                                           {Array.from({ length: daysInCurrMonth }, (_, i) => i + 1).map((dNum) => {
                                             const dateStr = `${currYear}-${String(currMonth).padStart(2, '0')}-${String(dNum).padStart(2, '0')}`;
                                             const isSelected = workerDates.includes(dateStr);
+                                            const busyInfo = getBusyAssignment(item, dateStr);
+                                            const isBusy = !!busyInfo;
+
                                             return (
                                               <button
                                                 key={`curr-${dNum}`}
                                                 type="button"
+                                                disabled={isBusy}
                                                 onClick={() => handleToggleWorkerDateStr(idx, dateStr)}
-                                                className={`w-6 h-6 text-[11px] font-bold rounded flex items-center justify-center transition-all cursor-pointer ${
-                                                  isSelected
-                                                    ? 'bg-blue-600 text-white font-black scale-105 shadow-2xs border border-blue-700'
-                                                    : 'bg-slate-50 text-slate-700 hover:bg-blue-50 hover:text-blue-600 border border-slate-200'
+                                                className={`w-6 h-6 text-[11px] font-bold rounded flex items-center justify-center transition-all relative select-none ${
+                                                  isBusy
+                                                    ? 'bg-rose-50 text-rose-400 border border-rose-200 line-through cursor-not-allowed opacity-80'
+                                                    : isSelected
+                                                    ? 'bg-blue-600 text-white font-black scale-105 shadow-2xs border border-blue-700 cursor-pointer'
+                                                    : 'bg-slate-50 text-slate-700 hover:bg-blue-50 hover:text-blue-600 border border-slate-200 cursor-pointer'
                                                 }`}
-                                                title={`${currMonth}월 ${dNum}일 출근 선택/해제`}
+                                                title={
+                                                  isBusy
+                                                    ? `[선택불가 / 타현장 배정됨] ${currMonth}월 ${dNum}일은 이미 "${busyInfo.clientName}" 현장에 출근 배정되어 있습니다.`
+                                                    : `${currMonth}월 ${dNum}일 출근 선택/해제`
+                                                }
                                               >
                                                 {dNum}
+                                                {isBusy && (
+                                                  <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-rose-500 rounded-full" />
+                                                )}
                                               </button>
                                             );
                                           })}
@@ -1223,19 +1431,32 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
                                           {Array.from({ length: daysInNextMonth }, (_, i) => i + 1).map((dNum) => {
                                             const dateStr = `${nextMonthObj.year}-${String(nextMonthObj.month).padStart(2, '0')}-${String(dNum).padStart(2, '0')}`;
                                             const isSelected = workerDates.includes(dateStr);
+                                            const busyInfo = getBusyAssignment(item, dateStr);
+                                            const isBusy = !!busyInfo;
+
                                             return (
                                               <button
                                                 key={`next-${dNum}`}
                                                 type="button"
+                                                disabled={isBusy}
                                                 onClick={() => handleToggleWorkerDateStr(idx, dateStr)}
-                                                className={`w-6 h-6 text-[11px] font-bold rounded flex items-center justify-center transition-all cursor-pointer ${
-                                                  isSelected
-                                                    ? 'bg-emerald-600 text-white font-black scale-105 shadow-2xs border border-emerald-700'
-                                                    : 'bg-emerald-50/40 text-slate-700 hover:bg-emerald-100 hover:text-emerald-800 border border-emerald-200/80'
+                                                className={`w-6 h-6 text-[11px] font-bold rounded flex items-center justify-center transition-all relative select-none ${
+                                                  isBusy
+                                                    ? 'bg-rose-50 text-rose-400 border border-rose-200 line-through cursor-not-allowed opacity-80'
+                                                    : isSelected
+                                                    ? 'bg-emerald-600 text-white font-black scale-105 shadow-2xs border border-emerald-700 cursor-pointer'
+                                                    : 'bg-emerald-50/40 text-slate-700 hover:bg-emerald-100 hover:text-emerald-800 border border-emerald-200/80 cursor-pointer'
                                                 }`}
-                                                title={`${nextMonthObj.month}월 ${dNum}일 (다음달) 출근 선택/해제`}
+                                                title={
+                                                  isBusy
+                                                    ? `[선택불가 / 타현장 배정됨] ${nextMonthObj.month}월 ${dNum}일은 이미 "${busyInfo.clientName}" 현장에 출근 배정되어 있습니다.`
+                                                    : `${nextMonthObj.month}월 ${dNum}일 (다음달) 출근 선택/해제`
+                                                }
                                               >
                                                 {dNum}
+                                                {isBusy && (
+                                                  <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-rose-500 rounded-full" />
+                                                )}
                                               </button>
                                             );
                                           })}
