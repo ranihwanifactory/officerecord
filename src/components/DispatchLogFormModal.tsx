@@ -151,6 +151,10 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
       category: w.category || '보통',
       dailyRate: w.defaultDailyRate || 160000,
       residentId: w.residentId || '',
+      bankName: w.bankName || '',
+      accountNumber: w.accountNumber || '',
+      accountHolder: w.accountHolder || '',
+      bankAccount: w.bankAccount || '',
       gongsu: 1.0,
       remarks: '',
       overtimeFee: 0,
@@ -176,6 +180,10 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
           if (found.residentId) {
             item.residentId = found.residentId;
           }
+          if (found.bankName) item.bankName = found.bankName;
+          if (found.accountNumber) item.accountNumber = found.accountNumber;
+          if (found.accountHolder) item.accountHolder = found.accountHolder;
+          if (found.bankAccount) item.bankAccount = found.bankAccount;
         }
       }
 

@@ -8,6 +8,10 @@ export interface WorkerMaster {
   specialty?: string; // 전공기술/주특기 (예: 조적, 미장, 타일, 할석, 곰방, 철거, 비계, 용접, 형틀목수, 전기 등)
   residentId?: string; // 주민등록번호 (예: 801121-1795828)
   phone?: string;
+  bankName?: string; // 은행명 (예: 농협, 국민은행, 신한은행, 카카오뱅크 등)
+  accountNumber?: string; // 계좌번호 (예: 302-1234-5678-91)
+  accountHolder?: string; // 예금주 (미입력 시 본인 성명)
+  bankAccount?: string; // 통합 계좌 정보 문자열 (예: "농협 302-1234-5678-91 (이성복)")
   memo?: string; // 특이사항 / 메모 (예: 차량소지, 안전교육필, 외국인비자 E-9, 근면성실 등)
   createdAt?: string;
 }
@@ -119,6 +123,10 @@ export interface DispatchWorkerItem {
   dailyRate: number; // e.g. 160000
   gongsu: number; // e.g. 1.0 (공수) or total days worked
   residentId?: string; // 주민등록번호 (위임장 표기용)
+  bankName?: string; // 은행명
+  accountNumber?: string; // 계좌번호
+  accountHolder?: string; // 예금주
+  bankAccount?: string; // 계좌정보 통합본
   signatureDataUrl?: string; // 서명날인 이미지 (Base64 Data URL)
   remarks?: string; // 비고
   workDaysList?: number[]; // [1, 2, 3, 5, 12, 15, ...] selected day numbers (1..31)
