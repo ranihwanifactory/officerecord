@@ -6,11 +6,47 @@ import { Pagination } from './Pagination';
 interface SettlementSummaryProps {
   logs: DispatchLog[];
   officeSettings: OfficeSettings;
+  officeProfiles?: OfficeSettings[];
+  activeOfficeId?: string;
+  onSelectActiveProfile?: (id: string) => void;
 }
 
-export const SettlementSummary: React.FC<SettlementSummaryProps> = ({ logs, officeSettings }) => {
+export const SettlementSummary: React.FC<SettlementSummaryProps> = ({
+  logs,
+  officeSettings,
+  officeProfiles = [],
+  activeOfficeId = 'default',
+  onSelectActiveProfile,
+}) => {
   const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1); // 1-12
+
+  // Branch Profile Helpers & Filtering
+  const isAllBranches = activeOfficeId === 'all';
+  const defaultProfile = officeProfiles.find((p) => p.isDefault) || officeProfiles[0] || officeSettings;
+  const defaultProfileId = defaultProfile?.id || 'default';
+
+  const uniqueProfiles = (() => {
+    const seen = new Set<string>();
+    return officeProfiles.filter((p) => {
+      const norm = (p.profileName || p.officeName || '').trim().replace(/\s+/g, '');
+      if (seen.has(norm)) return false;
+      seen.add(norm);
+      return true;
+    });
+  })();
+
+  const activeBranchProfile = officeProfiles.find((p) => p.id === activeOfficeId);
+  const activeBranchDisplayName = isAllBranches
+    ? '전체 지점 (통합)'
+    : activeBranchProfile?.profileName || activeBranchProfile?.officeName || officeSettings.officeName;
+
+  // Filter logs for the active branch first
+  const branchFilteredLogs = logs.filter((log) => {
+    if (isAllBranches) return true;
+    const logBranch = log.officeProfileId || defaultProfileId;
+    return logBranch === activeOfficeId;
+  });
 
   // Pagination states
   const [matrixPage, setMatrixPage] = useState(1);
@@ -22,11 +58,11 @@ export const SettlementSummary: React.FC<SettlementSummaryProps> = ({ logs, offi
     setMatrixPage(1);
     setClientPage(1);
     setWorkerSummaryPage(1);
-  }, [selectedYear, selectedMonth]);
+  }, [selectedYear, selectedMonth, activeOfficeId]);
 
   // Filter logs for selected year and month (including cross-month weekly dispatches)
   const monthPrefix = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`;
-  const filteredLogs = logs.filter((l) => {
+  const filteredLogs = branchFilteredLogs.filter((l) => {
     if (l.date && l.date.startsWith(monthPrefix)) return true;
     if (l.workers && l.workers.some((w) => w.workDates && w.workDates.some((d) => d.startsWith(monthPrefix)))) return true;
     if (l.startDate && l.startDate.startsWith(monthPrefix)) return true;
@@ -255,17 +291,66 @@ export const SettlementSummary: React.FC<SettlementSummaryProps> = ({ logs, offi
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       
+      {/* Branch Quick Switcher Bar */}
+      {uniqueProfiles.length > 1 && onSelectActiveProfile && (
+        <div className="flex flex-wrap items-center gap-1.5 p-2 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs">
+          <span className="text-xs font-bold text-slate-500 dark:text-slate-400 px-2 flex items-center space-x-1 shrink-0">
+            <Building className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+            <span>지점별 정산 분리:</span>
+          </span>
+          <button
+            type="button"
+            onClick={() => onSelectActiveProfile('all')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center space-x-1.5 ${
+              isAllBranches
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+            }`}
+          >
+            <span>전체 지점 통합</span>
+            <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-extrabold ${isAllBranches ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}`}>
+              {logs.length}건
+            </span>
+          </button>
+          {uniqueProfiles.map((p) => {
+            const pId = p.id || 'default';
+            const count = logs.filter((l) => (l.officeProfileId || defaultProfileId) === pId).length;
+            const isSelected = activeOfficeId === pId;
+            return (
+              <button
+                key={pId}
+                type="button"
+                onClick={() => onSelectActiveProfile(pId)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center space-x-1.5 ${
+                  isSelected
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                <span>📍 {p.profileName || p.officeName}</span>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-extrabold ${isSelected ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}`}>
+                  {count}건
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {/* Top Filter Bar */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-wrap items-center justify-between gap-4 transition-colors">
         <div>
+          <div className="flex items-center space-x-2 text-xs font-bold text-blue-600 dark:text-blue-400 mb-1">
+            <span>📍 {activeBranchDisplayName}</span>
+          </div>
           <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 flex items-center space-x-2">
             <DollarSign className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-            <span>월간 자동 정산 및 통계 보고서</span>
+            <span>{isAllBranches ? '전체 지점 통합' : activeBranchDisplayName} 월간 자동 정산 보고서</span>
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            기간별 총 출력 공수, 업체별 정산액 및 인부별 지급액을 한눈에 집계합니다.
+            {activeBranchDisplayName}의 총 출력 공수, 업체별 정산액 및 인부별 지급액을 집계합니다.
           </p>
         </div>
 

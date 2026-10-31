@@ -185,6 +185,21 @@ export const OfficeSettingsModal: React.FC<OfficeSettingsModalProps> = ({
     setTimeout(() => setIsSavedNotice(false), 3000);
   };
 
+  const [isDeduplicating, setIsDeduplicating] = useState(false);
+
+  const handleDeduplicateBranches = async () => {
+    try {
+      setIsDeduplicating(true);
+      const synced = await syncOfficeProfilesWithFirestore();
+      setSyncNotice(`✓ 지점 목록 중복 검사 완료: 현재 총 ${synced.length}개 지점이 정상 유지 관리 중입니다.`);
+      setTimeout(() => setSyncNotice(null), 4000);
+    } catch (err: any) {
+      alert(`중복 정리 중 오류: ${err?.message || err}`);
+    } finally {
+      setIsDeduplicating(false);
+    }
+  };
+
   const handleDownloadBackup = () => {
     try {
       downloadDatabaseBackup(currentUserEmail);
@@ -295,7 +310,17 @@ export const OfficeSettingsModal: React.FC<OfficeSettingsModalProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={handleDeduplicateBranches}
+              disabled={isDeduplicating}
+              className="px-3 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/60 dark:hover:bg-amber-900/60 text-amber-700 dark:text-amber-300 font-bold text-xs flex items-center space-x-1.5 transition-colors cursor-pointer border border-amber-200 dark:border-amber-800 disabled:opacity-50"
+              title="이름이 중복된 지점을 하나로 정리하고 모든 출력표를 안전하게 병합합니다."
+            >
+              <Tag className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+              <span>{isDeduplicating ? '정리 중...' : '지점 중복 정리'}</span>
+            </button>
+
             <button
               onClick={handleSyncCloud}
               disabled={isSyncingCloud}
@@ -402,10 +427,13 @@ export const OfficeSettingsModal: React.FC<OfficeSettingsModalProps> = ({
                         <span>{isBeingEdited ? '수정 중' : '정보 수정'}</span>
                       </button>
 
-                      {profiles.length > 1 && !p.isDefault && onDeleteProfile && (
+                      {profiles.length > 1 && onDeleteProfile && (
                         <button
                           onClick={() => {
-                            if (confirm(`'${p.profileName || p.officeName}' 프로필을 삭제하시겠습니까?`)) {
+                            const confirmText = p.isDefault
+                              ? `'${p.profileName || p.officeName}' 기본 지점을 삭제하시겠습니까?\n(삭제 시 다른 지점이 기본 지점으로 자동 지정됩니다)`
+                              : `'${p.profileName || p.officeName}' 지점 프로필을 삭제하시겠습니까?`;
+                            if (confirm(confirmText)) {
                               onDeleteProfile(pId);
                               if (selectedEditId === pId) {
                                 setSelectedEditId(profiles.find((x) => x.id !== pId)?.id || 'default');
@@ -413,7 +441,7 @@ export const OfficeSettingsModal: React.FC<OfficeSettingsModalProps> = ({
                             }
                           }}
                           className="p-1 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950 transition-colors cursor-pointer"
-                          title="프로필 삭제"
+                          title="지점 프로필 삭제"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>

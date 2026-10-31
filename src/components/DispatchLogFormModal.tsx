@@ -40,8 +40,9 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
 }) => {
   const todayStr = getTodayDateString();
 
+  const defaultProfileId = officeProfiles.find((p) => p.isDefault)?.id || officeProfiles[0]?.id || 'default';
   const [officeProfileId, setOfficeProfileId] = useState<string>(
-    initialLog?.officeProfileId || activeOfficeId || officeProfiles[0]?.id || 'default'
+    initialLog?.officeProfileId || (activeOfficeId !== 'all' ? activeOfficeId : defaultProfileId)
   );
   
   const [formType, setFormType] = useState<'worker_roster' | 'invoice_summary'>(
@@ -817,19 +818,31 @@ export const DispatchLogFormModal: React.FC<DispatchLogFormModalProps> = ({
               <div className="pb-1 border-b border-slate-200/60 dark:border-slate-700/60">
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center space-x-1">
                   <Building className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                  <span>발행 사무소 선택 (출력표 표기 직인 / 계좌 / 연락처)</span>
+                  <span>발행 사무소/지점 선택 (출력표 분리 관리)</span>
                 </label>
                 <select
                   value={officeProfileId}
                   onChange={(e) => setOfficeProfileId(e.target.value)}
                   className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer"
                 >
-                  {officeProfiles.map((p) => (
-                    <option key={p.id || p.officeName} value={p.id || 'default'} className="dark:bg-slate-800">
-                      {p.profileName || p.officeName} ({p.officeName} / {p.phone1 || '연락처'})
-                    </option>
-                  ))}
+                  {(() => {
+                    const seen = new Set<string>();
+                    const unique = officeProfiles.filter((p) => {
+                      const norm = (p.profileName || p.officeName || '').trim().replace(/\s+/g, '');
+                      if (seen.has(norm)) return false;
+                      seen.add(norm);
+                      return true;
+                    });
+                    return unique.map((p) => (
+                      <option key={p.id || p.officeName} value={p.id || 'default'} className="dark:bg-slate-800 font-bold">
+                        📍 {p.profileName || p.officeName} ({p.officeName} / {p.phone1 || '연락처'})
+                      </option>
+                    ));
+                  })()}
                 </select>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+                  ※ 선택한 지점의 출력표로 등록되며, 달력 및 정산표에서 지점별로 구분 관리됩니다.
+                </p>
               </div>
             )}
 

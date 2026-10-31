@@ -7,6 +7,9 @@ import { getTodayDateString } from '../utils/date';
 interface CalendarViewProps {
   logs: DispatchLog[];
   officeSettings: OfficeSettings;
+  officeProfiles?: OfficeSettings[];
+  activeOfficeId?: string;
+  onSelectActiveProfile?: (id: string) => void;
   onSelectDate: (dateStr: string) => void;
   onNewLogForDate: (dateStr: string) => void;
   onEditLog: (log: DispatchLog) => void;
@@ -19,6 +22,9 @@ interface CalendarViewProps {
 export const CalendarView: React.FC<CalendarViewProps> = ({
   logs,
   officeSettings,
+  officeProfiles = [],
+  activeOfficeId = 'default',
+  onSelectActiveProfile,
   onSelectDate,
   onNewLogForDate,
   onEditLog,
@@ -37,6 +43,53 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   // Month navigation helpers
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth(); // 0-indexed
+
+  // Branch Profile Helpers & Filtering
+  const isAllBranches = activeOfficeId === 'all';
+  const defaultProfile = officeProfiles.find((p) => p.isDefault) || officeProfiles[0] || officeSettings;
+  const defaultProfileId = defaultProfile?.id || 'default';
+
+  // Deduplicated profiles list for pills
+  const uniqueProfiles = (() => {
+    const seen = new Set<string>();
+    return officeProfiles.filter((p) => {
+      const norm = (p.profileName || p.officeName || '').trim().replace(/\s+/g, '');
+      if (seen.has(norm)) return false;
+      seen.add(norm);
+      return true;
+    });
+  })();
+
+  const activeBranchProfile = officeProfiles.find((p) => p.id === activeOfficeId);
+  const activeBranchDisplayName = isAllBranches
+    ? '전체 지점 (통합)'
+    : activeBranchProfile?.profileName || activeBranchProfile?.officeName || officeSettings.officeName;
+
+  // Filter logs for the active branch
+  // If a log has no officeProfileId, map to defaultProfileId (본점)
+  const branchFilteredLogs = logs.filter((log) => {
+    if (isAllBranches) return true;
+    const logBranch = log.officeProfileId || defaultProfileId;
+    return logBranch === activeOfficeId;
+  });
+
+  const getBranchBadgeInfo = (log: DispatchLog) => {
+    const bId = log.officeProfileId || defaultProfileId;
+    const profile = officeProfiles.find((p) => p.id === bId);
+    const fullName = profile?.profileName || profile?.officeName || '본점';
+    let shortName = fullName.replace(/젊은인력사무소\s*/g, '').replace(/[()]/g, '').trim();
+    if (!shortName) shortName = fullName;
+    if (!shortName.endsWith('점') && !shortName.includes('본')) shortName += '점';
+    const isDefaultBranch = bId === defaultProfileId;
+    return {
+      name: shortName,
+      fullName: fullName,
+      isDefaultBranch,
+      className: isDefaultBranch
+        ? 'bg-blue-100 text-blue-800 dark:bg-blue-950/80 dark:text-blue-300 border-blue-200 dark:border-blue-800'
+        : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
+    };
+  };
 
   const handlePrevMonth = () => {
     setCurrentDate(new Date(year, month - 1, 1));
@@ -60,11 +113,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
   // Create grid cells
   const calendarCells = [];
-  // Empty padding cells for previous month
   for (let i = 0; i < firstDayOfMonth; i++) {
     calendarCells.push(null);
   }
-  // Days of current month
   for (let d = 1; d <= daysInMonth; d++) {
     const monthFormatted = String(month + 1).padStart(2, '0');
     const dayFormatted = String(d).padStart(2, '0');
@@ -72,9 +123,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     calendarCells.push({ day: d, dateStr });
   }
 
-  // Filter logs for selected month
+  // Filter logs for selected month (from branchFilteredLogs!)
   const currentMonthPrefix = `${year}-${String(month + 1).padStart(2, '0')}`;
-  const monthlyLogs = logs.filter((l) => l.date.startsWith(currentMonthPrefix));
+  const monthlyLogs = branchFilteredLogs.filter((l) => l.date.startsWith(currentMonthPrefix));
   
   // Calculate monthly summary
   const monthlyTotalWorkers = monthlyLogs.reduce((sum, l) => {
@@ -86,13 +137,13 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   const monthlyTotalAmount = monthlyLogs.reduce((sum, l) => sum + (l.grandTotalAmount || l.totalAmount || 0), 0);
 
   // Selected Date logs & pagination
-  const selectedDateLogs = logs.filter((l) => l.date === selectedDateStr);
+  const selectedDateLogs = branchFilteredLogs.filter((l) => l.date === selectedDateStr);
   const [selectedDatePage, setSelectedDatePage] = useState(1);
   const ITEMS_PER_PAGE = 5;
 
   useEffect(() => {
     setSelectedDatePage(1);
-  }, [selectedDateStr]);
+  }, [selectedDateStr, activeOfficeId]);
 
   const selectedDateTotalPages = Math.ceil(selectedDateLogs.length / ITEMS_PER_PAGE) || 1;
   const paginatedSelectedDateLogs = selectedDateLogs.slice(
@@ -101,17 +152,64 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       
+      {/* Branch Quick Switcher Bar */}
+      {uniqueProfiles.length > 1 && onSelectActiveProfile && (
+        <div className="flex flex-wrap items-center gap-1.5 p-2 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs">
+          <span className="text-xs font-bold text-slate-500 dark:text-slate-400 px-2 flex items-center space-x-1 shrink-0">
+            <span>🏢 지점별 출력표 분리:</span>
+          </span>
+          <button
+            type="button"
+            onClick={() => onSelectActiveProfile('all')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center space-x-1.5 ${
+              isAllBranches
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+            }`}
+          >
+            <span>전체 지점 통합</span>
+            <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-extrabold ${isAllBranches ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}`}>
+              {logs.length}건
+            </span>
+          </button>
+          {uniqueProfiles.map((p) => {
+            const pId = p.id || 'default';
+            const count = logs.filter((l) => (l.officeProfileId || defaultProfileId) === pId).length;
+            const isSelected = activeOfficeId === pId;
+            return (
+              <button
+                key={pId}
+                type="button"
+                onClick={() => onSelectActiveProfile(pId)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center space-x-1.5 ${
+                  isSelected
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                <span>📍 {p.profileName || p.officeName}</span>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-extrabold ${isSelected ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}`}>
+                  {count}건
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {/* Monthly Summary Banner (Bento Dark Stat Card) */}
       <div className="bg-slate-900 text-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-2">
           <div className="flex items-center space-x-2 text-blue-400 font-bold text-xs uppercase tracking-widest">
             <CalendarIcon className="w-4 h-4" />
             <span>Monthly Insights ({year}년 {month + 1}월)</span>
+            <span className="text-white/40">•</span>
+            <span className="text-amber-300 font-semibold">{activeBranchDisplayName}</span>
           </div>
-          <h2 className="text-lg sm:text-2xl font-bold tracking-tight text-white">
-            누적 출력 현황 및 집계
+          <h2 className="text-lg sm:text-2xl font-bold tracking-tight text-white flex items-center space-x-2">
+            <span>{isAllBranches ? '전체 지점' : activeBranchDisplayName} 누적 출력 현황 및 집계</span>
           </h2>
           <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-3 pt-1">
             <div className="bg-white/10 p-2.5 sm:px-3.5 sm:py-2 rounded-xl border border-white/10">
@@ -122,6 +220,12 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               <p className="text-[10px] text-slate-400 font-semibold uppercase">총 정산 금액</p>
               <p className="text-sm sm:text-lg font-black text-emerald-400 truncate">₩{monthlyTotalAmount.toLocaleString()}원</p>
             </div>
+            {!isAllBranches && (
+              <div className="bg-blue-950/60 p-2.5 sm:px-3.5 sm:py-2 rounded-xl border border-blue-500/30 flex items-center space-x-2 col-span-2 sm:col-span-1">
+                <span className="text-xs text-blue-300 font-bold">지점 전용 모드</span>
+                <span className="text-[10px] text-blue-400">({monthlyLogs.length}건 등록됨)</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -274,8 +378,15 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                           }`}
                           title={`${log.clientName} (${headcount}명 / ₩${log.totalAmount.toLocaleString()}) ${log.isPaid ? '[결제완료]' : '[미결제]'}`}
                         >
-                          <span className="truncate">{log.clientName}</span>
-                          <span className="shrink-0 text-[8px] sm:text-[9px]">{headcount}명</span>
+                          <div className="flex items-center space-x-1 truncate min-w-0">
+                            {isAllBranches && (
+                              <span className={`text-[7px] font-black px-1 rounded shrink-0 ${getBranchBadgeInfo(log).isDefaultBranch ? 'bg-blue-200 text-blue-900 dark:bg-blue-900 dark:text-blue-200' : 'bg-emerald-200 text-emerald-900 dark:bg-emerald-900 dark:text-emerald-200'}`}>
+                                {getBranchBadgeInfo(log).name}
+                              </span>
+                            )}
+                            <span className="truncate">{log.clientName}</span>
+                          </div>
+                          <span className="shrink-0 text-[8px] sm:text-[9px] font-mono">{headcount}명</span>
                         </div>
                       );
                     })}
@@ -297,7 +408,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
         <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col transition-colors">
           <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
             <div>
-              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">선택한 날짜</div>
+              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">선택한 날짜 ({activeBranchDisplayName})</div>
               <h3 className="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-100">
                 {selectedDateStr}
               </h3>
@@ -317,34 +428,41 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             {selectedDateLogs.length === 0 ? (
               <div className="text-center py-10 text-slate-400 space-y-2">
                 <CalendarIcon className="w-10 h-10 mx-auto opacity-30 text-slate-400" />
-                <p className="text-sm font-medium text-slate-500">선택한 날짜에 등록된 출력일지가 없습니다.</p>
+                <p className="text-sm font-medium text-slate-500">선택한 날짜에 등록된 {activeBranchDisplayName} 출력일지가 없습니다.</p>
                 <button
                   onClick={() => onNewLogForDate(selectedDateStr)}
-                  className="mt-2 text-xs text-blue-600 font-bold underline hover:text-blue-700"
+                  className="mt-2 text-xs text-blue-600 font-bold underline hover:text-blue-700 cursor-pointer"
                 >
                   + 이 날짜로 새 출력표 작성하기
                 </button>
               </div>
             ) : (
-              paginatedSelectedDateLogs.map((log) => (
-                <div
-                  key={log.id}
-                  className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-750 rounded-xl p-3 sm:p-4 space-y-3 hover:border-blue-300 dark:hover:border-blue-700 transition-all shadow-xs"
-                >
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <span className="text-[11px] font-bold text-blue-700 dark:text-blue-300 bg-blue-100/60 dark:bg-blue-950 px-2 py-0.5 rounded-md">
-                        {log.clientContact || '연락처 미기재'}
-                      </span>
-                      <h4 className="text-base font-bold text-slate-800 dark:text-slate-100 mt-1">
-                        {log.clientName}
-                      </h4>
-                    </div>
-
-                    <div className="text-right">
-                      <div className="text-base sm:text-lg font-black text-blue-600 dark:text-blue-400">
-                        ₩{log.totalAmount.toLocaleString()}원
+              paginatedSelectedDateLogs.map((log) => {
+                const badge = getBranchBadgeInfo(log);
+                return (
+                  <div
+                    key={log.id}
+                    className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-750 rounded-xl p-3 sm:p-4 space-y-3 hover:border-blue-300 dark:hover:border-blue-700 transition-all shadow-xs"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="flex items-center space-x-1.5 mb-1">
+                          <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md border ${badge.className}`}>
+                            📍 {badge.name}
+                          </span>
+                          <span className="text-[11px] font-bold text-blue-700 dark:text-blue-300 bg-blue-100/60 dark:bg-blue-950 px-2 py-0.5 rounded-md">
+                            {log.clientContact || '연락처 미기재'}
+                          </span>
+                        </div>
+                        <h4 className="text-base font-bold text-slate-800 dark:text-slate-100">
+                          {log.clientName}
+                        </h4>
                       </div>
+
+                      <div className="text-right">
+                        <div className="text-base sm:text-lg font-black text-blue-600 dark:text-blue-400">
+                          ₩{log.totalAmount.toLocaleString()}원
+                        </div>
                       <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">
                         {(() => {
                           let general = log.generalGongsuCount || 0;
@@ -471,8 +589,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                   </div>
 
                 </div>
-              ))
-            )}
+              );
+            })
+          )}
           </div>
 
           <Pagination

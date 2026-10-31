@@ -55,18 +55,39 @@ export const Navbar: React.FC<NavbarProps> = ({
               <div className="min-w-0">
                 <div className="flex items-center space-x-1.5 sm:space-x-2">
                   {/* Office Profile Selector Dropdown */}
-                  {officeProfiles.length > 1 && onSelectActiveProfile ? (
+                  {officeProfiles.length > 0 && onSelectActiveProfile ? (
                     <div className="relative flex items-center min-w-0">
                       <select
                         value={activeOfficeId}
                         onChange={(e) => onSelectActiveProfile(e.target.value)}
-                        className="font-extrabold text-sm sm:text-lg tracking-tight text-slate-800 dark:text-slate-100 bg-transparent border border-slate-200 dark:border-slate-700 rounded-lg px-1.5 py-0.5 outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer max-w-[130px] sm:max-w-[220px] truncate"
+                        className="font-extrabold text-xs sm:text-base tracking-tight text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg px-2 py-1 outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer max-w-[150px] sm:max-w-[240px] truncate shadow-2xs"
+                        title="관리할 지점을 선택하여 출력표를 지점별로 구분 관리할 수 있습니다."
                       >
-                        {officeProfiles.map((p) => (
-                          <option key={p.id || p.officeName} value={p.id || 'default'} className="dark:bg-slate-800 font-bold text-slate-900 dark:text-slate-100">
-                            {p.profileName || p.officeName}
+                        {/* Option to view all branches integrated if more than 1 branch */}
+                        {officeProfiles.length > 1 && (
+                          <option value="all" className="dark:bg-slate-800 font-bold text-blue-600 dark:text-blue-400">
+                            🏢 전체 지점 통합 보기
                           </option>
-                        ))}
+                        )}
+                        {/* Deduplicated profile options */}
+                        {(() => {
+                          const seenNames = new Set<string>();
+                          const uniqueProfiles = officeProfiles.filter((p) => {
+                            const norm = (p.profileName || p.officeName || '').trim().replace(/\s+/g, '');
+                            if (seenNames.has(norm)) return false;
+                            seenNames.add(norm);
+                            return true;
+                          });
+                          return uniqueProfiles.map((p) => (
+                            <option
+                              key={p.id || p.officeName}
+                              value={p.id || 'default'}
+                              className="dark:bg-slate-800 font-bold text-slate-900 dark:text-slate-100"
+                            >
+                              📍 {p.profileName || p.officeName}
+                            </option>
+                          ));
+                        })()}
                       </select>
                     </div>
                   ) : (

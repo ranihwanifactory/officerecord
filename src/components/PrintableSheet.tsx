@@ -287,11 +287,20 @@ export const PrintableSheet: React.FC<PrintableSheetProps> = ({
                 onChange={(e) => setSelectedOfficeId(e.target.value)}
                 className="font-bold bg-white text-slate-800 border border-slate-200 rounded-lg px-2 py-1 outline-none cursor-pointer"
               >
-                {officeProfiles.map((p) => (
-                  <option key={p.id || p.officeName} value={p.id || 'default'}>
-                    {p.profileName || p.officeName}
-                  </option>
-                ))}
+                {(() => {
+                  const seen = new Set<string>();
+                  const unique = officeProfiles.filter((p) => {
+                    const norm = (p.profileName || p.officeName || '').trim().replace(/\s+/g, '');
+                    if (seen.has(norm)) return false;
+                    seen.add(norm);
+                    return true;
+                  });
+                  return unique.map((p) => (
+                    <option key={p.id || p.officeName} value={p.id || 'default'}>
+                      📍 {p.profileName || p.officeName}
+                    </option>
+                  ));
+                })()}
               </select>
             </div>
           )}

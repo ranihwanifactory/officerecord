@@ -411,6 +411,9 @@ export default function App() {
           <CalendarView
             logs={dispatchLogs}
             officeSettings={officeSettings}
+            officeProfiles={officeProfiles}
+            activeOfficeId={activeOfficeId}
+            onSelectActiveProfile={handleSelectActiveOffice}
             onSelectDate={(dateStr) => setSelectedDateForForm(dateStr)}
             onNewLogForDate={(dateStr) => handleOpenNewLogModal(dateStr)}
             onEditLog={handleOpenEditLogModal}
@@ -424,6 +427,9 @@ export default function App() {
         {activeTab === 'list' && (
           <DispatchLogList
             logs={dispatchLogs}
+            officeProfiles={officeProfiles}
+            activeOfficeId={activeOfficeId}
+            onSelectActiveProfile={handleSelectActiveOffice}
             onNewLogClick={() => handleOpenNewLogModal()}
             onEditLog={handleOpenEditLogModal}
             onPrintLog={handlePrintLog}
@@ -437,6 +443,9 @@ export default function App() {
           <SettlementSummary
             logs={dispatchLogs}
             officeSettings={officeSettings}
+            officeProfiles={officeProfiles}
+            activeOfficeId={activeOfficeId}
+            onSelectActiveProfile={handleSelectActiveOffice}
           />
         )}
 

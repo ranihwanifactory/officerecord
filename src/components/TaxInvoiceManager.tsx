@@ -49,8 +49,17 @@ export const TaxInvoiceManager: React.FC<TaxInvoiceManagerProps> = ({
   onSaveInvoice,
   onDeleteInvoice,
 }) => {
-  // Active profiles
-  const profiles = officeProfiles.length > 0 ? officeProfiles : [officeSettings];
+  // Active profiles (deduplicated)
+  const rawProfiles = officeProfiles.length > 0 ? officeProfiles : [officeSettings];
+  const profiles = useMemo(() => {
+    const seen = new Set<string>();
+    return rawProfiles.filter((p) => {
+      const norm = (p.profileName || p.officeName || '').trim().replace(/\s+/g, '');
+      if (seen.has(norm)) return false;
+      seen.add(norm);
+      return true;
+    });
+  }, [rawProfiles]);
 
   // Filters
   const [searchTerm, setSearchTerm] = useState('');

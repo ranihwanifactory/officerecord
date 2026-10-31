@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { DispatchLog } from '../types';
+import { DispatchLog, OfficeSettings } from '../types';
 import { Search, Printer, Copy, Edit, Trash2, Calendar, Users, Building, Plus, CheckCircle2, Check, Clock, FileSignature } from 'lucide-react';
 import { Pagination } from './Pagination';
 
 interface DispatchLogListProps {
   logs: DispatchLog[];
+  officeProfiles?: OfficeSettings[];
+  activeOfficeId?: string;
+  onSelectActiveProfile?: (id: string) => void;
   onNewLogClick: () => void;
   onEditLog: (log: DispatchLog) => void;
   onPrintLog: (log: DispatchLog, initialFormType?: 'worker_roster' | 'invoice_summary' | 'delegation_letter') => void;
@@ -15,6 +18,9 @@ interface DispatchLogListProps {
 
 export const DispatchLogList: React.FC<DispatchLogListProps> = ({
   logs,
+  officeProfiles = [],
+  activeOfficeId = 'default',
+  onSelectActiveProfile,
   onNewLogClick,
   onEditLog,
   onPrintLog,
@@ -28,7 +34,40 @@ export const DispatchLogList: React.FC<DispatchLogListProps> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
 
+  const isAllBranches = activeOfficeId === 'all';
+  const defaultProfileId = officeProfiles.find((p) => p.isDefault)?.id || officeProfiles[0]?.id || 'default';
+
+  const uniqueProfiles = (() => {
+    const seen = new Set<string>();
+    return officeProfiles.filter((p) => {
+      const norm = (p.profileName || p.officeName || '').trim().replace(/\s+/g, '');
+      if (seen.has(norm)) return false;
+      seen.add(norm);
+      return true;
+    });
+  })();
+
+  const getBranchBadgeInfo = (log: DispatchLog) => {
+    const bId = log.officeProfileId || defaultProfileId;
+    const profile = officeProfiles.find((p) => p.id === bId);
+    const fullName = profile?.profileName || profile?.officeName || '본점';
+    let shortName = fullName.replace(/젊은인력사무소\s*/g, '').replace(/[()]/g, '').trim();
+    if (!shortName) shortName = fullName;
+    if (!shortName.endsWith('점') && !shortName.includes('본')) shortName += '점';
+    const isDefaultBranch = bId === defaultProfileId;
+    return {
+      name: shortName,
+      fullName: fullName,
+      isDefaultBranch,
+      className: isDefaultBranch
+        ? 'bg-blue-100 text-blue-800 dark:bg-blue-950/80 dark:text-blue-300 border-blue-200 dark:border-blue-800'
+        : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
+    };
+  };
+
   const filteredLogs = logs.filter((log) => {
+    const matchesBranch = isAllBranches || (log.officeProfileId || defaultProfileId) === activeOfficeId;
+
     const matchesSearch =
       log.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       log.clientContact.includes(searchTerm) ||
@@ -45,12 +84,12 @@ export const DispatchLogList: React.FC<DispatchLogListProps> = ({
         ? !!log.isPaid
         : !log.isPaid;
 
-    return matchesSearch && matchesMonth && matchesPaid;
+    return matchesBranch && matchesSearch && matchesMonth && matchesPaid;
   });
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, filterMonth, filterPaidStatus]);
+  }, [searchTerm, filterMonth, filterPaidStatus, activeOfficeId]);
 
   const totalPages = Math.ceil(filteredLogs.length / ITEMS_PER_PAGE) || 1;
   const paginatedLogs = filteredLogs.slice(
@@ -59,8 +98,54 @@ export const DispatchLogList: React.FC<DispatchLogListProps> = ({
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       
+      {/* Branch Quick Switcher Bar */}
+      {uniqueProfiles.length > 1 && onSelectActiveProfile && (
+        <div className="flex flex-wrap items-center gap-1.5 p-2 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs">
+          <span className="text-xs font-bold text-slate-500 dark:text-slate-400 px-2 flex items-center space-x-1 shrink-0">
+            <Building className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+            <span>지점별 출력표 분리:</span>
+          </span>
+          <button
+            type="button"
+            onClick={() => onSelectActiveProfile('all')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center space-x-1.5 ${
+              isAllBranches
+                ? 'bg-blue-600 text-white shadow-xs'
+                : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+            }`}
+          >
+            <span>전체 지점 통합</span>
+            <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-extrabold ${isAllBranches ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}`}>
+              {logs.length}건
+            </span>
+          </button>
+          {uniqueProfiles.map((p) => {
+            const pId = p.id || 'default';
+            const count = logs.filter((l) => (l.officeProfileId || defaultProfileId) === pId).length;
+            const isSelected = activeOfficeId === pId;
+            return (
+              <button
+                key={pId}
+                type="button"
+                onClick={() => onSelectActiveProfile(pId)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center space-x-1.5 ${
+                  isSelected
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                <span>📍 {p.profileName || p.officeName}</span>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-extrabold ${isSelected ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}`}>
+                  {count}건
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {/* Top Filter & Action Header */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 sm:p-5 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-wrap items-center justify-between gap-4 transition-colors">
         
@@ -128,6 +213,7 @@ export const DispatchLogList: React.FC<DispatchLogListProps> = ({
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-500 dark:text-slate-400 font-bold text-[11px] uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
               <tr>
+                <th className="p-3.5">발행 지점</th>
                 <th className="p-3.5">출력 날짜</th>
                 <th className="p-3.5">업체 / 현장명</th>
                 <th className="p-3.5">결제 상태</th>
@@ -141,7 +227,7 @@ export const DispatchLogList: React.FC<DispatchLogListProps> = ({
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {filteredLogs.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="p-12 text-center text-slate-400 dark:text-slate-500 space-y-2">
+                  <td colSpan={9} className="p-12 text-center text-slate-400 dark:text-slate-500 space-y-2">
                     <p className="text-sm font-medium">검색 조건에 일치하는 출력 일지가 없습니다.</p>
                     <button
                       onClick={onNewLogClick}
@@ -152,13 +238,22 @@ export const DispatchLogList: React.FC<DispatchLogListProps> = ({
                   </td>
                 </tr>
               ) : (
-                paginatedLogs.map((log) => (
-                  <tr key={log.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
-                    
-                    {/* Date */}
-                    <td className="p-3.5 font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
-                      {log.date}
-                    </td>
+                paginatedLogs.map((log) => {
+                  const bBadge = getBranchBadgeInfo(log);
+                  return (
+                    <tr key={log.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
+                      
+                      {/* Branch */}
+                      <td className="p-3.5 whitespace-nowrap">
+                        <span className={`text-[11px] font-extrabold px-2 py-0.5 rounded-md border ${bBadge.className}`}>
+                          📍 {bBadge.name}
+                        </span>
+                      </td>
+
+                      {/* Date */}
+                      <td className="p-3.5 font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
+                        {log.date}
+                      </td>
 
                     {/* Client */}
                     <td className="p-3.5 font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap">
@@ -338,7 +433,8 @@ export const DispatchLogList: React.FC<DispatchLogListProps> = ({
                     </td>
 
                   </tr>
-                ))
+                );
+              })
               )}
             </tbody>
           </table>
@@ -357,13 +453,18 @@ export const DispatchLogList: React.FC<DispatchLogListProps> = ({
               </button>
             </div>
           ) : (
-            paginatedLogs.map((log) => (
+            paginatedLogs.map((log) => {
+              const bBadge = getBranchBadgeInfo(log);
+              return (
               <div key={log.id} className="p-4 space-y-3 hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors">
                 
                 {/* Header: Date + Client + Paid Toggle */}
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <div className="flex items-center space-x-1.5 mb-1">
+                      <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded border ${bBadge.className}`}>
+                        📍 {bBadge.name}
+                      </span>
                       <span className="text-xs font-black text-slate-900 dark:text-slate-100 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md font-mono">
                         {log.date}
                       </span>
@@ -515,7 +616,8 @@ export const DispatchLogList: React.FC<DispatchLogListProps> = ({
                 </div>
 
               </div>
-            ))
+            );
+          })
           )}
         </div>
 

@@ -445,6 +445,133 @@ export function subscribeActiveOfficeId(onUpdate: (activeId: string) => void): (
   };
 }
 
+// Branch Profile Name Normalization & Deduplication
+export function normalizeBranchName(name?: string): string {
+  if (!name) return '';
+  return name.trim().toLowerCase().replace(/\s+/g, '').replace(/[()（）[\]]/g, '');
+}
+
+export function deduplicateOfficeProfiles(profiles: OfficeSettings[]): {
+  cleaned: OfficeSettings[];
+  redirectMap: Record<string, string>;
+  hasDuplicates: boolean;
+} {
+  const cleaned: OfficeSettings[] = [];
+  const seenIds = new Set<string>();
+  const seenNames = new Map<string, string>(); // normName -> canonicalId
+  const redirectMap: Record<string, string> = {};
+  let hasDuplicates = false;
+
+  for (const p of profiles) {
+    const rawId = p.id || 'default';
+    const normName = normalizeBranchName(p.profileName || p.officeName);
+
+    // If ID already seen
+    if (seenIds.has(rawId)) {
+      hasDuplicates = true;
+      continue;
+    }
+
+    // If a profile with the same normalized name already exists
+    if (normName && seenNames.has(normName)) {
+      const canonicalId = seenNames.get(normName)!;
+      redirectMap[rawId] = canonicalId;
+      hasDuplicates = true;
+      continue;
+    }
+
+    seenIds.add(rawId);
+    if (normName) {
+      seenNames.set(normName, rawId);
+    }
+    cleaned.push({ ...p, id: rawId });
+  }
+
+  if (cleaned.length === 0) {
+    cleaned.push(...DEFAULT_OFFICE_PROFILES);
+  }
+
+  if (!cleaned.some((p) => p.isDefault)) {
+    cleaned[0].isDefault = true;
+  }
+
+  return { cleaned, redirectMap, hasDuplicates };
+}
+
+/**
+ * Re-links dispatch logs and tax invoices when duplicate branch profiles are merged,
+ * and cleans up duplicate Firestore documents.
+ */
+export async function applyProfileDeduplicationRedirects(redirectMap: Record<string, string>): Promise<void> {
+  const dupIds = Object.keys(redirectMap);
+  if (dupIds.length === 0) return;
+
+  // 1. Re-link dispatch logs
+  const currentLogs = getLocalData<DispatchLog[]>(KEYS.LOGS, []);
+  let logsChanged = false;
+  const updatedLogs = currentLogs.map((log) => {
+    if (log.officeProfileId && redirectMap[log.officeProfileId]) {
+      logsChanged = true;
+      return { ...log, officeProfileId: redirectMap[log.officeProfileId] };
+    }
+    return log;
+  });
+
+  if (logsChanged) {
+    setLocalData(KEYS.LOGS, updatedLogs);
+    notifyLogsListeners(updatedLogs);
+    for (const log of updatedLogs) {
+      if (log.officeProfileId && redirectMap[log.officeProfileId]) {
+        try {
+          await setDoc(doc(db, 'dispatch_logs', log.id), sanitizeForFirestore(log), { merge: true });
+        } catch (e) {
+          console.warn('Re-link dispatch log error:', e);
+        }
+      }
+    }
+  }
+
+  // 2. Re-link tax invoices
+  const currentInvoices = getLocalData<TaxInvoice[]>(KEYS.TAX_INVOICES, []);
+  let invsChanged = false;
+  const updatedInvoices = currentInvoices.map((inv) => {
+    if (inv.supplierOfficeId && redirectMap[inv.supplierOfficeId]) {
+      invsChanged = true;
+      return { ...inv, supplierOfficeId: redirectMap[inv.supplierOfficeId] };
+    }
+    return inv;
+  });
+
+  if (invsChanged) {
+    setLocalData(KEYS.TAX_INVOICES, updatedInvoices);
+    notifyTaxInvoicesListeners(updatedInvoices);
+    for (const inv of updatedInvoices) {
+      if (inv.supplierOfficeId && redirectMap[inv.supplierOfficeId]) {
+        try {
+          await setDoc(doc(db, 'tax_invoices', inv.id), sanitizeForFirestore(inv), { merge: true });
+        } catch (e) {
+          console.warn('Re-link tax invoice error:', e);
+        }
+      }
+    }
+  }
+
+  // 3. Clean up active office id if pointing to duplicate
+  const currentActiveId = getActiveOfficeId();
+  if (redirectMap[currentActiveId]) {
+    setActiveOfficeId(redirectMap[currentActiveId]);
+  }
+
+  // 4. Delete duplicate docs from Firestore
+  for (const dupId of dupIds) {
+    try {
+      await deleteDoc(doc(db, 'office_profiles', dupId));
+    } catch (e) {
+      console.warn('Delete duplicate office profile doc error:', e);
+    }
+  }
+}
+
 // Office Profiles & Settings Realtime Sync
 export async function syncOfficeProfilesWithFirestore(): Promise<OfficeSettings[]> {
   try {
@@ -500,13 +627,13 @@ export async function syncOfficeProfilesWithFirestore(): Promise<OfficeSettings[
       console.warn('Firestore settings/office_info read error:', e);
     }
 
-    let mergedProfiles = Array.from(profileMap.values());
-    if (mergedProfiles.length === 0) {
-      mergedProfiles = DEFAULT_OFFICE_PROFILES;
-    }
+    const rawProfiles = Array.from(profileMap.values());
+    const { cleaned: mergedProfiles, redirectMap } = deduplicateOfficeProfiles(rawProfiles);
 
-    if (!mergedProfiles.some((p) => p.isDefault)) {
-      mergedProfiles[0].isDefault = true;
+    if (Object.keys(redirectMap).length > 0) {
+      applyProfileDeduplicationRedirects(redirectMap).catch((err) => {
+        console.warn('Deduplication redirect application error:', err);
+      });
     }
 
     // Update LocalStorage
@@ -519,7 +646,7 @@ export async function syncOfficeProfilesWithFirestore(): Promise<OfficeSettings[
     const activeId = getActiveOfficeProfileId();
     notifyOfficeProfilesListeners(mergedProfiles, activeId);
 
-    // 5. Push unified state back to Firestore so all other devices get every profile
+    // 5. Push unified state back to Firestore so all other devices get clean deduplicated profiles
     try {
       await setDoc(doc(db, 'settings', 'office_profiles'), {
         profiles: sanitizeForFirestore(mergedProfiles),
@@ -600,7 +727,11 @@ export function subscribeOfficeProfiles(
           firestoreMap.set(docSnap.id, { id: docSnap.id, ...docSnap.data() } as OfficeSettings);
         });
 
-        const merged = Array.from(firestoreMap.values());
+        const rawMerged = Array.from(firestoreMap.values());
+        const { cleaned: merged, redirectMap } = deduplicateOfficeProfiles(rawMerged);
+        if (Object.keys(redirectMap).length > 0) {
+          applyProfileDeduplicationRedirects(redirectMap).catch(() => {});
+        }
         setLocalData(KEYS.OFFICE_PROFILES, merged);
         const defaultProfile = merged.find((p) => p.isDefault) || merged[0];
         if (defaultProfile) {
@@ -627,7 +758,11 @@ export function subscribeOfficeProfiles(
             firestoreMap.set(id, { ...p, id });
           });
 
-          const merged = Array.from(firestoreMap.values());
+          const rawMerged = Array.from(firestoreMap.values());
+          const { cleaned: merged, redirectMap } = deduplicateOfficeProfiles(rawMerged);
+          if (Object.keys(redirectMap).length > 0) {
+            applyProfileDeduplicationRedirects(redirectMap).catch(() => {});
+          }
           setLocalData(KEYS.OFFICE_PROFILES, merged);
           const defaultProfile = merged.find((p) => p.isDefault) || merged[0];
           if (defaultProfile) {
@@ -652,14 +787,23 @@ export function subscribeOfficeProfiles(
 }
 
 export async function saveOfficeProfile(profile: OfficeSettings): Promise<void> {
-  const profileId = profile.id || `office_${Date.now()}`;
+  const currentProfiles = getLocalData<OfficeSettings[]>(KEYS.OFFICE_PROFILES, DEFAULT_OFFICE_PROFILES);
+  const normName = normalizeBranchName(profile.profileName || profile.officeName);
+  
+  // Check if a profile with the same normalized name already exists under another ID
+  const existingSameName = normName
+    ? currentProfiles.find(
+        (p) => normalizeBranchName(p.profileName || p.officeName) === normName && p.id !== profile.id
+      )
+    : undefined;
+
+  const profileId = profile.id || (existingSameName ? existingSameName.id : `office_${Date.now()}`);
   const profileToSave: OfficeSettings = {
     ...profile,
     id: profileId,
     profileName: profile.profileName || profile.officeName,
   };
 
-  const currentProfiles = getLocalData<OfficeSettings[]>(KEYS.OFFICE_PROFILES, DEFAULT_OFFICE_PROFILES);
   const idx = currentProfiles.findIndex((p) => p.id === profileId);
 
   let updatedProfiles: OfficeSettings[];
@@ -674,6 +818,13 @@ export async function saveOfficeProfile(profile: OfficeSettings): Promise<void> 
   } else {
     updatedProfiles.push(profileToSave);
   }
+
+  // Deduplicate before saving
+  const { cleaned, redirectMap } = deduplicateOfficeProfiles(updatedProfiles);
+  if (Object.keys(redirectMap).length > 0) {
+    applyProfileDeduplicationRedirects(redirectMap).catch(() => {});
+  }
+  updatedProfiles = cleaned;
 
   if (!updatedProfiles.some((p) => p.isDefault) && updatedProfiles.length > 0) {
     updatedProfiles[0].isDefault = true;
@@ -733,8 +884,30 @@ export async function deleteOfficeProfile(id: string): Promise<void> {
     setLocalData(KEYS.OFFICE, defaultProfile);
   }
 
-  const activeId = getActiveOfficeProfileId();
+  // If deleted profile was active, switch to default profile
+  let activeId = getActiveOfficeProfileId();
+  if (activeId === id) {
+    activeId = defaultProfile?.id || 'default';
+    setActiveOfficeId(activeId);
+  }
+
   notifyOfficeProfilesListeners(updatedProfiles, activeId);
+
+  // Re-link any dispatch logs from the deleted profile to default profile
+  const targetReassignId = defaultProfile?.id || 'default';
+  const currentLogs = getLocalData<DispatchLog[]>(KEYS.LOGS, []);
+  let logsChanged = false;
+  const remappedLogs = currentLogs.map((log) => {
+    if (log.officeProfileId === id) {
+      logsChanged = true;
+      return { ...log, officeProfileId: targetReassignId };
+    }
+    return log;
+  });
+  if (logsChanged) {
+    setLocalData(KEYS.LOGS, remappedLogs);
+    notifyLogsListeners(remappedLogs);
+  }
 
   try {
     await deleteDoc(doc(db, 'office_profiles', id));
@@ -746,6 +919,14 @@ export async function deleteOfficeProfile(id: string): Promise<void> {
     if (defaultProfile) {
       await setDoc(doc(db, 'settings', 'office_info'), sanitizeForFirestore(defaultProfile), { merge: true });
       await setDoc(doc(db, 'settings', 'office_settings'), sanitizeForFirestore(defaultProfile), { merge: true });
+    }
+
+    if (logsChanged) {
+      for (const log of remappedLogs) {
+        if (log.officeProfileId === targetReassignId) {
+          await setDoc(doc(db, 'dispatch_logs', log.id), sanitizeForFirestore(log), { merge: true });
+        }
+      }
     }
   } catch (err) {
     console.warn('Firestore deleteOfficeProfile error:', err);
