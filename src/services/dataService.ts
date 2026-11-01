@@ -448,7 +448,13 @@ export function subscribeActiveOfficeId(onUpdate: (activeId: string) => void): (
 // Branch Profile Name Normalization & Deduplication
 export function normalizeBranchName(name?: string): string {
   if (!name) return '';
-  return name.trim().toLowerCase().replace(/\s+/g, '').replace(/[()（）[\]]/g, '');
+  return name
+    .trim()
+    .toLowerCase()
+    .replace(/^젊은인력사무소\s*/, '')
+    .replace(/\s+/g, '')
+    .replace(/[()（）[\]]/g, '')
+    .replace(/지점$/, '점');
 }
 
 export function deduplicateOfficeProfiles(profiles: OfficeSettings[]): {
@@ -458,31 +464,34 @@ export function deduplicateOfficeProfiles(profiles: OfficeSettings[]): {
 } {
   const cleaned: OfficeSettings[] = [];
   const seenIds = new Set<string>();
-  const seenNames = new Map<string, string>(); // normName -> canonicalId
+  const seenBranchKeys = new Map<string, string>(); // normBranchKey -> canonicalId
   const redirectMap: Record<string, string> = {};
   let hasDuplicates = false;
 
   for (const p of profiles) {
     const rawId = p.id || 'default';
-    const normName = normalizeBranchName(p.profileName || p.officeName);
 
-    // If ID already seen
+    // 1. If duplicate ID already seen
     if (seenIds.has(rawId)) {
       hasDuplicates = true;
       continue;
     }
 
-    // If a profile with the same normalized name already exists
-    if (normName && seenNames.has(normName)) {
-      const canonicalId = seenNames.get(normName)!;
+    // 2. Extract distinctive branch token (e.g. '본점', '김천', '성주')
+    const rawBranch = p.profileName || p.officeName || '';
+    const normBranch = normalizeBranchName(rawBranch);
+
+    // Only deduplicate if normBranch is non-empty and clearly names the same branch
+    if (normBranch && normBranch.length > 0 && seenBranchKeys.has(normBranch)) {
+      const canonicalId = seenBranchKeys.get(normBranch)!;
       redirectMap[rawId] = canonicalId;
       hasDuplicates = true;
       continue;
     }
 
     seenIds.add(rawId);
-    if (normName) {
-      seenNames.set(normName, rawId);
+    if (normBranch && normBranch.length > 0) {
+      seenBranchKeys.set(normBranch, rawId);
     }
     cleaned.push({ ...p, id: rawId });
   }
@@ -592,7 +601,17 @@ export async function syncOfficeProfilesWithFirestore(): Promise<OfficeSettings[
         if (data && Array.isArray(data.profiles)) {
           data.profiles.forEach((p: OfficeSettings) => {
             const id = p.id || 'default';
-            profileMap.set(id, { ...p, id });
+            const existing = profileMap.get(id);
+            profileMap.set(id, {
+              ...p,
+              ...(existing || {}),
+              id,
+              registrationNumber: existing?.registrationNumber || p.registrationNumber || '508-90-65550',
+              bizType: existing?.bizType || p.bizType || '서비스업',
+              bizCategory: existing?.bizCategory || p.bizCategory || '인력공급, 근로자파견, 고용알선',
+              email: existing?.email || p.email || 'acehwan69@gmail.com',
+              color: existing?.color || p.color || (id === 'default' ? '#2563EB' : '#059669'),
+            });
           });
         }
       }
@@ -606,7 +625,17 @@ export async function syncOfficeProfilesWithFirestore(): Promise<OfficeSettings[
       if (!colSnap.empty) {
         colSnap.forEach((docSnap) => {
           const p = { id: docSnap.id, ...docSnap.data() } as OfficeSettings;
-          profileMap.set(docSnap.id, p);
+          const existing = profileMap.get(docSnap.id);
+          profileMap.set(docSnap.id, {
+            ...p,
+            ...(existing || {}),
+            id: docSnap.id,
+            registrationNumber: existing?.registrationNumber || p.registrationNumber || '508-90-65550',
+            bizType: existing?.bizType || p.bizType || '서비스업',
+            bizCategory: existing?.bizCategory || p.bizCategory || '인력공급, 근로자파견, 고용알선',
+            email: existing?.email || p.email || 'acehwan69@gmail.com',
+            color: existing?.color || p.color || (docSnap.id === 'default' ? '#2563EB' : '#059669'),
+          });
         });
       }
     } catch (e) {
@@ -788,30 +817,37 @@ export function subscribeOfficeProfiles(
 
 export async function saveOfficeProfile(profile: OfficeSettings): Promise<void> {
   const currentProfiles = getLocalData<OfficeSettings[]>(KEYS.OFFICE_PROFILES, DEFAULT_OFFICE_PROFILES);
-  const normName = normalizeBranchName(profile.profileName || profile.officeName);
+  const profileId = profile.id || `office_${Date.now()}`;
   
-  // Check if a profile with the same normalized name already exists under another ID
-  const existingSameName = normName
-    ? currentProfiles.find(
-        (p) => normalizeBranchName(p.profileName || p.officeName) === normName && p.id !== profile.id
-      )
-    : undefined;
-
-  const profileId = profile.id || (existingSameName ? existingSameName.id : `office_${Date.now()}`);
   const profileToSave: OfficeSettings = {
     ...profile,
     id: profileId,
-    profileName: profile.profileName || profile.officeName,
+    profileName: (profile.profileName || profile.officeName || '젊은인력사무소').trim(),
+    officeName: (profile.officeName || '젊은인력사무소').trim(),
+    registrationNumber: (profile.registrationNumber !== undefined ? profile.registrationNumber : '508-90-65550').trim(),
+    bizType: (profile.bizType !== undefined ? profile.bizType : '서비스업').trim(),
+    bizCategory: (profile.bizCategory !== undefined ? profile.bizCategory : '인력공급, 근로자파견, 고용알선').trim(),
+    email: (profile.email !== undefined ? profile.email : 'acehwan69@gmail.com').trim(),
+    phone1: (profile.phone1 || '').trim(),
+    phone2: (profile.phone2 || '').trim(),
+    address: (profile.address || '').trim(),
+    bankAccount: (profile.bankAccount || '').trim(),
+    representativeName: (profile.representativeName || '김진환').trim(),
+    representativeResidentId: (profile.representativeResidentId || '801121-1795828').trim(),
+    representativeAccount: (profile.representativeAccount || '기업은행 69301137601015 김진환').trim(),
+    adminEmails: profile.adminEmails && profile.adminEmails.length > 0 ? profile.adminEmails : ['acehwan69@gmail.com', 'hwanace@gmail.com'],
+    isDefault: Boolean(profile.isDefault),
+    color: profile.color || '#2563EB',
   };
 
   const idx = currentProfiles.findIndex((p) => p.id === profileId);
 
-  let updatedProfiles: OfficeSettings[];
-  if (profileToSave.isDefault) {
-    updatedProfiles = currentProfiles.map((p) => ({ ...p, isDefault: false }));
-  } else {
-    updatedProfiles = [...currentProfiles];
-  }
+  let updatedProfiles = currentProfiles.map((p) => {
+    if (profileToSave.isDefault && p.id !== profileId) {
+      return { ...p, isDefault: false };
+    }
+    return p;
+  });
 
   if (idx >= 0) {
     updatedProfiles[idx] = profileToSave;

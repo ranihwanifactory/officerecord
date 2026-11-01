@@ -3,6 +3,7 @@ import { DispatchLog, OfficeSettings } from '../types';
 import { ChevronLeft, ChevronRight, Plus, Printer, Copy, Edit, Trash2, Calendar as CalendarIcon, Users, DollarSign, CheckCircle2, Clock, FileSignature } from 'lucide-react';
 import { Pagination } from './Pagination';
 import { getTodayDateString } from '../utils/date';
+import { getBranchRepresentativeColor } from '../constants/defaultData';
 
 interface CalendarViewProps {
   logs: DispatchLog[];
@@ -81,13 +82,12 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     if (!shortName) shortName = fullName;
     if (!shortName.endsWith('점') && !shortName.includes('본')) shortName += '점';
     const isDefaultBranch = bId === defaultProfileId;
+    const color = profile?.color || getBranchRepresentativeColor(officeProfiles, bId);
     return {
       name: shortName,
       fullName: fullName,
       isDefaultBranch,
-      className: isDefaultBranch
-        ? 'bg-blue-100 text-blue-800 dark:bg-blue-950/80 dark:text-blue-300 border-blue-200 dark:border-blue-800'
-        : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800',
+      color,
     };
   };
 
@@ -178,19 +178,25 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             const pId = p.id || 'default';
             const count = logs.filter((l) => (l.officeProfileId || defaultProfileId) === pId).length;
             const isSelected = activeOfficeId === pId;
+            const pColor = p.color || getBranchRepresentativeColor(officeProfiles, pId);
             return (
               <button
                 key={pId}
                 type="button"
                 onClick={() => onSelectActiveProfile(pId)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center space-x-1.5 ${
+                style={isSelected ? { backgroundColor: pColor, borderColor: pColor } : undefined}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center space-x-1.5 border ${
                   isSelected
-                    ? 'bg-blue-600 text-white shadow-xs'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                    ? 'text-white shadow-xs'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border-slate-200 dark:border-slate-700'
                 }`}
               >
+                <span
+                  className="w-2.5 h-2.5 rounded-full shrink-0 shadow-2xs"
+                  style={{ backgroundColor: isSelected ? '#FFFFFF' : pColor }}
+                />
                 <span>📍 {p.profileName || p.officeName}</span>
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-extrabold ${isSelected ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}`}>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-extrabold ${isSelected ? 'bg-white/25 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}`}>
                   {count}건
                 </span>
               </button>
@@ -285,7 +291,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               }
 
               const { day, dateStr } = cell;
-              const dayLogs = logs.filter((l) => l.date === dateStr);
+              const dayLogs = branchFilteredLogs.filter((l) => l.date === dateStr);
               const isSelected = dateStr === selectedDateStr;
               const isToday = dateStr === todayStr;
               const dayOfWeek = new Date(year, month, day).getDay();
@@ -356,12 +362,15 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                     )}
                   </div>
 
-                  {/* Day Log Badges */}
+                  {/* Day Log Badges Styled with Branch Representative Color */}
                   <div className="space-y-1 overflow-y-auto max-h-8 sm:max-h-16 scrollbar-none my-0.5">
                     {dayLogs.map((log) => {
                       const headcount = log.workers && log.workers.length > 0
                         ? log.workers.length
                         : (log.invoiceItems?.reduce((acc, i) => acc + (Number(i.serviceCount) || 0), 0) || 0);
+
+                      const badge = getBranchBadgeInfo(log);
+                      const bColor = badge.color;
 
                       return (
                         <div
@@ -371,17 +380,25 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                             setSelectedDateStr(dateStr);
                             onPrintLog(log);
                           }}
-                          className={`text-[9px] sm:text-[10px] font-bold p-0.5 sm:p-1 rounded sm:rounded-lg truncate transition-colors flex items-center justify-between gap-1 ${
-                            log.isPaid
-                              ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 hover:bg-emerald-600 dark:hover:bg-emerald-600 hover:text-white'
-                              : 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 hover:bg-blue-600 dark:hover:bg-blue-600 hover:text-white'
-                          }`}
-                          title={`${log.clientName} (${headcount}명 / ₩${log.totalAmount.toLocaleString()}) ${log.isPaid ? '[결제완료]' : '[미결제]'}`}
+                          style={{
+                            backgroundColor: `${bColor}15`,
+                            borderColor: `${bColor}45`,
+                            color: bColor,
+                          }}
+                          className="text-[9px] sm:text-[10px] font-bold p-0.5 sm:p-1 rounded sm:rounded-lg truncate transition-colors flex items-center justify-between gap-1 border hover:brightness-90 dark:hover:brightness-125"
+                          title={`${log.clientName} (${headcount}명 / ₩${log.totalAmount.toLocaleString()}) [${badge.fullName}] ${log.isPaid ? '[결제완료]' : '[미결제]'}`}
                         >
                           <div className="flex items-center space-x-1 truncate min-w-0">
+                            <span
+                              className="w-1.5 h-1.5 rounded-full shrink-0"
+                              style={{ backgroundColor: bColor }}
+                            />
                             {isAllBranches && (
-                              <span className={`text-[7px] font-black px-1 rounded shrink-0 ${getBranchBadgeInfo(log).isDefaultBranch ? 'bg-blue-200 text-blue-900 dark:bg-blue-900 dark:text-blue-200' : 'bg-emerald-200 text-emerald-900 dark:bg-emerald-900 dark:text-emerald-200'}`}>
-                                {getBranchBadgeInfo(log).name}
+                              <span
+                                className="text-[7px] font-black px-1 rounded shrink-0 text-white"
+                                style={{ backgroundColor: bColor }}
+                              >
+                                {badge.name}
                               </span>
                             )}
                             <span className="truncate">{log.clientName}</span>
@@ -447,8 +464,19 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                     <div className="flex items-start justify-between">
                       <div>
                         <div className="flex items-center space-x-1.5 mb-1">
-                          <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md border ${badge.className}`}>
-                            📍 {badge.name}
+                          <span
+                            className="text-[10px] font-extrabold px-2 py-0.5 rounded-md border flex items-center space-x-1"
+                            style={{
+                              backgroundColor: `${badge.color}18`,
+                              color: badge.color,
+                              borderColor: `${badge.color}50`,
+                            }}
+                          >
+                            <span
+                              className="w-1.5 h-1.5 rounded-full shrink-0"
+                              style={{ backgroundColor: badge.color }}
+                            />
+                            <span>{badge.name}</span>
                           </span>
                           <span className="text-[11px] font-bold text-blue-700 dark:text-blue-300 bg-blue-100/60 dark:bg-blue-950 px-2 py-0.5 rounded-md">
                             {log.clientContact || '연락처 미기재'}

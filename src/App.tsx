@@ -47,6 +47,7 @@ import {
   User,
 } from './firebase';
 import { getTodayDateString } from './utils/date';
+import { DEFAULT_OFFICE_SETTINGS, DEFAULT_OFFICE_PROFILES } from './constants/defaultData';
 
 export default function App() {
   // Navigation State
@@ -86,15 +87,8 @@ export default function App() {
   const [workersRoster, setWorkersRoster] = useState<WorkerMaster[]>([]);
   const [clientsRoster, setClientsRoster] = useState<ClientSiteMaster[]>([]);
   const [taxInvoices, setTaxInvoices] = useState<TaxInvoice[]>([]);
-  const [officeSettings, setOfficeSettings] = useState<OfficeSettings>({
-    officeName: '젊은인력사무소',
-    phone1: '054-933-1566',
-    phone2: '010-7545-0038',
-    address: '경북 성주군 성주읍 성주순환로2길 69',
-    bankAccount: '농협 302-65550038-11 손영란',
-    adminEmails: ['acehwan69@gmail.com', 'hwanace@gmail.com'],
-  });
-  const [officeProfiles, setOfficeProfiles] = useState<OfficeSettings[]>([]);
+  const [officeSettings, setOfficeSettings] = useState<OfficeSettings>(DEFAULT_OFFICE_SETTINGS);
+  const [officeProfiles, setOfficeProfiles] = useState<OfficeSettings[]>(DEFAULT_OFFICE_PROFILES);
   const [activeOfficeId, setActiveOfficeIdState] = useState<string>('default');
 
   // Keep logToPrint synchronized in real-time whenever dispatchLogs updates
@@ -322,6 +316,18 @@ export default function App() {
   const handleSaveOfficeProfile = async (profile: OfficeSettings) => {
     if (!checkAdminPermission()) return;
     await saveOfficeProfile(profile);
+    setOfficeProfiles((prev) => {
+      const idx = prev.findIndex((p) => p.id === profile.id);
+      if (idx >= 0) {
+        const copy = [...prev];
+        copy[idx] = profile;
+        return copy;
+      }
+      return [...prev, profile];
+    });
+    if (profile.isDefault || activeOfficeId === profile.id) {
+      setOfficeSettings(profile);
+    }
   };
 
   const handleDeleteOfficeProfile = async (id: string) => {

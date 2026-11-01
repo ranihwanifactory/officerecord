@@ -207,6 +207,7 @@ export interface OfficeSettings {
 
   adminEmails: string[]; // e.g. ["acehwan69@gmail.com"]
   isDefault?: boolean; // 기본 사무소 여부
+  color?: string; // 지점 대표 색상 (예: '#2563EB', '#059669', '#7C3AED', '#D97706', etc.)
 }
 
 export interface DatabaseBackupData {

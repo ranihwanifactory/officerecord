@@ -18,8 +18,40 @@ export const DEFAULT_OFFICE_PROFILES: OfficeSettings[] = [
     representativeAccount: '기업은행 69301137601015 김진환',
     adminEmails: ['acehwan69@gmail.com', 'hwanace@gmail.com'],
     isDefault: true,
+    color: '#2563EB', // 기본 본점 대표 색상 (로얄 블루)
   },
 ];
+
+export const BRANCH_COLOR_PALETTE = [
+  { name: '로얄 블루', hex: '#2563EB', bgClass: 'bg-blue-600', textClass: 'text-blue-600' },
+  { name: '에메랄드 그린', hex: '#059669', bgClass: 'bg-emerald-600', textClass: 'text-emerald-600' },
+  { name: '바이올렛 퍼플', hex: '#7C3AED', bgClass: 'bg-purple-600', textClass: 'text-purple-600' },
+  { name: '앰버 오렌지', hex: '#D97706', bgClass: 'bg-amber-600', textClass: 'text-amber-600' },
+  { name: '로즈 레드', hex: '#E11D48', bgClass: 'bg-rose-600', textClass: 'text-rose-600' },
+  { name: '틸 사이언', hex: '#0D9488', bgClass: 'bg-teal-600', textClass: 'text-teal-600' },
+  { name: '인디고 네이비', hex: '#4F46E5', bgClass: 'bg-indigo-600', textClass: 'text-indigo-600' },
+  { name: '스카이 블루', hex: '#0284C7', bgClass: 'bg-sky-600', textClass: 'text-sky-600' },
+  { name: '푸시아 핑크', hex: '#C026D3', bgClass: 'bg-fuchsia-600', textClass: 'text-fuchsia-600' },
+  { name: '슬레이트 그레이', hex: '#475569', bgClass: 'bg-slate-600', textClass: 'text-slate-600' },
+];
+
+export function getBranchRepresentativeColor(
+  profiles: OfficeSettings[],
+  profileId?: string,
+  fallbackIndex: number = 0
+): string {
+  if (!profileId) {
+    const defaultProfile = profiles.find((p) => p.isDefault) || profiles[0];
+    return defaultProfile?.color || BRANCH_COLOR_PALETTE[0].hex;
+  }
+  const found = profiles.find((p) => p.id === profileId);
+  if (found?.color) {
+    return found.color;
+  }
+  const idx = profiles.findIndex((p) => p.id === profileId);
+  const targetIdx = idx >= 0 ? idx : Math.abs(fallbackIndex);
+  return BRANCH_COLOR_PALETTE[targetIdx % BRANCH_COLOR_PALETTE.length].hex;
+}
 
 export const DEFAULT_OFFICE_SETTINGS: OfficeSettings = DEFAULT_OFFICE_PROFILES[0];
 

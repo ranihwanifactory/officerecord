@@ -3,7 +3,7 @@ import { OfficeSettings, DatabaseBackupData } from '../types';
 import { 
   Settings, Save, Shield, Building, Phone, MapPin, CreditCard, Plus, CheckCircle, 
   Trash2, Edit3, Tag, Database, Download, Upload, RefreshCw, AlertTriangle, CheckCircle2,
-  FileText, Users, Loader2, HardDrive
+  FileText, Users, Loader2, HardDrive, Palette
 } from 'lucide-react';
 import { 
   downloadDatabaseBackup, 
@@ -11,6 +11,7 @@ import {
   restoreDatabaseFromBackup,
   syncOfficeProfilesWithFirestore
 } from '../services/dataService';
+import { BRANCH_COLOR_PALETTE, getBranchRepresentativeColor } from '../constants/defaultData';
 
 interface OfficeSettingsModalProps {
   officeSettings: OfficeSettings;
@@ -52,19 +53,78 @@ export const OfficeSettingsModal: React.FC<OfficeSettingsModalProps> = ({
   const [phone2, setPhone2] = useState('');
   const [address, setAddress] = useState('');
   const [bankAccount, setBankAccount] = useState('');
-  const [registrationNumber, setRegistrationNumber] = useState('504-81-12345');
-  const [bizType, setBizType] = useState('서비스');
-  const [bizCategory, setBizCategory] = useState('인력공급, 고용알선');
-  const [email, setEmail] = useState('youngman_hr@naver.com');
+  const [registrationNumber, setRegistrationNumber] = useState('508-90-65550');
+  const [bizType, setBizType] = useState('서비스업');
+  const [bizCategory, setBizCategory] = useState('인력공급, 근로자파견, 고용알선');
+  const [email, setEmail] = useState('acehwan69@gmail.com');
   const [representativeName, setRepresentativeName] = useState('김진환');
   const [representativeResidentId, setRepresentativeResidentId] = useState('801121-1795828');
   const [representativeAccount, setRepresentativeAccount] = useState('기업은행 69301137601015 김진환');
-  const [adminEmailsStr, setAdminEmailsStr] = useState('');
+  const [adminEmailsStr, setAdminEmailsStr] = useState('acehwan69@gmail.com, hwanace@gmail.com');
   const [isDefault, setIsDefault] = useState(false);
+  const [branchColor, setBranchColor] = useState<string>('#2563EB');
 
   const [isSavedNotice, setIsSavedNotice] = useState(false);
   const [isSyncingCloud, setIsSyncingCloud] = useState(false);
   const [syncNotice, setSyncNotice] = useState<string | null>(null);
+
+  // Track the last loaded profile ID to prevent background sync from wiping user edits
+  const lastLoadedIdRef = useRef<string | null | undefined>(undefined);
+
+  const loadProfileIntoForm = (targetId: string | null) => {
+    lastLoadedIdRef.current = targetId;
+    if (targetId) {
+      const target = profiles.find((p) => p.id === targetId) || officeSettings;
+      setProfileName(target.profileName || target.officeName || '젊은인력사무소 (본점)');
+      setOfficeName(target.officeName || '젊은인력사무소');
+      setPhone1(target.phone1 || '');
+      setPhone2(target.phone2 || '');
+      setAddress(target.address || '');
+      setBankAccount(target.bankAccount || '');
+      setRegistrationNumber(target.registrationNumber || officeSettings.registrationNumber || '508-90-65550');
+      setBizType(target.bizType || officeSettings.bizType || '서비스업');
+      setBizCategory(target.bizCategory || officeSettings.bizCategory || '인력공급, 근로자파견, 고용알선');
+      setEmail(target.email || officeSettings.email || 'acehwan69@gmail.com');
+      setRepresentativeName(target.representativeName || officeSettings.representativeName || '김진환');
+      setRepresentativeResidentId(target.representativeResidentId || officeSettings.representativeResidentId || '801121-1795828');
+      setRepresentativeAccount(target.representativeAccount || officeSettings.representativeAccount || '기업은행 69301137601015 김진환');
+      setAdminEmailsStr((target.adminEmails || ['acehwan69@gmail.com', 'hwanace@gmail.com']).join(', '));
+      setIsDefault(Boolean(target.isDefault));
+      setBranchColor(target.color || getBranchRepresentativeColor(profiles, targetId));
+    } else {
+      // New Profile Reset
+      setProfileName('');
+      setOfficeName(officeSettings.officeName || '젊은인력사무소');
+      setPhone1('');
+      setPhone2('');
+      setAddress('');
+      setBankAccount('');
+      setRegistrationNumber(officeSettings.registrationNumber || '508-90-65550');
+      setBizType(officeSettings.bizType || '서비스업');
+      setBizCategory(officeSettings.bizCategory || '인력공급, 근로자파견, 고용알선');
+      setEmail(officeSettings.email || 'acehwan69@gmail.com');
+      setRepresentativeName(officeSettings.representativeName || '김진환');
+      setRepresentativeResidentId(officeSettings.representativeResidentId || '801121-1795828');
+      setRepresentativeAccount(officeSettings.representativeAccount || '기업은행 69301137601015 김진환');
+      setAdminEmailsStr('acehwan69@gmail.com, hwanace@gmail.com');
+      setIsDefault(profiles.length === 0);
+      setBranchColor('#059669'); // Fresh branch default to Green
+    }
+  };
+
+  // Only reload form when selectedEditId is switched by the user
+  useEffect(() => {
+    if (lastLoadedIdRef.current !== selectedEditId) {
+      loadProfileIntoForm(selectedEditId);
+    }
+  }, [selectedEditId]);
+
+  // Initial load on component mount
+  useEffect(() => {
+    if (lastLoadedIdRef.current === undefined) {
+      loadProfileIntoForm(selectedEditId);
+    }
+  }, []);
 
   // Auto-sync with Firestore on mount to guarantee latest cloud profiles across devices
   useEffect(() => {
@@ -102,51 +162,13 @@ export const OfficeSettingsModal: React.FC<OfficeSettingsModalProps> = ({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Populate form based on selectedEditId
-  useEffect(() => {
-    if (selectedEditId) {
-      const target = profiles.find((p) => p.id === selectedEditId) || officeSettings;
-      setProfileName(target.profileName || target.officeName || '젊은인력사무소 (본점)');
-      setOfficeName(target.officeName || '');
-      setPhone1(target.phone1 || '');
-      setPhone2(target.phone2 || '');
-      setAddress(target.address || '');
-      setBankAccount(target.bankAccount || '');
-      setRegistrationNumber(target.registrationNumber || '504-81-12345');
-      setBizType(target.bizType || '서비스');
-      setBizCategory(target.bizCategory || '인력공급, 고용알선');
-      setEmail(target.email || 'youngman_hr@naver.com');
-      setRepresentativeName(target.representativeName || '김진환');
-      setRepresentativeResidentId(target.representativeResidentId || '801121-1795828');
-      setRepresentativeAccount(target.representativeAccount || '기업은행 69301137601015 김진환');
-      setAdminEmailsStr((target.adminEmails || ['acehwan69@gmail.com']).join(', '));
-      setIsDefault(Boolean(target.isDefault));
-    } else {
-      // New Profile Reset
-      setProfileName('');
-      setOfficeName('');
-      setPhone1('');
-      setPhone2('');
-      setAddress('');
-      setBankAccount('');
-      setRegistrationNumber('504-81-12345');
-      setBizType('서비스');
-      setBizCategory('인력공급, 고용알선');
-      setEmail('youngman_hr@naver.com');
-      setRepresentativeName('김진환');
-      setRepresentativeResidentId('801121-1795828');
-      setRepresentativeAccount('기업은행 69301137601015 김진환');
-      setAdminEmailsStr('acehwan69@gmail.com, hwanace@gmail.com');
-      setIsDefault(profiles.length === 0);
-    }
-  }, [selectedEditId, officeProfiles, officeSettings]);
-
   const handleAddNew = () => {
     setSelectedEditId(null);
   };
 
   const handleSelectForEdit = (profile: OfficeSettings) => {
     setSelectedEditId(profile.id || null);
+    loadProfileIntoForm(profile.id || null);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -175,12 +197,14 @@ export const OfficeSettingsModal: React.FC<OfficeSettingsModalProps> = ({
       representativeName: representativeName.trim(),
       representativeResidentId: representativeResidentId.trim(),
       representativeAccount: representativeAccount.trim(),
-      adminEmails: emailsList.length > 0 ? emailsList : ['acehwan69@gmail.com'],
+      adminEmails: emailsList.length > 0 ? emailsList : ['acehwan69@gmail.com', 'hwanace@gmail.com'],
       isDefault,
+      color: branchColor,
     };
 
     onSave(updated);
     setSelectedEditId(targetId);
+    lastLoadedIdRef.current = targetId;
     setIsSavedNotice(true);
     setTimeout(() => setIsSavedNotice(false), 3000);
   };
@@ -359,6 +383,7 @@ export const OfficeSettingsModal: React.FC<OfficeSettingsModalProps> = ({
               const pId = p.id || 'default';
               const isActive = activeOfficeId === pId || (profiles.length === 1);
               const isBeingEdited = selectedEditId === pId;
+              const pColor = p.color || getBranchRepresentativeColor(profiles, pId);
 
               return (
                 <div
@@ -372,12 +397,26 @@ export const OfficeSettingsModal: React.FC<OfficeSettingsModalProps> = ({
                   <div className="space-y-1">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
-                        <Building className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                        <span
+                          className="w-3.5 h-3.5 rounded-full shrink-0 shadow-2xs border border-white dark:border-slate-700"
+                          style={{ backgroundColor: pColor }}
+                          title={`지점 대표 색상: ${pColor}`}
+                        />
                         <span className="font-bold text-sm text-slate-800 dark:text-slate-100">
                           {p.profileName || p.officeName}
                         </span>
                       </div>
                       <div className="flex items-center space-x-1">
+                        <span
+                          className="px-2 py-0.5 text-[10px] font-extrabold rounded-md border"
+                          style={{
+                            backgroundColor: `${pColor}18`,
+                            color: pColor,
+                            borderColor: `${pColor}50`,
+                          }}
+                        >
+                          달력 색상
+                        </span>
                         {p.isDefault && (
                           <span className="px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-100 dark:bg-amber-950 rounded-md border border-amber-300 dark:border-amber-800">
                             기본
@@ -394,6 +433,9 @@ export const OfficeSettingsModal: React.FC<OfficeSettingsModalProps> = ({
 
                     <div className="text-xs text-slate-600 dark:text-slate-300 space-y-0.5 pt-1 font-medium">
                       <div>상호: <span className="font-bold">{p.officeName}</span></div>
+                      {p.registrationNumber && (
+                        <div>사업자번호: <span className="font-mono font-semibold">{p.registrationNumber}</span></div>
+                      )}
                       {p.phone1 && <div>연락처: {p.phone1} {p.phone2 ? `/ ${p.phone2}` : ''}</div>}
                       {p.bankAccount && <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate">계좌: {p.bankAccount}</div>}
                     </div>
@@ -510,6 +552,99 @@ export const OfficeSettingsModal: React.FC<OfficeSettingsModalProps> = ({
                 placeholder="예: 젊은인력사무소"
                 className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-sm font-bold text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-blue-500 placeholder-slate-400 dark:placeholder-slate-500"
               />
+            </div>
+          </div>
+
+          {/* Branch Representative Color Section (출력달력 지점별 대표 색상) */}
+          <div className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-xl border border-slate-200 dark:border-slate-750 space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center space-x-1.5">
+                <Palette className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <span>지점 대표 색상 설정 (출력달력 표기용)</span>
+              </label>
+              <div className="flex items-center space-x-2">
+                <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">선택된 색상:</span>
+                <span
+                  className="px-2 py-0.5 rounded-md text-[11px] font-bold font-mono border"
+                  style={{
+                    backgroundColor: `${branchColor}18`,
+                    color: branchColor,
+                    borderColor: `${branchColor}50`,
+                  }}
+                >
+                  {branchColor.toUpperCase()}
+                </span>
+              </div>
+            </div>
+
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              * 출력달력에서 해당 지점의 출력일지와 배지가 이 대표 색상으로 구분되어 나타납니다.
+            </p>
+
+            {/* Color Swatches Grid */}
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              {BRANCH_COLOR_PALETTE.map((c) => {
+                const isSelected = branchColor.toLowerCase() === c.hex.toLowerCase();
+                return (
+                  <button
+                    key={c.hex}
+                    type="button"
+                    onClick={() => setBranchColor(c.hex)}
+                    title={`${c.name} (${c.hex})`}
+                    className={`group relative flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                      isSelected
+                        ? 'ring-2 ring-blue-500 dark:ring-blue-400 shadow-xs bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-600'
+                        : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-slate-300'
+                    }`}
+                  >
+                    <span
+                      className="w-3.5 h-3.5 rounded-full shadow-2xs shrink-0"
+                      style={{ backgroundColor: c.hex }}
+                    />
+                    <span className="text-slate-700 dark:text-slate-200 text-[11px]">{c.name}</span>
+                    {isSelected && (
+                      <CheckCircle className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+                    )}
+                  </button>
+                );
+              })}
+
+              {/* Custom Color Picker Input */}
+              <div className="flex items-center space-x-1.5 pl-1">
+                <label
+                  htmlFor="customColorPicker"
+                  className="cursor-pointer text-[11px] font-bold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white flex items-center space-x-1.5 bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 rounded-xl shadow-2xs"
+                  title="원하는 색상 직접 선택 (Color Picker)"
+                >
+                  <input
+                    type="color"
+                    id="customColorPicker"
+                    value={branchColor}
+                    onChange={(e) => setBranchColor(e.target.value)}
+                    className="w-4 h-4 rounded cursor-pointer border-0 p-0 bg-transparent"
+                  />
+                  <span>직접 색상 선택</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Live Preview Sample */}
+            <div className="pt-2 border-t border-slate-200/60 dark:border-slate-700/60 flex flex-wrap items-center gap-2 sm:gap-3 text-xs">
+              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 shrink-0">출력달력 표시 미리보기:</span>
+              <div
+                className="px-2.5 py-1 rounded-lg text-xs font-bold border flex items-center space-x-1.5 shadow-2xs"
+                style={{
+                  backgroundColor: `${branchColor}18`,
+                  color: branchColor,
+                  borderColor: `${branchColor}55`,
+                }}
+              >
+                <span
+                  className="w-2 h-2 rounded-full"
+                  style={{ backgroundColor: branchColor }}
+                />
+                <span>[{profileName || officeName || '지점'}] 신성에스엔티 (4명 / ₩640,000)</span>
+              </div>
             </div>
           </div>
 
